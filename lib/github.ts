@@ -1,5 +1,9 @@
 import 'server-only'
 
+import { mkdirSync, statSync, openSync, closeSync, utimesSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+
 import { cleanDesc } from './parse'
 
 const TOKEN = (process.env.GITHUB_TOKEN ?? '').trim()
@@ -46,7 +50,45 @@ interface GhSearchResponse {
 const TIME_BUDGET_MS = 10_000
 const SCRAPE_TIME_BUDGET_MS = 15_000
 
+/* ------------------------- GitHub 请求全局平滑节流 ------------------------- */
+/* 构建期 7 个 worker 并发填缓存会在 1 秒内打出几十个 Search 请求，触发
+ * GitHub「二级限流」（403 且不扣主配额，冷却 ~1 分钟）。这里用 tmp 目录锁
+ * 把任意进程内的 GitHub 请求间隔拉平：有 token ≈ 每 2.1s ≤30/min，匿名 ≈ 每 6.2s ≤10/min。
+ * 运行时请求极少排队，二台 Vercel 流量下自身即有空闲窗口。 */
+
+const LOCK_DIR = join(tmpdir(), 'ghb-quota')
+const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms))
+
+async function quotaSlot(): Promise<void> {
+  const interval = Number(process.env.GHB_FETCH_INTERVAL_MS) || (TOKEN ? 2_100 : 6_200)
+  for (;;) {
+    try {
+      mkdirSync(LOCK_DIR, { recursive: true })
+      const marker = join(LOCK_DIR, 'last')
+      let last = 0
+      try {
+        last = statSync(marker).mtimeMs
+      } catch {
+        /* 首次无标记 */
+      }
+      const wait = last + interval - Date.now()
+      if (wait <= 0) {
+        // 排他占用时间片（他人随后重读 mtime 会看到更新后的值并继续等待）
+        const fd = openSync(marker, 'w')
+        closeSync(fd)
+        utimesSync(marker, new Date(), new Date())
+        return
+      }
+      await sleep(Math.min(wait, 10_000) + 30)
+    } catch {
+      // 节流失败不应阻塞请求
+      return
+    }
+  }
+}
+
 async function ghJson(url: string): Promise<unknown> {
+  await quotaSlot()
   const res = await fetch(url, {
     headers: githubHeaders(),
     signal: AbortSignal.timeout(TIME_BUDGET_MS),
@@ -146,6 +188,7 @@ export interface TrendingQuery {
 
 /** 抓取 github.com/trending 公开页面并解析。 */
 export async function fetchTrendingPage({ since, language }: TrendingQuery): Promise<string> {
+  await quotaSlot()
   const path = language ? `/trending/${encodeURIComponent(language.toLowerCase())}` : '/trending'
   const url = `https://github.com${path}?since=${since}`
   const res = await fetch(url, {

@@ -10,6 +10,9 @@ import { BoardSkeleton } from '@/components/board-view'
 import Reveal from '@/components/Reveal'
 import { fmtNum } from '@/lib/format'
 
+// build 期 use cache fill 与 GitHub 配额节流协同：允许单页生成最长 4 分钟
+export const staticPageGenerationTimeout = 240
+
 export async function generateStaticParams() {
   return [{ lang: 'zh' }, { lang: 'en' }]
 }

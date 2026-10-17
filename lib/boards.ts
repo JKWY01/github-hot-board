@@ -93,7 +93,8 @@ function toItems(repos: PoolRepo[], decorate?: (item: BoardItem, repo: PoolRepo)
 
 export async function getOverallData(language?: string): Promise<BoardData> {
   const q = `stars:>1000 fork:false${language ? ` language:${language}` : ''}`
-  const repos = await ghSearch(q, { pages: 3 })
+  // 按星排序的第 1 页本身就是 Top100，无需更多页
+  const repos = await ghSearch(q, { pages: 1 })
   repos.sort((a, b) => b.stars - a.stars)
   return {
     slug: 'overall',
@@ -168,7 +169,8 @@ export async function getTrendingBoardData({ period, language }: TrendingParams)
 }
 
 export async function getAnnualData(): Promise<BoardData> {
-  const repos = await ghSearch(`created:>${YEAR_START} stars:>10 fork:false`, { pages: 2 })
+  // 同总榜：第 1 页即今年的星数 Top100
+  const repos = await ghSearch(`created:>${YEAR_START} stars:>10 fork:false`, { pages: 1 })
   repos.sort((a, b) => b.stars - a.stars)
   return {
     slug: 'annual',
@@ -245,7 +247,8 @@ export async function getControversialData(): Promise<BoardData> {
 }
 
 export async function getForksData(): Promise<BoardData> {
-  const repos = await ghSearch('forks:>500 fork:false', { sort: 'forks', pages: 2 })
+  // 同总榜：按 fork 排序第 1 页即 Top100
+  const repos = await ghSearch('forks:>500 fork:false', { sort: 'forks', pages: 1 })
   repos.sort((a, b) => b.forks - a.forks)
   return {
     slug: 'forks',
