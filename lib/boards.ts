@@ -190,16 +190,24 @@ export async function getRisingData(): Promise<BoardData> {
 }
 
 export async function getDarkData(): Promise<BoardData> {
-  const pool = (await getRisingData()).items
-  const repos = pool.filter(
-    (item) => item.stars >= 30 && item.stars <= 1500 && (item.slope ?? 0) > 0,
-  )
-  repos.sort((a, b) => (b.slope ?? 0) - (a.slope ?? 0))
+  // 独立一口径：90 天内新建、30–1500 星，取斜率最高者（不复用 rising 的前 100 切片，
+  // 否则过滤后经常为空——斜率排序天然偏向全新小仓库）。
+  let repos: PoolRepo[] = []
+  try {
+    repos = await ghSearch(`created:>${isoDaysAgo(90)} stars:30..1500 fork:false`, { pages: 3 })
+  } catch {
+    repos = []
+  }
+  const filtered = repos
+    .filter((repo) => repo.stars >= 30 && repo.stars <= 1500 && (slopeStarsPerDay(repo) ?? 0) > 0)
+    .sort((a, b) => (slopeStarsPerDay(b) ?? 0) - (slopeStarsPerDay(a) ?? 0))
+    .slice(0, 80)
   return {
     slug: 'dark',
-    items: repos.slice(0, 80),
+    items: toItems(filtered),
     source: 'github-search',
     generatedAt: new Date().toISOString(),
+    degraded: !filtered.length ? true : undefined,
   }
 }
 
