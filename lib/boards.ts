@@ -1,0 +1,386 @@
+import 'server-only'
+
+import { cacheLife, cacheTag } from 'next/cache'
+
+import { RateLimitError, fetchTrendingPage, ghSearch } from './github'
+import { cleanDesc, parseTrendingHtml } from './parse'
+import type { BoardData, BoardItem } from './types'
+
+const DAY_MS = 86_400_000
+
+const isoDaysAgo = (days: number) =>
+  new Date(Date.now() - days * DAY_MS).toISOString().slice(0, 10)
+
+const YEAR_START = `${new Date().getUTCFullYear()}-01-01`
+
+/** 支持语言分榜的 GitHub 语言片段（与 trending 路径与 search qualifier 兼容）。 */
+export const FACET_LANGUAGES = [
+  'javascript', 'typescript', 'python', 'go', 'rust', 'java', 'c', 'c++',
+] as const
+export type FacetLanguage = (typeof FACET_LANGUAGES)[number]
+
+export type BoardSlug =
+  | 'overall' | 'weekly' | 'monthly' | 'annual' | 'rising' | 'dark'
+  | 'overlooked' | 'controversial' | 'forks' | 'milestone'
+
+export interface BoardMeta {
+  slug: BoardSlug
+  /** 数据来自 trending 抓取时用得多 */
+  trending: boolean
+  facets: boolean
+}
+
+export const BOARD_ORDER: BoardSlug[] = [
+  'overall', 'weekly', 'monthly', 'annual', 'rising',
+  'dark', 'overlooked', 'controversial', 'forks', 'milestone',
+]
+
+export const BOARD_META: Record<BoardSlug, BoardMeta> = {
+  overall: { slug: 'overall', trending: false, facets: true },
+  weekly: { slug: 'weekly', trending: true, facets: true },
+  monthly: { slug: 'monthly', trending: true, facets: true },
+  annual: { slug: 'annual', trending: false, facets: false },
+  rising: { slug: 'rising', trending: false, facets: false },
+  dark: { slug: 'dark', trending: false, facets: false },
+  overlooked: { slug: 'overlooked', trending: false, facets: false },
+  controversial: { slug: 'controversial', trending: false, facets: false },
+  forks: { slug: 'forks', trending: false, facets: false },
+  milestone: { slug: 'milestone', trending: false, facets: false },
+}
+
+export function isBoardSlug(value: string): value is BoardSlug {
+  return (BOARD_ORDER as string[]).includes(value)
+}
+
+export function isFacetLanguage(value: string): value is FacetLanguage {
+  return (FACET_LANGUAGES as readonly string[]).includes(value)
+}
+
+function slopeStarsPerDay(repo: { stars: number; createdAt?: string }): number | undefined {
+  if (!repo.createdAt) return undefined
+  const age = (Date.now() - Date.parse(repo.createdAt)) / DAY_MS
+  if (!Number.isFinite(age)) return undefined
+  const days = Math.max(1, age)
+  return repo.stars / days
+}
+
+interface PoolRepo {
+  id: number
+  fullName: string
+  owner: string
+  name: string
+  htmlUrl: string
+  avatarUrl: string
+  desc: string | null
+  stars: number
+  forks: number
+  issues: number
+  language: string | null
+  createdAt?: string
+  pushedAt?: string
+  topics: string[]
+}
+
+function toItems(repos: PoolRepo[], decorate?: (item: BoardItem, repo: PoolRepo) => void): BoardItem[] {
+  return repos.map((repo) => {
+    const item: BoardItem = { ...repo, slope: slopeStarsPerDay(repo) }
+    decorate?.(item, repo)
+    return item
+  })
+}
+
+/* ---------------------------------- 榜单 ---------------------------------- */
+
+export async function getOverallData(language?: string): Promise<BoardData> {
+  const q = `stars:>1000 fork:false${language ? ` language:${language}` : ''}`
+  const repos = await ghSearch(q, { pages: 3 })
+  repos.sort((a, b) => b.stars - a.stars)
+  return {
+    slug: 'overall',
+    items: toItems(repos).slice(0, 100),
+    language,
+    source: 'github-search',
+    generatedAt: new Date().toISOString(),
+  }
+}
+
+interface TrendingParams {
+  period: 'weekly' | 'monthly'
+  language?: string
+}
+
+export async function getTrendingBoardData({ period, language }: TrendingParams): Promise<BoardData> {
+  let firstError: unknown = null
+  try {
+    const html = await fetchTrendingPage({ since: period, language })
+    const parsed = parseTrendingHtml(html, period)
+    if (parsed.length === 0) throw new Error('trending parse returned 0 items')
+
+    const items: BoardItem[] = parsed.map((entry) => {
+      const [owner, name] = entry.fullName.split('/')
+      return {
+        id: hashFullName(entry.fullName),
+        fullName: entry.fullName,
+        owner: owner ?? '',
+        name: name ?? entry.fullName,
+        htmlUrl: `https://github.com/${entry.fullName}`,
+        avatarUrl: `https://github.com/${owner ?? 'github'}.png`,
+        desc: entry.desc,
+        stars: entry.stars,
+        forks: entry.forks,
+        issues: 0,
+        language: entry.language,
+        topics: [],
+        gained: entry.growth ?? undefined,
+        sincePeriod: entry.period,
+      }
+    })
+    return {
+      slug: period,
+      language,
+      items,
+      source: 'github-trending',
+      generatedAt: new Date().toISOString(),
+    }
+  } catch (error) {
+    firstError = error
+  }
+
+  // 降级口径：新建仓库按星数排序（与官方 trending 不同，页面会明确标注）
+  try {
+    const days = period === 'weekly' ? 7 : 30
+    const repos = await ghSearch(
+      `created:>${isoDaysAgo(days)} stars:>100 fork:false${language ? ` language:${language}` : ''}`,
+      { pages: 1 },
+    )
+    repos.sort((a, b) => b.stars - a.stars)
+    return {
+      slug: period,
+      language,
+      items: toItems(repos).slice(0, 50),
+      source: 'github-search-fallback',
+      degraded: true,
+      generatedAt: new Date().toISOString(),
+    }
+  } catch {
+    throw firstError
+  }
+}
+
+export async function getAnnualData(): Promise<BoardData> {
+  const repos = await ghSearch(`created:>${YEAR_START} stars:>10 fork:false`, { pages: 2 })
+  repos.sort((a, b) => b.stars - a.stars)
+  return {
+    slug: 'annual',
+    items: toItems(repos).slice(0, 100),
+    source: 'github-search',
+    generatedAt: new Date().toISOString(),
+  }
+}
+
+export async function getRisingData(): Promise<BoardData> {
+  const repos = await ghSearch(`created:>${isoDaysAgo(90)} stars:>10 fork:false`, { pages: 2 })
+  repos.sort((a, b) => (slopeStarsPerDay(b as PoolRepo) ?? 0) - (slopeStarsPerDay(a as PoolRepo) ?? 0))
+  return {
+    slug: 'rising',
+    items: toItems(repos).slice(0, 100),
+    source: 'github-search',
+    generatedAt: new Date().toISOString(),
+  }
+}
+
+export async function getDarkData(): Promise<BoardData> {
+  const pool = (await getRisingData()).items
+  const repos = pool.filter(
+    (item) => item.stars >= 30 && item.stars <= 1500 && (item.slope ?? 0) > 0,
+  )
+  repos.sort((a, b) => (b.slope ?? 0) - (a.slope ?? 0))
+  return {
+    slug: 'dark',
+    items: repos.slice(0, 80),
+    source: 'github-search',
+    generatedAt: new Date().toISOString(),
+  }
+}
+
+export async function getOverlookedData(): Promise<BoardData> {
+  const repos = await ghSearch(
+    `pushed:>${isoDaysAgo(30)} stars:100..800 fork:false`,
+    { pages: 1, order: 'asc' },
+  )
+  repos.sort((a, b) => a.stars - b.stars)
+  return {
+    slug: 'overlooked',
+    items: toItems(repos).slice(0, 100),
+    source: 'github-search',
+    generatedAt: new Date().toISOString(),
+    degraded: !repos.length ? true : undefined,
+  }
+}
+
+export async function getControversialData(): Promise<BoardData> {
+  const pool = await getOverallData()
+  const repos = pool.items
+    .filter((item) => item.stars >= 3000)
+    .map((item) => ({
+      ...item,
+      score: (item.forks * 2 + item.issues) / Math.max(1, item.stars),
+    }))
+    .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
+    .slice(0, 60)
+  return {
+    slug: 'controversial',
+    items: repos,
+    source: 'github-search',
+    generatedAt: new Date().toISOString(),
+  }
+}
+
+export async function getForksData(): Promise<BoardData> {
+  const repos = await ghSearch('forks:>500 fork:false', { sort: 'forks', pages: 2 })
+  repos.sort((a, b) => b.forks - a.forks)
+  return {
+    slug: 'forks',
+    items: toItems(repos).slice(0, 100),
+    source: 'github-search',
+    generatedAt: new Date().toISOString(),
+  }
+}
+
+export interface MilestoneThreshold {
+  value: number
+  quote: string
+}
+
+export const MILESTONE_THRESHOLDS = [1_000, 10_000, 50_000, 100_000] as const
+
+export async function getMilestoneData(): Promise<BoardData> {
+  const tenDaysAgo = isoDaysAgo(30)
+  const settled = await Promise.allSettled(
+    MILESTONE_THRESHOLDS.map((threshold) =>
+      ghSearch(`stars:${threshold - 80}..${threshold + 80} pushed:>${tenDaysAgo} fork:false`, {
+        perPage: 30,
+        pages: 1,
+      }),
+    ),
+  )
+
+  const byFull = new Map<string, BoardItem>()
+  const errors: unknown[] = []
+  for (const result of settled) {
+    if (result.status === 'fulfilled') {
+      for (const repo of result.value) {
+        const existing = byFull.get(repo.fullName)
+        if (existing) continue
+        const item: BoardItem = { ...repo, slope: slopeStarsPerDay(repo) as number | undefined }
+        const target = nearestThreshold(repo)
+        item.milestoneTarget = target
+        byFull.set(repo.fullName, item)
+      }
+    } else {
+      errors.push(result.reason)
+    }
+  }
+
+  const items = [...byFull.values()]
+  if (items.length === 0 && errors.length > 0) {
+    const anyRate = errors.some((e) => e instanceof RateLimitError)
+    throw anyRate ? errors.find((e) => e instanceof RateLimitError) : errors[0]
+  }
+
+  items.sort((a, b) => remainingToTarget(a) - remainingToTarget(b))
+  return {
+    slug: 'milestone',
+    items: items.slice(0, 90),
+    source: 'github-search',
+    generatedAt: new Date().toISOString(),
+  }
+}
+
+function nearestThreshold(repo: PoolRepo): number {
+  const stars = repo.stars
+  let best: number = MILESTONE_THRESHOLDS[0]
+  let bestDist = Number.MAX_SAFE_INTEGER
+  for (const t of MILESTONE_THRESHOLDS) {
+    const dist = Math.abs(t - stars)
+    if (dist < bestDist) {
+      best = t
+      bestDist = dist
+    }
+  }
+  return best
+}
+
+function remainingToTarget(item: BoardItem): number {
+  if (!item.milestoneTarget) return Number.MAX_SAFE_INTEGER
+  return Math.max(0, item.milestoneTarget - item.stars)
+}
+
+/* ---------------------------------- 调度 ---------------------------------- */
+
+export async function getBoardData(
+  slug: BoardSlug,
+  language?: string,
+): Promise<BoardData> {
+  switch (slug) {
+    case 'overall':
+      return getOverallData(language)
+    case 'weekly':
+      return getTrendingBoardData({ period: 'weekly', language })
+    case 'monthly':
+      return getTrendingBoardData({ period: 'monthly', language })
+    case 'annual':
+      return getAnnualData()
+    case 'rising':
+      return getRisingData()
+    case 'dark':
+      return getDarkData()
+    case 'overlooked':
+      return getOverlookedData()
+    case 'controversial':
+      return getControversialData()
+    case 'forks':
+      return getForksData()
+    case 'milestone':
+      return getMilestoneData()
+  }
+}
+
+function hashFullName(fullName: string): number {
+  let hash = 5381
+  for (let i = 0; i < fullName.length; i += 1) {
+    hash = ((hash << 5) + hash + fullName.charCodeAt(i)) | 0
+  }
+  return hash
+}
+
+/**
+ * Cache Components 专用包装：把"当前时间"等不稳定的值放进 'use cache' 作用域，
+ * 让预渲染期的静态壳包含真实榜单内容；运行时按 cacheLife 周期后台再验证。
+ * 内层所有 GitHub fetch 自带 Data Cache TTL（Vercel 持久化），保护 API 配额。
+ */
+export async function getBoardDataCached(
+  slug: BoardSlug,
+  language?: string,
+): Promise<BoardData> {
+  'use cache'
+  cacheLife({ stale: 60, revalidate: 300, expire: 3600 })
+  // 统一打上 'github' 标签，/api/refresh 可用 revalidateTag 一键强制全站刷新。
+  cacheTag('github')
+
+  // 失败不向上抛：预渲染期的缓存填充阶段一旦有 rejection 会直接挂掉构建。
+  // 这里烘焙一张"明确标注失败"的空榜卡，cacheLife 到期后自动重新拉数自愈。
+  try {
+    return await getBoardData(slug, language)
+  } catch (error) {
+    return {
+      slug,
+      language,
+      items: [],
+      source: 'github-error',
+      degraded: true,
+      error: { code: error instanceof RateLimitError ? 'rate-limited' : 'upstream' },
+      generatedAt: new Date().toISOString(),
+    }
+  }
+}

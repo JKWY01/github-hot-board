@@ -1,26 +1,172 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  --color-ink: #1d1d1f;
+  --color-sub: #86868b;
+  --color-surface: #f5f5f7;
+  --color-accent: #0071e3;
+  --color-good: #248a3d;
+  --color-bad: #b25000;
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  color: var(--color-ink);
+  background: #ffffff;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  letter-spacing: -0.01em;
+}
+
+::selection {
+  background: rgba(0, 113, 227, 0.25);
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+.hairline {
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.gradient-text {
+  background: linear-gradient(96deg, #0071e3 0%, #7a4dd6 52%, #b25000 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.hero-title {
+  font-size: clamp(2.6rem, 6.4vw, 4.6rem);
+  line-height: 1.04;
+  font-weight: 650;
+  letter-spacing: -0.028em;
+}
+
+.hero-title-en {
+  font-size: clamp(1.4rem, 3.2vw, 2.2rem);
+  line-height: 1.08;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  color: var(--color-sub);
+}
+
+.section-title {
+  font-size: clamp(1.7rem, 3.4vw, 2.5rem);
+  line-height: 1.12;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+.kicker {
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  color: var(--color-accent);
+}
+
+.card {
+  background: #ffffff;
+  border-radius: 22px;
+  border: 0.5px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.language-chip {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  border-radius: 999px;
+  border: 0.5px solid rgba(0, 0, 0, 0.12);
+  background: #ffffff;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(29, 29, 31, 0.75);
+  transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+.language-chip:hover {
+  border-color: rgba(0, 113, 227, 0.4);
+  color: #0071e3;
+}
+.language-chip-active,
+.language-chip-active:hover {
+  background: #1d1d1f;
+  border-color: #1d1d1f;
+  color: #ffffff;
+}
+
+/* 入场动效（仅在 JS 就绪后隐藏，无 JS 环境内容始终可见 —— SEO 友好） */
+.reveal {
+  transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1), transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+html.js .reveal {
+  opacity: 0;
+  transform: translateY(14px);
+}
+html.js .reveal.revealed {
+  opacity: 1;
+  transform: none;
+}
+
+/* 页面加载一次性动画（hero 元素，带 animation-delay） */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.rise {
+  opacity: 0;
+  animation: rise 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation-delay: var(--rise-delay, 0ms);
+}
+
+/* 名次牌进前三的微光 */
+@keyframes podium-glow {
+  0% { box-shadow: 0 0 0 0 rgba(0, 113, 227, 0); }
+  35% { box-shadow: 0 0 0 5px rgba(0, 113, 227, 0.16); }
+  100% { box-shadow: 0 0 0 0 rgba(0, 113, 227, 0); }
+}
+.podium-flash {
+  animation: podium-glow 1.6s ease-out 1;
+}
+
+/* toast 提示 */
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(18px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+.toast-in {
+  animation: toast-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .reveal, .rise, .podium-flash, .toast-in {
+    animation: none !important;
+    transition: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
 }
