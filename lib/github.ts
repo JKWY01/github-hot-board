@@ -213,17 +213,34 @@ async function defaultBranch(full: string): Promise<string> {
   }
 }
 
+/** 把 a/./b/../c 这类路径段归一化成干净的仓库根路径。 */
+function normRel(p: string): string {
+  const parts: string[] = []
+  for (const seg of p.split('/')) {
+    if (!seg || seg === '.') continue
+    if (seg === '..') parts.pop()
+    else parts.push(seg)
+  }
+  return parts.join('/')
+}
+
 /** 统一改写:剥壳 → 根相对补域 → 裸相对按文档目录落位 → 外链新标签。 */
 function absolutizeMdHtml(html: string, full: string, branch: string, dir: string): string {
   let out = html.replace(/<!doctype[\s\S]*?>|<\/?(html|body)[^>]*>/gi, '').trim()
-  const blobBase = `https://github.com/${full}/blob/${branch}${dir ? `/${dir}` : ''}`
-  const rawBase = `https://raw.githubusercontent.com/${full}/${branch}${dir ? `/${dir}` : ''}`
+  const blobBase = `https://github.com/${full}/blob/${branch}`
+  const rawBase = `https://raw.githubusercontent.com/${full}/${branch}`
   // 根相对(/owner/repo/raw/...)补 GitHub 域
   out = out.replace(/(src|href)="\/([^/])/g, '$1="https://github.com/$2')
-  // 同目录裸相对的文档链接
-  out = out.replace(/href="(?!(?:https?:|#|mailto:|javascript:))\.?\/?([^"]+)"/gi, `href="${blobBase}/$1"`)
+  // 裸相对(含 ./ 与 ../)一律先并入文档目录、再做段归一化,.. 才有正确落点
+  out = out.replace(/href="(?!(?:https?:|#|mailto:|javascript:))([^"]+)"/gi, (m, p1) => {
+    const rel = dir ? `${dir}/${p1}` : p1
+    return `href="${blobBase}/${normRel(rel)}"`
+  })
   // 同目录裸相对的图片
-  out = out.replace(/src="(?!(?:https?:|data:|#))\.?\/?([^"]+)"/gi, `src="${rawBase}/$1"`)
+  out = out.replace(/src="(?!(?:https?:|data:|#))([^"]+)"/gi, (m, p1) => {
+    const rel = dir ? `${dir}/${p1}` : p1
+    return `src="${rawBase}/${normRel(rel)}"`
+  })
   // 外链新标签(页内锚点除外,交给客户端就地滚动)
   out = out.replace(/<a\b(?![^>]*\btarget=)(?![^>]*\bhref="#)/g, '<a target="_blank" rel="noopener noreferrer"')
   return out

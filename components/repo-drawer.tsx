@@ -42,6 +42,7 @@ export default function RepoDrawer({
   const cacheRef = useRef(new Map<string, string>())
   const closeBtnRef = useRef<HTMLButtonElement>(null)
   const scrollBoxRef = useRef<HTMLDivElement>(null)
+  const mdBoxRef = useRef<HTMLDivElement>(null)
   const [entered, setEntered] = useState(false)
 
   useEffect(() => {
@@ -117,6 +118,31 @@ export default function RepoDrawer({
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose, onPrev, onNext])
+
+  // 图片失链回退:README 作者常把图写成相对路径,而图在别的目录
+  // (往往 Localization readme 目录下引用上级 assets)。单图只回退一次:
+  // 路径里出现 readme 目录段先剔除,否则向根走一级;仍失败就保持破图(GitHub 也一样)。
+  useEffect(() => {
+    const box = mdBoxRef.current
+    if (!box || state !== 'ok') return
+    const onErr = (e: Event) => {
+      const img = e.target as HTMLImageElement
+      if (img.tagName !== 'IMG' || img.dataset.lookedUp) return
+      const src = img.getAttribute('src') || ''
+      const m = src.match(/^(https:\/\/raw\.githubusercontent\.com\/[^/]+\/[^/]+\/[^/]+)\/(.+)$/)
+      if (!m) return
+      const segs = m[2].split('/')
+      if (segs.length < 2) return
+      img.dataset.lookedUp = '1'
+      const ri = segs.findIndex((s) => s.toLowerCase() === 'readme')
+      if (ri > 0) segs.splice(ri, 1)
+      else if (segs.length > 2) segs.splice(segs.length - 2, 1)
+      else return
+      img.src = `${m[1]}/${segs.join('/')}`
+    }
+    box.addEventListener('error', onErr, true)
+    return () => box.removeEventListener('error', onErr, true)
+  }, [state, html])
 
   // 邻居预取:当前页稳定半秒后,顺手把上/下一名的 README 拉进缓存
   // (别人之后点上下名时近乎零等待;数据本身走服务端共享缓存,不额外压配额)
@@ -239,9 +265,9 @@ export default function RepoDrawer({
             <p className="mx-5 my-4 rounded-2xl border-[0.5px] border-black/10 bg-[#fff8e6] px-3.5 py-2 text-[12px] text-bad" role="status">
               {drawer.fail}
             </p>
-          )}
-          {state === 'ok' && html && (
+          )}{state === 'ok' && html && (
             <div
+              ref={mdBoxRef}
               className="md-body px-5 py-4"
               onClick={(e) => {
                 const a = (e.target as HTMLElement).closest('a')
