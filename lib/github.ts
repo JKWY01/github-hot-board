@@ -1,6 +1,5 @@
-import 'server-only'
 
-import { mkdirSync, statSync, openSync, closeSync, utimesSync } from 'node:fs'
+import { mkdirSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
@@ -56,39 +55,59 @@ const SCRAPE_TIME_BUDGET_MS = 15_000
  * 把任意进程内的 GitHub 请求间隔拉平：有 token ≈ 每 2.1s ≤30/min，匿名 ≈ 每 6.2s ≤10/min。
  * 运行时请求极少排队，二台 Vercel 流量下自身即有空闲窗口。 */
 
-const LOCK_DIR = join(tmpdir(), 'ghb-quota')
+const LOCK_DIR = process.env.VERCEL ? join(tmpdir(), 'ghb-quota') : join(process.cwd(), '.data', 'quota')
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms))
 
-async function quotaSlot(): Promise<void> {
-  const interval = Number(process.env.GHB_FETCH_INTERVAL_MS) || (TOKEN ? 2_100 : 6_200)
+/** 全局语速令牌（进程间经 tmp 目录 marker 的 mtime 排队，Search / Trending 各一条队列）：
+ * 1) 读 marker mtime 得上次请求时刻；2) 睡到 last+interval；3) writeFileSync 戳新时刻；
+ * 4) 戳完若发现被人以更晚时刻覆盖 → 让位重排。绝不在 fill 里无限等待：排队超 45s
+ * 直接放行（宁可偶发双发，不可把构建/请求卡死——wx 排他认领曾在 marker 常存时死转）。 */
+async function quotaSlot(label: string): Promise<void> {
+  const trending = label.startsWith('trending:')
+  const interval = Number(process.env.GHB_FETCH_INTERVAL_MS)
+    || (trending ? 650 : TOKEN ? 2_100 : 6_200)
+  const deadline = Date.now() + 45_000
   for (;;) {
     try {
       mkdirSync(LOCK_DIR, { recursive: true })
-      const marker = join(LOCK_DIR, 'last')
+      const marker = join(LOCK_DIR, trending ? 'trending' : 'search')
       let last = 0
       try {
         last = statSync(marker).mtimeMs
       } catch {
         /* 首次无标记 */
       }
-      const wait = last + interval - Date.now()
+      const now = Date.now()
+      const wait = last + interval - now
       if (wait <= 0) {
-        // 排他占用时间片（他人随后重读 mtime 会看到更新后的值并继续等待）
-        const fd = openSync(marker, 'w')
-        closeSync(fd)
-        utimesSync(marker, new Date(), new Date())
+        // 戳新 mtime（创建或清空都会刷新）；失败的唯一情形是目录不可写 → 放行
+        try {
+          writeFileSync(marker, '')
+        } catch {
+          return
+        }
+        // 末位写入者独得时间片：他人以更晚时刻覆盖 → 回炉重排
+        if (statSync(marker).mtimeMs > now + 2) continue
+        if (process.env.GHB_QUOTA_DEBUG) {
+          console.error(`[quota/claim] ${label} interval=${interval} ts+${((now % 1_000_000) / 1000).toFixed(1)}s`)
+        }
+        return
+      }
+      if (now > deadline) {
+        // 排队过久直接放行（如 7 worker 强争），绝不把 fill 卡到超时
+        if (process.env.GHB_QUOTA_DEBUG) console.error(`[quota/giveup] ${label}`)
         return
       }
       await sleep(Math.min(wait, 10_000) + 30)
     } catch {
-      // 节流失败不应阻塞请求
+      // 节流失败绝不阻塞请求
       return
     }
   }
 }
 
 async function ghJson(url: string): Promise<unknown> {
-  await quotaSlot()
+  await quotaSlot(url.slice(-40))
   const res = await fetch(url, {
     headers: githubHeaders(),
     signal: AbortSignal.timeout(TIME_BUDGET_MS),
@@ -188,7 +207,7 @@ export interface TrendingQuery {
 
 /** 抓取 github.com/trending 公开页面并解析。 */
 export async function fetchTrendingPage({ since, language }: TrendingQuery): Promise<string> {
-  await quotaSlot()
+  await quotaSlot(`trending:${since}:${language ?? 'all'}`)
   const path = language ? `/trending/${encodeURIComponent(language.toLowerCase())}` : '/trending'
   const url = `https://github.com${path}?since=${since}`
   const res = await fetch(url, {

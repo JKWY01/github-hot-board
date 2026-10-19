@@ -10,9 +10,6 @@ import { BoardSkeleton } from '@/components/board-view'
 import Reveal from '@/components/Reveal'
 import { fmtNum } from '@/lib/format'
 
-// build 期 use cache fill 与 GitHub 配额节流协同：允许单页生成最长 4 分钟
-export const staticPageGenerationTimeout = 240
-
 export async function generateStaticParams() {
   return [{ lang: 'zh' }, { lang: 'en' }]
 }
@@ -108,7 +105,7 @@ export default async function HomePage({
               </div>
               <Link
                 href={`/${locale}/boards/weekly`}
-                className="text-[13.5px] font-medium text-accent transition-opacity hover:opacity-75"
+                className="text-[13.5px] font-medium text-accent-strong transition-opacity hover:opacity-75"
               >
                 {dict.ui.viewAll} &rarr;
               </Link>
@@ -130,7 +127,7 @@ export default async function HomePage({
             </div>
             <Link
               href={`/${locale}/boards/overall`}
-              className="text-[13.5px] font-medium text-accent transition-opacity hover:opacity-75"
+              className="text-[13.5px] font-medium text-accent-strong transition-opacity hover:opacity-75"
             >
               {dict.ui.viewAll} &rarr;
             </Link>
@@ -155,7 +152,7 @@ export default async function HomePage({
               </div>
               <Link
                 href={`/${locale}/boards/milestone`}
-                className="text-[13.5px] font-medium text-accent transition-opacity hover:opacity-75"
+                className="text-[13.5px] font-medium text-accent-strong transition-opacity hover:opacity-75"
               >
                 {dict.ui.viewAll} &rarr;
               </Link>
@@ -188,8 +185,8 @@ export default async function HomePage({
               })),
             )
             .map((board, index) => (
-              <Reveal key={board.key} delay={(index % 3) * 60}>
-                <li>
+              <li key={board.key} className="h-full">
+                <Reveal delay={(index % 3) * 60} className="h-full">
                   <Link
                     href={`/${locale}/boards/${board.slug}`}
                     className="group flex h-full flex-col justify-between rounded-[22px] border-[0.5px] border-black/10 bg-white p-6 transition-shadow hover:shadow-[0_10px_36px_rgba(0,0,0,0.08)]"
@@ -210,8 +207,8 @@ export default async function HomePage({
                     </div>
                     <span className="mt-5 text-[13px] font-medium text-accent">{dict.home.viewBoard} &rarr;</span>
                   </Link>
-                </li>
-              </Reveal>
+                </Reveal>
+              </li>
             ))}
         </ul>
       </section>
@@ -270,12 +267,13 @@ async function HeroStats({ locale }: { locale: 'zh' | 'en' }) {
       {stats.map((stat) => (
         <div
           key={stat.label}
-          className="rounded-[22px] border-[0.5px] border-black/10 bg-white px-6 py-5 text-center"
+          className="flex flex-col-reverse rounded-[22px] border-[0.5px] border-black/10 bg-white px-6 py-5 text-center"
         >
+          {/* 语义顺序 dt→dd;flex-col-reverse 让视觉保持数值在上 */}
+          <dt className="mt-1 text-[12.5px] text-sub">{stat.label}</dt>
           <dd className="text-[26px] font-semibold tracking-tight tabular-nums text-ink">
             {stat.value}
           </dd>
-          <dt className="mt-1 text-[12.5px] text-sub">{stat.label}</dt>
         </div>
       ))}
     </dl>

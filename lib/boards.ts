@@ -1,10 +1,38 @@
-import 'server-only'
-
 import { cacheLife, cacheTag } from 'next/cache'
 
 import { RateLimitError, fetchTrendingPage, ghSearch } from './github'
+import { appendHistory, readPersistedBoard, savePersistedBoard } from './persist'
+import { readBoardHead } from './snapshot'
 import { cleanDesc, parseTrendingHtml } from './parse'
 import type { BoardData, BoardItem } from './types'
+
+/** 持久层水合上限:重建后(.next 数据缓存清空)优先读 .data 磁盘快照,
+ * 不去打 GitHub。超龄(默认 30 分钟)才走真实拉取。 */
+const HYDRATE_MAX_MIN = Number(process.env.PERSIST_HYDRATE_MAX_MIN) || 30
+
+/** cacheKey 与文件名的共用键;语言用 URL 安全 slug(c++ → cpp)。 */
+function persistKey(slug: BoardSlug, language?: string): string {
+  return language ? `${slug}-${facetLangSlug(language)}` : slug
+}
+
+/** 历史行瘦身:只要时序分析所需的最小字段。 */
+function toHistoryPayload(key: string, data: BoardData) {
+  return {
+    generatedAt: data.generatedAt,
+    key,
+    source: data.source,
+    degraded: data.degraded ?? false,
+    items: data.items.map((item: BoardItem, index: number) => ({
+      rank: index + 1,
+      repo: item.fullName,
+      stars: item.stars,
+      forks: item.forks,
+      ...(item.slope !== undefined ? { slope: item.slope } : {}),
+      ...(item.gained !== undefined ? { gained: item.gained } : {}),
+      ...(item.score !== undefined ? { score: item.score } : {}),
+    })),
+  }
+}
 
 const DAY_MS = 86_400_000
 
@@ -13,15 +41,13 @@ const isoDaysAgo = (days: number) =>
 
 const YEAR_START = `${new Date().getUTCFullYear()}-01-01`
 
-/** 支持语言分榜的 GitHub 语言片段（与 trending 路径与 search qualifier 兼容）。 */
-export const FACET_LANGUAGES = [
-  'javascript', 'typescript', 'python', 'go', 'rust', 'java', 'c', 'c++',
-] as const
-export type FacetLanguage = (typeof FACET_LANGUAGES)[number]
+import { BOARD_SLUGS, FACET_LANGUAGES, facetDisplay, facetLangFromSlug, facetLangSlug, type FacetLanguage } from './facet'
 
-export type BoardSlug =
-  | 'overall' | 'weekly' | 'monthly' | 'annual' | 'rising' | 'dark'
-  | 'overlooked' | 'controversial' | 'forks' | 'milestone'
+/* 语言分面与 slug 工具的单一来源在 lib/facet.ts(纯数据,middleware 也会用到);这里原样再导出。 */
+export { FACET_LANGUAGES, facetDisplay, facetLangFromSlug, facetLangSlug }
+export type { FacetLanguage }
+
+export type BoardSlug = (typeof BOARD_SLUGS)[number]
 
 export interface BoardMeta {
   slug: BoardSlug
@@ -30,10 +56,7 @@ export interface BoardMeta {
   facets: boolean
 }
 
-export const BOARD_ORDER: BoardSlug[] = [
-  'overall', 'weekly', 'monthly', 'annual', 'rising',
-  'dark', 'overlooked', 'controversial', 'forks', 'milestone',
-]
+export const BOARD_ORDER: BoardSlug[] = [...BOARD_SLUGS]
 
 export const BOARD_META: Record<BoardSlug, BoardMeta> = {
   overall: { slug: 'overall', trending: false, facets: true },
@@ -382,8 +405,48 @@ export async function getBoardDataCached(
   // 失败不向上抛：预渲染期的缓存填充阶段一旦有 rejection 会直接挂掉构建。
   // 这里烘焙一张"明确标注失败"的空榜卡，cacheLife 到期后自动重新拉数自愈。
   try {
-    return await getBoardData(slug, language)
+    if (process.env.GHB_FILL_DEBUG) console.error(`[fill] enter ${slug}:${language ?? 'all'}`)
+    const key = persistKey(slug, language)
+
+    // ① 数据库优先(唯一数据源):只有同步任务联 GitHub,站点读路径 0 次上游请求。
+    if (process.env.DATABASE_URL) {
+      const head = await readBoardHead(key)
+      const dbMaxAge = (Number(process.env.GHB_DB_MAX_MIN) || 90) * 60_000
+      if (head && head.ageMs < dbMaxAge) {
+        if (process.env.GHB_FILL_DEBUG) {
+          console.error(`[fill] db-head ${slug}:${language ?? 'all'} age=${Math.round(head.ageMs / 1000)}s items=${(head.data as BoardData).items?.length ?? 0}`)
+        }
+        return head.data
+      }
+      if (process.env.GHB_FILL_DEBUG && head) console.error(`[fill] db-head-stale ${slug}:${language ?? 'all'} age=${Math.round(head.ageMs / 1000)}s`)
+    }
+
+    // ② 磁盘水合:重建/冷启动后(.next 数据缓存被清)优先吃上一轮的磁盘快照,不打 GitHub
+    const persisted = readPersistedBoard(key)
+    const maxAge = HYDRATE_MAX_MIN * 60_000
+    if (
+      persisted &&
+      persisted.ageMs < maxAge &&
+      (persisted.data as BoardData | null)?.items &&
+      Array.isArray((persisted.data as BoardData).items)
+    ) {
+      const data = persisted.data as BoardData
+      if (process.env.GHB_FILL_DEBUG) {
+        console.error(`[fill] hydrated-from-disk ${slug}:${language ?? 'all'} age=${Math.round(persisted.ageMs / 1000)}s`)
+      }
+      return data
+    }
+
+    // ② 正路:真实拉取(GitHub Search / Trending,内部有配额节流与降级口径)
+    const t0 = Date.now()
+    const data = await getBoardData(slug, language)
+    // ③ 落盘:最新快照 + 按月分段的历史拍(30 分钟一拍起,PERSIST_HISTORY_MIN 控制)
+    savePersistedBoard(key, data)
+    appendHistory(key, toHistoryPayload(key, data))
+    if (process.env.GHB_FILL_DEBUG) console.error(`[fill] done ${slug}:${language ?? 'all'} ${Date.now() - t0}ms`)
+    return data
   } catch (error) {
+    if (process.env.GHB_FILL_DEBUG) console.error(`[fill] baked-error ${slug}:${language ?? 'all'} ${String(error).slice(0, 60)}`)
     return {
       slug,
       language,

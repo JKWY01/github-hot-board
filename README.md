@@ -21,6 +21,8 @@
 
 总榜 / 周榜 / 月榜支持语言分榜（javascript / typescript / python / go / rust / java / c / c++），对应 URL 形如 `/zh/boards/weekly/python`（每条 URL 独立收录）。
 
+URL 使用语言 slug：`c++` → `/cpp`（未来 `c#` → `/csharp`），避免 `+`/`#` 出现在路径段（Next 路由解析层面会 404且回落被 ISR 缓存）。数据层仍按 GitHub 原生语言名查询；旧链接（`/c++`、`/c%2B%2B`）由根目录 `proxy.ts` 在路由匹配之前 308 到 slug 形态。
+
 ## 技术要点
 
 - **Next.js 16 App Router + React 19 + TypeScript + Tailwind v4**，`cacheComponents` 新缓存模型（页面静态壳 + Suspense 动态洞，无 `export const revalidate` 旧段配置）。
@@ -85,12 +87,47 @@ app/[lang]/*        双语页面与 dictionaries（站点全部文案）
 app/api/boards/[slug]  客户端轮询端点
 ```
 
+## 数据与快照（市场分析体系）
+
+站点本身**零数据库**:数据从 GitHub Search API / Trending 页进入 Next 增量缓存(ISR,'use cache'),分发到静态产物;前端 60s 轮询命中的也是同一份缓存。要做时间维度的市场分析,按三层取用:
+
+| 层 | 介质 | 能回答 | 代价 |
+|---|---|---|---|
+| 站点快照(待接) | 自建定时快照 → Postgres | 我自己的榜位历史、黑马爆发点回放 | cron 一行,量极小 |
+| 归档查询(已可用) | `scripts/market.mjs` ↔ GH Archive 公共镜像 | 任意仓库/赛道/任意时间段的星标与 fork 曲线、全站火箭榜 | 零账号;**~10% 抽样 + 近期/2026 中段灌注缺口,看形状与排名** |
+| 全量精确(需要时再上) | BigQuery `githubarchive.day.*` | 绝对精确的逐日星标、时代趋势聚合 | 免费 1TB 查询/月;需 Google 账号 |
+
+用 CLI 分析三个入口:
+
+```bash
+node scripts/market.mjs repo vercel/next.js --days 60   # 单仓库爆发日/拐点(自动兼容改名仓库)
+node scripts/market.mjs track agent --months 12          # 赛道时代趋势(新星数/活跃仓库数)
+node scripts/market.mjs risers --days 30 --limit 15      # 全站任意窗口的涨星火箭榜
+```
+
+已知事实(2026-10 探明):GitHub 已把 REST `stargazers`/`subscribers` 明细端点与 GraphQL 的星标边**平台级撤下**(token 正常仍 404/空)——逐星时间线只存在于事件归档里;仓库改名后归档事件仍按旧名存储,查询需新旧名都算(`repo` 命令已处理)。
+
 ## 如何新增一个榜
 
 1. `lib/boards.ts`：写一个 `getXxxData()`（Search API 口口相接），并在 `getBoardData` 分发。
 2. `app/[lang]/dictionaries.ts`：补 `BoardCopy`（名称/口径/FAQ，中英双语）。
 3. 需要语言分面就在 `BOARD_META` 开 `facets`。
 4. 路由、导航、footer、sitemap 全部随 `BOARD_ORDER` 自动生效。
+
+## 数据架构(2026-10 起:「卖货与进货分离」)
+
+```
+GitHub ──(仅同步任务触碰)──> Neon Postgres ──(站点只 SELECT)──> 访客
+```
+
+- **同步任务**是唯一碰 GitHub 的通道:`lib/sync.ts` 顺序抓全量 34 榜(含语言分面),
+  写 `board_head`(每键最新一拍,站点读它)+ `board_snapshots`(逐仓逐名次明细,历史与「往日榜」原料),并镜像落盘 `.data/`。
+- 触发方式三选:`npm run sync`(本地,走已启动站点)、`POST /api/sync`(带 CRON_SECRET)、
+  GitHub Actions 每半小时(`.github/workflows/sync.yml`,配 SYNC_URL/CRON_SECRET 仓库密钥)。
+- **读路径零 GitHub 请求**(实测日志 `[fill] db-head overall:all age=292s items=100`);
+  降级链:数据库 → 磁盘快照(.data,重建 94 页 ~15 秒全走水合)→ 现场拉取。
+- 明细行保留 `SNAPSHOT_RETENTION_DAYS`(默认 60 天)自动治理;Trending 被挡时同步内部自愈重试,访客无感。
+- 诊断:`/api/dbcheck`(库状态)、`GHB_FILL_DEBUG=1`(读路日志)、`GHB_SQL_DEBUG=1`(发往库的 SQL)。
 
 ## 已知限制（如实说明）
 

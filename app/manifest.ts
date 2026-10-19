@@ -6,7 +6,7 @@ export default function manifest(): MetadataRoute.Manifest {
   const zh = DICT.zh
   return {
     name: zh.meta.siteName,
-    short_name: zh.shortBoards.overall,
+    short_name: zh.meta.siteName.replace('GitHub ', ''),
     description: zh.meta.homeDescription,
     start_url: '/zh',
     display: 'standalone',

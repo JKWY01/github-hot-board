@@ -77,10 +77,10 @@ const zhBoards: Record<BoardSlug, BoardCopy> = {
     tagline: '低绝对星数 × 高斜率 × 近期仍在维护，爆发通常从这里开始。',
     metricLabel: '星 / 天',
     metricHint: '斜率',
-    desc: '在“潜力榜”池子中筛选累计 Star 低于 1500、但斜率和近期活跃度都亮眼的项目。这类仓库往往还没有进入大众视野，属于“被雪藏”的爆发候选。',
+    desc: '在过去 90 天内新建、累计 Star 在 30–1500 之间、且斜率仍为正的仓库中，按“星/天”斜率从高到低取前 80。这类项目往往还没进入大众视野，属于“被雪藏”的爆发候选。',
     faqs: [
-      { q: '为什么它和潜力榜取同一数据池？', a: '黑马本质上是潜力榜的“低绝对值切片”；同一池子换一个观察角度，刻意保持口径可追溯。' },
-      { q: '为什么设置 1500 的门槛？', a: '低于 1500 星的仓库大多还没上过官方 Trending 首页，是“未被广泛发现”状态的合理近似。' },
+      { q: '为什么是独立查询，而不直接从潜力榜里筛？', a: '口径不同：黑马是“先按星数区间（30–1500）过滤、再按斜率排序”；若复用潜力榜（按斜率排序后取前 100）再过滤，榜头会被星数更少、出现更晚的小仓库挤满，反而漏掉真正的黑马。' },
+      { q: '为什么设置 30 和 1500 两个门槛？', a: '低于 30 星时斜率的噪音太大（几个朋友点星就是 10 星/天）；高于 1500 星的仓库大多已进入大众视野。两者之间是“有一定拉力、尚未被发现”的甜区。' },
     ],
   },
   overlooked: {
@@ -190,10 +190,10 @@ const enBoards: Record<BoardSlug, BoardCopy> = {
     tagline: 'Low absolute stars × steep slope × still maintained. Breakouts start here.',
     metricLabel: 'Stars / day',
     metricHint: 'slope',
-    desc: 'A slice of the Rising pool: fewer than 1500 total stars with a steep slope. These repos are usually “buried” — not yet discovered by the crowd.',
+    desc: 'Repositories created within the last 90 days, totalling 30–1500 stars with a positive slope, ranked by stars per day — top 80. These projects are usually barely discovered yet: “buried” breakout candidates.',
     faqs: [
-      { q: 'Why the same pool as Rising?', a: 'Dark Horses is deliberately the low-absolute-star slice of the same pool, keeping the metric auditable.' },
-      { q: 'Why the 1500 threshold?', a: 'Repositories under 1500 stars have rarely been featured on the official Trending page — a reasonable proxy for “not widely discovered”. ' },
+      { q: 'Why a dedicated query instead of slicing Rising?', a: 'Different methodology: filter by the star band (30–1500) first, then rank by slope. Reusing Rising’s top-100 before filtering would flood the top with tiny, brand-new repos and hide real breakout candidates.' },
+      { q: 'Why the 30 and 1500 thresholds?', a: 'Under 30 stars the slope is mostly noise (a handful of friends off to an 10 stars/day start); above 1500 they are already widely noticed. In between is the sweet spot: real pull, barely discovered.' },
     ],
   },
   overlooked: {
@@ -324,6 +324,20 @@ export interface Dict {
     body: string
     back: string
   }
+  history: {
+    title: string
+    subtitle: string
+    pickDate: string
+    latest: string
+    daysCount: string
+    empty: string
+    accumulating: string
+    metricLabel: string
+    sourceLabel: string
+    degradedNote: string
+    note: string
+    backToBoard: string
+  }
 }
 
 export const DICT: Record<Locale, Dict> = {
@@ -332,7 +346,7 @@ export const DICT: Record<Locale, Dict> = {
     htmlLang: 'zh-CN',
     meta: {
       siteName: 'GitHub 火线榜',
-      homeTitle: 'GitHub 火线榜 ·实时开源项目热榜（总榜/周榜/月榜/潜力/黑红）',
+      homeTitle: 'GitHub 火线榜 · 实时开源项目热榜（总榜/周榜/月榜/潜力/黑红）',
       homeDescription: '实时追踪 GitHub 项目热度：史上最强总榜、官方 Trending 周月榜、年度新星、90 天潜力、黑马、被忽视的宝藏、黑红争议榜、Fork 之王与实时里程碑直播。全部口径公开，每分钟自动刷新。',
       homeKeywords: 'GitHub 排行榜, GitHub 热榜, GitHub Trending, 开源项目排行, 每周热榜, 明星项目, 黑马项目, HN, 开源风向',
     },
@@ -420,6 +434,20 @@ export const DICT: Record<Locale, Dict> = {
       title: '页面不存在',
       body: '这条 Repository 看起来已经被宇宙移走，或从未存在。',
       back: '回到首页',
+    },
+    history: {
+      title: '往日榜',
+      subtitle: '每半小时拍一整张榜，按日期回看当时的完整排名。',
+      pickDate: '选择日期',
+      latest: '最新一拍',
+      daysCount: '天',
+      empty: '这一天没有留下档案。',
+      accumulating: '档案正在积累——每天自动多存几拍。',
+      metricLabel: '指标值',
+      sourceLabel: '当拍口径',
+      degradedNote: '当拍为搜索口径（Trending 抓取受阻时的替身）。',
+      note: '历史拍只存排名、仓库与数字，不含实时简介。基准口径（全语言）。',
+      backToBoard: '返回实时榜',
     },
   },
   en: {
@@ -515,6 +543,20 @@ export const DICT: Record<Locale, Dict> = {
       title: 'Page not found',
       body: 'This repository seems to have left the universe, or never existed. ',
       back: 'Back home',
+    },
+    history: {
+      title: 'Time Machine',
+      subtitle: 'The full board is photographed every 30 minutes — rewind by date to see the ranking at that moment.',
+      pickDate: 'Pick a date',
+      latest: 'latest tap',
+      daysCount: 'd',
+      empty: 'No archive exists for this date.',
+      accumulating: 'Archive is accumulating — a few snapshots are stored automatically every day.',
+      metricLabel: 'metric',
+      sourceLabel: 'tap source',
+      degradedNote: 'That tap used the Search-based fallback (official Trending crawl was blocked).',
+      note: 'Historical taps store rank, repo and numbers only, without live descriptions. Base language pool.',
+      backToBoard: 'Back to live board',
     },
   },
 }

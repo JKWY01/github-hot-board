@@ -47,19 +47,26 @@ export function ogShell({
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', fontSize: 92, fontWeight: 700, letterSpacing: -2 }}>
-            <span style={{ color: 'rgba(255,255,255,0.92)' }}>{title} </span>
-            <span
-              style={{
-                background: 'linear-gradient(90deg, #0071e3, #7a4dd6)',
-                backgroundClip: 'text',
-                color: 'transparent',
-              }}
-            >
-              {accent}
-            </span>
+          {/* satori 限制:白字与渐变字必须各自成块,同排内联会在多行时叠印 */}
+          <div style={{ display: 'flex', fontSize: 92, fontWeight: 700, letterSpacing: -2, color: 'rgba(255,255,255,0.92)' }}>
+            {title}
           </div>
-          <div style={{ marginTop: 20, fontSize: 30, color: 'rgba(255,255,255,0.65)', maxWidth: 920 }}>
+          <div
+            style={{
+              display: 'flex',
+              fontSize: accent.length <= 14 ? 96 : accent.length <= 24 ? 78 : 64,
+              fontWeight: 700,
+              letterSpacing: -2,
+              lineHeight: 1.12,
+              marginTop: 10,
+              background: 'linear-gradient(90deg, #0071e3, #7a4dd6)',
+              backgroundClip: 'text',
+              color: 'transparent',
+            }}
+          >
+            {accent}
+          </div>
+          <div style={{ marginTop: 24, fontSize: 30, color: 'rgba(255,255,255,0.65)', maxWidth: 920 }}>
             {sub}
           </div>
         </div>

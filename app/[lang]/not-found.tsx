@@ -1,6 +1,6 @@
-import Link from 'next/link'
+import HomeButton from '@/components/HomeButton'
 
-/** 静态 404（双语）；不读 params，避免动态参数缺失问题。 */
+/** 静态 404(双语标题 + 按路径定位语言的单按钮);不读 params,避免动态参数缺失问题。 */
 export default function NotFound() {
   return (
     <div className="mx-auto flex min-h-[50vh] max-w-xl flex-col items-center justify-center px-6 text-center">
@@ -12,19 +12,8 @@ export default function NotFound() {
         <br />
         This repository seems to have left the universe — or never existed.
       </p>
-      <div className="mt-8 flex gap-3">
-        <Link
-          href="/zh"
-          className="inline-flex items-center rounded-full bg-accent px-5 py-2.5 text-[13.5px] font-medium text-white transition-opacity hover:opacity-85"
-        >
-          回到首页
-        </Link>
-        <Link
-          href="/en"
-          className="inline-flex items-center rounded-full border-[0.5px] border-black/15 bg-white px-5 py-2.5 text-[13.5px] font-medium text-ink transition-colors hover:border-accent hover:text-accent"
-        >
-          Back home
-        </Link>
+      <div className="mt-8">
+        <HomeButton />
       </div>
     </div>
   )

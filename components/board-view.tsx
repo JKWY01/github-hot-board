@@ -3,9 +3,10 @@ import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 
-import { BOARD_META, BOARD_ORDER, FACET_LANGUAGES, isBoardSlug, type BoardSlug } from '@/lib/boards'
+import { BOARD_META, BOARD_ORDER, FACET_LANGUAGES, facetDisplay, isBoardSlug, facetLangSlug, type BoardSlug } from '@/lib/boards'
 import { getDict, isLocale, type BoardCopy } from '@/app/[lang]/dictionaries'
 import BoardStream from '@/components/BoardStream'
+import PendingChip from '@/components/PendingChip'
 
 export default async function BoardPageView({
   lang,
@@ -29,22 +30,21 @@ export default async function BoardPageView({
     <div>
       <section className="mx-auto max-w-6xl px-5 pb-10 pt-14 sm:px-6 sm:pt-20">
         <p className="kicker">{dictMeta.siteName}</p>
-        <h1 className="hero-title mt-2">{copy.name}</h1>
+        <h1 className="hero-title mt-2">
+          {copy.name}
+          {language && <span className="text-sub"> · {facetDisplay(language)}</span>}
+        </h1>
         <p className="mt-4 max-w-2xl text-[17px] leading-relaxed text-sub">{copy.tagline}</p>
 
         {meta.facets && (
           <nav aria-label={dict.ui.language} className="no-scrollbar mt-6 flex items-center gap-2 overflow-x-auto">
-            <Link href={`/${lang}/boards/${slug}`} className={`language-chip ${!language ? 'language-chip-active' : ''}`}>
+            <PendingChip href={`/${lang}/boards/${slug}`} active={!language}>
               {dict.ui.allLanguages}
-            </Link>
+            </PendingChip>
             {FACET_LANGUAGES.map((facet) => (
-              <Link
-                key={facet}
-                href={`/${lang}/boards/${slug}/${facet}`}
-                className={`language-chip ${language === facet ? 'language-chip-active' : ''}`}
-              >
-                {facet}
-              </Link>
+              <PendingChip key={facet} href={`/${lang}/boards/${slug}/${facetLangSlug(facet)}`} active={language === facet}>
+                {facetDisplay(facet)}
+              </PendingChip>
             ))}
           </nav>
         )}
@@ -115,7 +115,7 @@ function faqJsonLd(
   copy: BoardCopy,
 ) {
   const base = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
-  const path = language ? `/${lang}/boards/${slug}/${language}` : `/${lang}/boards/${slug}`
+  const path = language ? `/${lang}/boards/${slug}/${facetLangSlug(language)}` : `/${lang}/boards/${slug}`
   return {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
@@ -156,7 +156,7 @@ export function boardTitle(lang: string, slug: BoardSlug, language?: string): st
   if (!isLocale(lang)) return ''
   const dict = getDict(lang)
   const copy = dict.boards[slug]
-  return language ? `${copy.name} · ${language}` : copy.name
+  return language ? `${copy.name} · ${facetDisplay(language)}` : copy.name
 }
 
 export function boardMetadata(
@@ -167,8 +167,8 @@ export function boardMetadata(
   const dict = getDict(lang)
   const copy = dict.boards[slug]
   const localePath = (locale: string) =>
-    `/${locale}/boards/${slug}${language ? `/${language}` : ''}`
-  const title = language ? `${copy.name} · ${language}` : copy.name
+    `/${locale}/boards/${slug}${language ? `/${facetLangSlug(language)}` : ''}`
+  const title = language ? `${copy.name} · ${facetDisplay(language)}` : copy.name
   return {
     title,
     description: copy.desc,

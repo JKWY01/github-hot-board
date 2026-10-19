@@ -1,0 +1,30 @@
+# 数据同步(唯一的进货通道):每 30 分钟敲一次线上 /api/sync 端点。
+# 配置(仓库 Settings → Secrets and variables → Actions):
+#   SYNC_URL    形如 https://你的域名/api/sync
+#   CRON_SECRET 与 Vercel 环境变量 CRON_SECRET 相同
+name: sync
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch: {}
+
+concurrency:
+  group: sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping /api/sync
+        env:
+          SYNC_URL: ${{ secrets.SYNC_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -euo pipefail
+          code=$(curl -s -m 420 -o /tmp/sync.json -w '%{http_code}' -X POST \
+            -H "authorization: Bearer ${CRON_SECRET}" "${SYNC_URL}")
+          echo "http ${code}"
+          head -c 400 /tmp/sync.json; echo
+          test "${code}" = "200"

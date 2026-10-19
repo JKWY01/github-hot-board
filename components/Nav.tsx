@@ -5,6 +5,7 @@ import { getDict } from '@/app/[lang]/dictionaries'
 import type { Locale } from '@/lib/types'
 import { GithubIcon, LogoMark } from './Icons'
 import LangSwitch from './LangSwitch'
+import NavLinks from './NavLinks'
 
 export default function Nav({ locale }: { locale: Locale }) {
   const dict = getDict(locale)
@@ -16,17 +17,10 @@ export default function Nav({ locale }: { locale: Locale }) {
           <span className="text-[15px] font-semibold tracking-tight">{dict.meta.siteName}</span>
         </Link>
 
-        <nav aria-label={dict.footer.boardsTitle} className="no-scrollbar -mx-1 flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto">
-          {BOARD_ORDER.map((slug) => (
-            <Link
-              key={slug}
-              href={`/${locale}/boards/${slug}`}
-              className="shrink-0 whitespace-nowrap rounded-full px-2.5 py-1 text-[12.5px] font-medium text-ink/65 transition-colors hover:bg-black/5 hover:text-ink"
-            >
-              {dict.shortBoards[slug]}
-            </Link>
-          ))}
-        </nav>
+        <NavLinks
+          locale={locale}
+          items={BOARD_ORDER.map((slug) => ({ slug, label: dict.shortBoards[slug] }))}
+        />
 
         <div className="flex shrink-0 items-center gap-2">
           <LangSwitch current={locale} />

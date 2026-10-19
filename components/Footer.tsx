@@ -37,6 +37,12 @@ export default function Footer({ dict }: { dict: Dict }) {
             <div className="mt-3">
               <LangSwitch current={locale} />
             </div>
+            <Link
+              className="mt-4 inline-block text-[13px] text-ink/65 transition-colors hover:text-accent-strong"
+              href={`/${locale}/history/overall`}
+            >
+              {dict.history.title} →
+            </Link>
             <p className="mt-4 max-w-[220px] text-[12px] leading-relaxed text-sub">{dict.footer.disclaimer}</p>
           </div>
         </div>
