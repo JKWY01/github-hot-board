@@ -308,6 +308,20 @@ export interface Dict {
     up: string
     down: string
     newEntry: string
+    drawerTitle: string
+    drawerLoading: string
+    drawerFail: string
+    drawerWatchers: string
+    drawerCreated: string
+    drawerPushed: string
+    drawerOpen: string
+    drawerClose: string
+    drawerPrev: string
+    drawerNext: string
+    drawerRank: string
+    drawerCached: string
+    drawerLicense: string
+    drawerHomepage: string
   }
   langs: { zh: string; en: string; current: string }
   footer: {
@@ -419,6 +433,20 @@ export const DICT: Record<Locale, Dict> = {
       up: '上升',
       down: '下降',
       newEntry: '新进榜',
+      drawerTitle: '仓库详情',
+      drawerLoading: '正在拉取最新数据…',
+      drawerFail: '数据暂时没取到,可以稍后重开。',
+      drawerWatchers: '关注',
+      drawerCreated: '创建于',
+      drawerPushed: '最近推送',
+      drawerOpen: '在 GitHub 打开',
+      drawerClose: '关闭',
+      drawerPrev: '上一名',
+      drawerNext: '下一名',
+      drawerRank: '榜位',
+      drawerCached: '页面数据偶有 30 分钟缓存,以 GitHub 实时为准。',
+      drawerLicense: '许可证',
+      drawerHomepage: '主页',
     },
     langs: { zh: '中文', en: 'English', current: '当前语言' },
     footer: {
@@ -528,6 +556,20 @@ export const DICT: Record<Locale, Dict> = {
       up: 'up',
       down: 'down',
       newEntry: 'New entry',
+      drawerTitle: 'Repository',
+      drawerLoading: 'Fetching latest data…',
+      drawerFail: 'Data unavailable right now — reopen later.',
+      drawerWatchers: 'Watchers',
+      drawerCreated: 'Created',
+      drawerPushed: 'Last push',
+      drawerOpen: 'Open on GitHub',
+      drawerClose: 'Close',
+      drawerPrev: 'Previous',
+      drawerNext: 'Next',
+      drawerRank: 'Rank',
+      drawerCached: 'Page data may lag GitHub by up to 30 minutes.',
+      drawerLicense: 'License',
+      drawerHomepage: 'Homepage',
     },
     langs: { zh: '中文', en: 'English', current: 'Language' },
     footer: {
@@ -588,6 +630,22 @@ export function liveStrings(locale: Locale) {
     downLabel: d.ui.down,
     newLabel: d.ui.newEntry,
     totalLabel: d.ui.allLanguages === '全部语言' ? '总数' : 'total',
+    drawer: {
+      title: d.ui.drawerTitle,
+      loading: d.ui.drawerLoading,
+      fail: d.ui.drawerFail,
+      watchers: d.ui.drawerWatchers,
+      created: d.ui.drawerCreated,
+      pushed: d.ui.drawerPushed,
+      open: d.ui.drawerOpen,
+      close: d.ui.drawerClose,
+      prev: d.ui.drawerPrev,
+      next: d.ui.drawerNext,
+      rank: d.ui.drawerRank,
+      cached: d.ui.drawerCached,
+      license: d.ui.drawerLicense,
+      homepage: d.ui.drawerHomepage,
+    },
   }
 }
 

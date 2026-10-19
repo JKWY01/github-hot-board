@@ -5,6 +5,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNo
 import type { BoardItem, Locale, LivePatch } from '@/lib/types'
 import { fmtAgo, fmtDay, fmtNum, fmtSlope, fmtSigned } from '@/lib/format'
 import CountUp from './CountUp'
+import RepoDrawer from './repo-drawer'
 import { ArrowDownIcon, ArrowUpIcon, ClockIcon, ForkIcon, GithubIcon, IssueIcon, StarIcon } from './Icons'
 import { celebrateBurst } from './celebrate'
 
@@ -267,6 +268,36 @@ export default function LiveBoardList({
 
   const primaryUsesCountUp = metric === 'stars' || metric === 'forks' || metric === 'gap'
 
+  /* 点行抽屉:开着的抽屉不挡 60 秒轮询;切仓不重挂(内容原位切换)。 */
+  const [drawerFull, setDrawerFull] = useState<string | null>(null)
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  const [drawerItem, setDrawerItem] = useState<BoardItem | null>(null)
+  const drawerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const openDrawer = useCallback((full: string, item: BoardItem) => {
+    if (drawerTimerRef.current) {
+      clearTimeout(drawerTimerRef.current)
+      drawerTimerRef.current = null
+    }
+    setDrawerItem(item)
+    setDrawerFull(full)
+    setDrawerOpen(true)
+  }, [])
+  const closeDrawer = useCallback(() => {
+    setDrawerOpen(false)
+    if (drawerTimerRef.current) clearTimeout(drawerTimerRef.current)
+    drawerTimerRef.current = setTimeout(() => {
+      setDrawerFull(null)
+      setDrawerItem(null)
+      drawerTimerRef.current = null
+    }, 300)
+  }, [])
+  const drawerIndex = drawerFull ? items.findIndex((i) => i.fullName === drawerFull) : -1
+  const drawerRank = drawerIndex >= 0 ? drawerIndex + 1 : 0
+
+  useEffect(() => {
+    if (drawerFull && drawerOpen) rowElsRef.current.get(drawerFull)?.scrollIntoView({ block: 'nearest' })
+  }, [drawerFull, drawerOpen])
+
   return (
     <div className="relative">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-1">
@@ -300,7 +331,13 @@ export default function LiveBoardList({
                 if (el) rowElsRef.current.set(item.fullName, el)
                 else rowElsRef.current.delete(item.fullName)
               }}
-              className={`will-change-transform ${crossed ? 'bg-good/6' : index < 3 ? 'bg-surface/70' : ''} border-b-[0.5px] border-black/6 last:border-b-0`}
+              onClick={(e) => {
+                if ((e.target as HTMLElement).closest('a,button')) return
+                openDrawer(item.fullName, item)
+              }}
+              className={`will-change-transform cursor-pointer ${crossed ? 'bg-good/6' : index < 3 ? 'bg-surface/70' : ''} ${
+                drawerFull === item.fullName && drawerOpen ? 'ring-1 ring-inset ring-accent/40' : ''
+              } border-b-[0.5px] border-black/6 last:border-b-0`}
             >
               <div className={`flex items-center gap-3 px-4 sm:gap-4 sm:px-5 ${compact ? 'py-3' : 'py-4'}`}>
                 <div
@@ -418,6 +455,25 @@ export default function LiveBoardList({
           </div>
         ))}
       </div>
+
+      {drawerFull && (
+        <RepoDrawer
+          fullName={drawerFull}
+          item={drawerIndex >= 0 ? items[drawerIndex] : (drawerItem ?? undefined)}
+          rank={drawerRank}
+          total={items.length}
+          locale={locale}
+          strings={strings}
+          open={drawerOpen}
+          onClose={closeDrawer}
+          onPrev={() => {
+            if (drawerIndex > 0) openDrawer(items[drawerIndex - 1].fullName, items[drawerIndex - 1])
+          }}
+          onNext={() => {
+            if (drawerIndex >= 0 && drawerIndex < items.length - 1) openDrawer(items[drawerIndex + 1].fullName, items[drawerIndex + 1])
+          }}
+        />
+      )}
     </div>
   )
 }
