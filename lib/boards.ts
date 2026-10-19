@@ -447,6 +447,19 @@ export async function getBoardDataCached(
     return data
   } catch (error) {
     if (process.env.GHB_FILL_DEBUG) console.error(`[fill] baked-error ${slug}:${language ?? 'all'} ${String(error).slice(0, 60)}`)
+    // 陈库救护:上游拉取失败时不端空榜卡,只要库里还有任何一拍(哪怕超龄)就诚实地渲染它。
+    // 数据旧但真,横幅标"口径降级";比一张错误卡对读者的价值高得多。
+    try {
+      const rescue = await readBoardHead(persistKey(slug, language))
+      if (rescue?.data && Array.isArray((rescue.data as BoardData).items) && (rescue.data as BoardData).items.length > 0) {
+        if (process.env.GHB_FILL_DEBUG) {
+          console.error(`[fill] db-stale-rescue ${slug}:${language ?? 'all'} age=${Math.round(rescue.ageMs / 1000)}s`)
+        }
+        return rescue.data
+      }
+    } catch {
+      // 数据库也死了:保留烘焙卡
+    }
     return {
       slug,
       language,
