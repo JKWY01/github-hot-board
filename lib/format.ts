@@ -39,7 +39,7 @@ const zhDay = new Intl.DateTimeFormat('zh-CN', {
 })
 const enDay = new Intl.DateTimeFormat('en-US', {
   timeZone: 'UTC',
-  month: 'short',
+  month: 'long',
   day: 'numeric',
 })
 

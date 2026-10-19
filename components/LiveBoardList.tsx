@@ -5,7 +5,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNo
 import type { BoardItem, Locale, LivePatch } from '@/lib/types'
 import { fmtAgo, fmtDay, fmtNum, fmtSlope, fmtSigned } from '@/lib/format'
 import CountUp from './CountUp'
-import { ArrowDownIcon, ArrowUpIcon, ClockIcon, ForkIcon, IssueIcon, StarIcon } from './Icons'
+import { ArrowDownIcon, ArrowUpIcon, ClockIcon, ForkIcon, GithubIcon, IssueIcon, StarIcon } from './Icons'
 import { celebrateBurst } from './celebrate'
 
 export type LiveStrings = Awaited<ReturnType<typeof import('@/app/[lang]/dictionaries').liveStrings>>
@@ -322,13 +322,18 @@ export default function LiveBoardList({
 
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
+                    {/* 仓库名不再是外链:浏览不放走流量;真正想去的走行尾小门(明确意图下才出站) */}
+                    <span className={`truncate font-semibold tracking-tight text-ink ${compact ? 'text-[13.5px]' : 'text-[15px]'}`}>
+                      {item.fullName}
+                    </span>
                     <a
                       href={item.htmlUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className={`truncate font-semibold tracking-tight text-ink transition-colors hover:text-accent ${compact ? 'text-[13.5px]' : 'text-[15px]'}`}
+                      aria-label={`GitHub · ${item.fullName}`}
+                      className="shrink-0 text-ink/28 transition-colors hover:text-accent"
                     >
-                      {item.fullName}
+                      <GithubIcon size={12} />
                     </a>
                     {flag && flagBadge(flag.kind, flag.delta, strings)}
                   </div>

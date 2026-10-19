@@ -25,7 +25,7 @@ export default function Nav({ locale }: { locale: Locale }) {
         <div className="flex shrink-0 items-center gap-2">
           <LangSwitch current={locale} />
           <a
-            href="https://github.com/trending"
+            href="https://github.com/JKWY01/github-hot-board"
             target="_blank"
             rel="noopener noreferrer"
             aria-label="GitHub"

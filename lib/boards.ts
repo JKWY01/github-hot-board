@@ -1,6 +1,6 @@
 import { cacheLife, cacheTag } from 'next/cache'
 
-import { RateLimitError, fetchTrendingPage, ghSearch } from './github'
+import { RateLimitError, fetchTrendingPage, ghSearch, resolveAvatarUrl } from './github'
 import { appendHistory, readPersistedBoard, savePersistedBoard } from './persist'
 import { readBoardHead } from './snapshot'
 import { cleanDesc, parseTrendingHtml } from './parse'
@@ -140,25 +140,27 @@ export async function getTrendingBoardData({ period, language }: TrendingParams)
     const parsed = parseTrendingHtml(html, period)
     if (parsed.length === 0) throw new Error('trending parse returned 0 items')
 
-    const items: BoardItem[] = parsed.map((entry) => {
-      const [owner, name] = entry.fullName.split('/')
-      return {
-        id: hashFullName(entry.fullName),
-        fullName: entry.fullName,
-        owner: owner ?? '',
-        name: name ?? entry.fullName,
-        htmlUrl: `https://github.com/${entry.fullName}`,
-        avatarUrl: `https://github.com/${owner ?? 'github'}.png`,
-        desc: entry.desc,
-        stars: entry.stars,
-        forks: entry.forks,
-        issues: 0,
-        language: entry.language,
-        topics: [],
-        gained: entry.growth ?? undefined,
-        sincePeriod: entry.period,
-      }
-    })
+    const items: BoardItem[] = await Promise.all(
+      parsed.map(async (entry) => {
+        const [owner, name] = entry.fullName.split('/')
+        return {
+          id: hashFullName(entry.fullName),
+          fullName: entry.fullName,
+          owner: owner ?? '',
+          name: name ?? entry.fullName,
+          htmlUrl: `https://github.com/${entry.fullName}`,
+          avatarUrl: await resolveAvatarUrl(owner ?? 'github'),
+          desc: entry.desc,
+          stars: entry.stars,
+          forks: entry.forks,
+          issues: 0,
+          language: entry.language,
+          topics: [],
+          gained: entry.growth ?? undefined,
+          sincePeriod: entry.period,
+        }
+      }),
+    )
     return {
       slug: period,
       language,

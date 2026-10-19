@@ -40,6 +40,7 @@ interface GhSearchRepo {
   created_at: string
   pushed_at: string
   topics?: string[]
+  owner?: { avatar_url?: string }
 }
 
 interface GhSearchResponse {
@@ -106,6 +107,45 @@ async function quotaSlot(label: string): Promise<void> {
   }
 }
 
+/** 头像直链解析:github.com/<owner>.png 走 302 且跳转响应 no-cache,
+ * 浏览器每次都要重打跳转并携带 cookie,谈不上本地缓存。
+ * 同步任务在这里换出 avatars CDN 直链(内容寻址,一年强缓存):
+ * 浏览器加载一次之后全部命中磁盘,轮询零重复下载。
+ * 进程内缓存 6 小时;解析失败回退 .png 形态,同步节奏不受影响。 */
+type AvatarEntry = { url: string; at: number }
+const avatarCache = new Map<string, AvatarEntry>()
+const AVATAR_TTL_MS = 6 * 3600_000
+
+export async function resolveAvatarUrl(owner: string): Promise<string> {
+  const key = (owner || 'github').toLowerCase()
+  const fallbackUrl = `https://github.com/${owner || 'github'}.png`
+  const hit = avatarCache.get(key)
+  if (hit && Date.now() - hit.at < AVATAR_TTL_MS) return hit.url
+  try {
+    await quotaSlot(`avatars:${key}`)
+    const res = await fetch(`https://api.github.com/users/${owner}`, {
+      headers: githubHeaders(),
+      signal: AbortSignal.timeout(TIME_BUDGET_MS),
+      next: { revalidate: 3600 },
+    })
+    if (res.ok) {
+      const json = (await res.json()) as { avatar_url?: string }
+      const cdn = json?.avatar_url
+      if (cdn && cdn.includes('avatars.githubusercontent.com')) {
+        const url = `${cdn}${cdn.includes('?') ? '&' : '?'}s=96`
+        avatarCache.set(key, { url, at: Date.now() })
+        return url
+      }
+    }
+  } catch {
+    // 解析失败不阻塞榜单;10 分钟后可重试,避免每拍钉着打
+    avatarCache.set(key, { url: fallbackUrl, at: Date.now() - AVATAR_TTL_MS + 10 * 60_000 })
+    return fallbackUrl
+  }
+  avatarCache.set(key, { url: fallbackUrl, at: Date.now() - AVATAR_TTL_MS + 10 * 60_000 })
+  return fallbackUrl
+}
+
 async function ghJson(url: string): Promise<unknown> {
   await quotaSlot(url.slice(-40))
   const res = await fetch(url, {
@@ -130,7 +170,9 @@ function mapRepo(repo: GhSearchRepo): BoardRepoFields {
     owner: owner ?? '',
     name: name ?? repo.full_name,
     htmlUrl: repo.html_url,
-    avatarUrl: `https://github.com/${owner ?? 'github'}.png`,
+    avatarUrl: repo.owner?.avatar_url
+      ? `${repo.owner.avatar_url}${repo.owner.avatar_url.includes('?') ? '&' : '?'}s=96`
+      : `https://github.com/${owner ?? 'github'}.png`,
     desc: repo.description ? cleanDesc(repo.description) : null,
     stars: repo.stargazers_count,
     forks: repo.forks_count,

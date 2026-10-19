@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { isLocale, getDict } from '@/app/[lang]/dictionaries'
 import { isBoardSlug } from '@/lib/boards'
 import type { HistoryDay, HistorySnapshot } from '@/lib/snapshot'
+import { GithubIcon } from './Icons'
 
 const nf = (n: number) => new Intl.NumberFormat('en-US', { notation: n >= 10000 ? 'compact' : 'standard', maximumFractionDigits: 1 }).format(n)
 
@@ -57,7 +58,7 @@ export function HistoryView({
                   href={`/${lang}/history/${slug}/${d.day}`}
                   aria-current={active ? 'true' : undefined}
                   className={`rounded-full px-3 py-1.5 transition-colors ${
-                    active ? 'bg-ink font-semibold text-white' : 'font-medium text-ink/65 hover:bg-black/5 hover:text-ink'
+                    active ? 'bg-ink font-semibold text-white ring-[0.5px] ring-black/25' : 'font-medium text-ink/70 hover:bg-black/8 hover:text-ink'
                   }`}
                 >
                   {fmtDay(d.day, lang)}
@@ -91,14 +92,20 @@ export function HistoryView({
                   <li key={r.rank} className="flex items-center gap-4 px-4 py-4 sm:px-5">
                     <span className="tabular-nums text-[13px] font-semibold text-ink/40">{String(r.rank).padStart(2, '0')}</span>
                     <div className="min-w-0 flex-1">
-                      <a
-                        href={`https://github.com/${r.repo}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block truncate text-[15px] font-semibold text-ink hover:text-accent-strong"
-                      >
-                        {r.repo}
-                      </a>
+                      <div className="flex items-center gap-2">
+                        <span className="truncate text-[15px] font-semibold text-ink">
+                          {r.repo}
+                        </span>
+                        <a
+                          href={`https://github.com/${r.repo}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label={`GitHub · ${r.repo}`}
+                          className="shrink-0 text-ink/28 transition-colors hover:text-accent"
+                        >
+                          <GithubIcon size={12} />
+                        </a>
+                      </div>
                       <span className="text-[12px] text-ink/50">
                         ★ {nf(r.stars)} · {dict.ui.forks} {nf(r.forks)}
                       </span>
