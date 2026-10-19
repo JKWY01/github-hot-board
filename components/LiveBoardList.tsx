@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 
 import type { BoardItem, Locale, LivePatch } from '@/lib/types'
-import { fmtAgo, fmtNum, fmtSlope, fmtSigned, fmtTime } from '@/lib/format'
+import { fmtAgo, fmtDay, fmtNum, fmtSlope, fmtSigned } from '@/lib/format'
 import CountUp from './CountUp'
 import { ArrowDownIcon, ArrowUpIcon, ClockIcon, ForkIcon, IssueIcon, StarIcon } from './Icons'
 import { celebrateBurst } from './celebrate'
@@ -277,15 +277,13 @@ export default function LiveBoardList({
         <div className="flex items-center gap-1.5 text-[11.5px] text-sub" suppressHydrationWarning>
           <span className={`h-1.5 w-1.5 rounded-full ${stale ? 'bg-bad' : 'bg-good'}`} aria-hidden="true" />
           <span>
-            {strings.updated} {fmtTime(generatedAt, locale)}
+            {strings.updated} {fmtDay(generatedAt, locale)}
           </span>
-          <span aria-hidden="true">·</span>
-          <span>{strings.autoRefresh}</span>
         </div>
       </div>
 
       {(degraded || stale) && (
-        <div className="mb-3 rounded-2xl border-[0.5px] border-black/10 bg-[#fff8e6] px-4 py-2.5 text-[12.5px] text-bad">
+        <div className="mb-3 rounded-2xl border-[0.5px] border-black/10 bg-[#fff8e6] px-3.5 py-2 text-[12px] text-bad">
           {stale ? strings.rateLimited : strings.degraded}
         </div>
       )}

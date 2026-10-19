@@ -22,7 +22,7 @@ export default function NavLinks({ items, locale }: { items: Array<{ slug: Board
             href={`/${locale}/boards/${slug}`}
             prefetch
             aria-current={active ? 'page' : undefined}
-            className={`shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-[12.5px] transition-colors ${
+            className={`shrink-0 whitespace-nowrap rounded-full px-2.5 py-1.5 text-[12.5px] transition-colors ${
               active
                 ? 'bg-ink font-semibold text-white'
                 : 'font-medium text-ink/65 hover:bg-black/5 hover:text-ink'

@@ -32,10 +32,28 @@ const enTime = new Intl.DateTimeFormat('en-US', {
   hour12: false,
 })
 
+const zhDay = new Intl.DateTimeFormat('zh-CN', {
+  timeZone: 'Asia/Shanghai',
+  month: 'long',
+  day: 'numeric',
+})
+const enDay = new Intl.DateTimeFormat('en-US', {
+  timeZone: 'UTC',
+  month: 'short',
+  day: 'numeric',
+})
+
 export function fmtTime(iso: string, locale: Locale): string {
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return '--'
   return (locale === 'zh' ? zhTime : enTime).format(d)
+}
+
+/** 只到「号」:zh → 10月19日,en → Oct 19。榜单信息条用,弱化时刻精度。 */
+export function fmtDay(iso: string, locale: Locale): string {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return '--'
+  return (locale === 'zh' ? zhDay : enDay).format(d)
 }
 
 export function fmtSlope(n: number): string {
