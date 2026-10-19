@@ -146,38 +146,150 @@ export async function resolveAvatarUrl(owner: string): Promise<string> {
   return fallbackUrl
 }
 
-/** 行点击抽屉:读取 GitHub 官方渲染好的 README HTML(Accept: html+json)。
+/** 行点击抽屉:读取 GitHub 官方渲染的 README HTML(Accept: html+json)。
  * GitHub 自己完成 markdown 渲染与消毒 —— 这正是打开仓库页面时看到的内容本体。
- * 边缘缓存 1 小时:同一仓库的访客共享一份请求。返回 null = 没读到(无 README/网络失败)。
- * 后处理:相对路径图片/链接补绝对;锚链接一律新标签打开,不出离抽屉。 */
+ * 服务端共享缓存 1 小时:同一仓库的访客共用一份请求。
+ *
+ * 链接治理:GitHub 渲染后混着三种形态 —— 根相对(/owner/repo/raw/...)、
+ * 同目录裸相对(docs/readme/README_zh.md)、绝对外链。裸相对进了抽屉会被
+ * 浏览器解析到我们自己的域名上(404 那种),这里统一改写:
+ *   文档链  → https://github.com/{full}/blob/{branch}/{dir}/{path}(抽屉内可继续翻)
+ *   图片    → https://raw.githubusercontent.com/{full}/{branch}/{dir}/{path}(CDN 直链)
+ *   外部链接 → 一律新标签;页内锚点保持原文,交给客户端就地滚动。
+ *
+ * 语言协商:站点为 zh 且仓库提供中文 README(切换器或常见命名)时优先取中文版。 */
 const REPO_FULL_RE = /^[^/\s\\]{1,100}\/[^/\s\\]{1,120}$/
 
-export async function fetchRepoReadme(full: string): Promise<string | null> {
-  if (!REPO_FULL_RE.test(full)) return null
+const ZH_README_PATHS = [
+  'README_zh-CN.md',
+  'README.zh-CN.md',
+  'README_zh.md',
+  'README.zh.md',
+  'README_zh-Hans.md',
+  'README.zh-Hans.md',
+  'README_CN.md',
+  'README-zh.md',
+  'docs/README_zh-CN.md',
+  'docs/README_zh.md',
+  'docs/readme/README_zh-CN.md',
+  'docs/readme/README_zh.md',
+  'doc/README_zh.md',
+  'docs/zh/README.md',
+]
+
+async function githubHtml(url: string): Promise<string | null> {
   try {
-    await quotaSlot(`repo:${full}`)
-    const res = await fetch(`https://api.github.com/repos/${full}/readme`, {
+    await quotaSlot(`md:${url.slice(-60)}`)
+    const res = await fetch(url, {
       headers: { ...githubHeaders(), Accept: 'application/vnd.github.html+json' },
       signal: AbortSignal.timeout(TIME_BUDGET_MS),
       next: { revalidate: 3600 },
     })
     if (!res.ok) return null
-    let html = await res.text()
-    // 防御性剥壳:html+json 理论上返回片段,若带了文档级标签一并去掉
-    html = html
+    const text = await res.text()
+    // 防御性剥壳:预期返回片段,但若带了文档级标签一并去掉
+    const cleaned = text
       .replace(/<!doctype[\s\S]*?>|<\/?(html|body)[^>]*>/gi, '')
       .trim()
-    if (!html) return null
-    // 相对路径补全(GitHub 的 raw/blob 链接多为站内相对形式)
-    html = html
-      .replace(/(src|href)="\/([^/])/g, '$1="https://github.com/$2')
-      .replace(/(src|href)="#/g, '$1="#')
-    // 抽屉内所有外链新标签打开,浏览节奏不中断;页内锚点(#开头)保持原位交给客户端滚动
-    html = html.replace(/<a\b(?![^>]*\btarget=)(?![^>]*\bhref="#)/g, '<a target="_blank" rel="noopener noreferrer"')
-    return html
+    return cleaned || null
   } catch {
     return null
   }
+}
+
+async function defaultBranch(full: string): Promise<string> {
+  try {
+    await quotaSlot(`branch:${full}`)
+    const res = await fetch(`https://api.github.com/repos/${full}`, {
+      headers: githubHeaders(),
+      signal: AbortSignal.timeout(TIME_BUDGET_MS),
+      next: { revalidate: 21600 },
+    })
+    if (!res.ok) return 'main'
+    const j = (await res.json()) as { default_branch?: string }
+    return j.default_branch || 'main'
+  } catch {
+    return 'main'
+  }
+}
+
+/** 统一改写:剥壳 → 根相对补域 → 裸相对按文档目录落位 → 外链新标签。 */
+function absolutizeMdHtml(html: string, full: string, branch: string, dir: string): string {
+  let out = html.replace(/<!doctype[\s\S]*?>|<\/?(html|body)[^>]*>/gi, '').trim()
+  const blobBase = `https://github.com/${full}/blob/${branch}${dir ? `/${dir}` : ''}`
+  const rawBase = `https://raw.githubusercontent.com/${full}/${branch}${dir ? `/${dir}` : ''}`
+  // 根相对(/owner/repo/raw/...)补 GitHub 域
+  out = out.replace(/(src|href)="\/([^/])/g, '$1="https://github.com/$2')
+  // 同目录裸相对的文档链接
+  out = out.replace(/href="(?!(?:https?:|#|mailto:|javascript:))\.?\/?([^"]+)"/gi, `href="${blobBase}/$1"`)
+  // 同目录裸相对的图片
+  out = out.replace(/src="(?!(?:https?:|data:|#))\.?\/?([^"]+)"/gi, `src="${rawBase}/$1"`)
+  // 外链新标签(页内锚点除外,交给客户端就地滚动)
+  out = out.replace(/<a\b(?![^>]*\btarget=)(?![^>]*\bhref="#)/g, '<a target="_blank" rel="noopener noreferrer"')
+  return out
+}
+
+/** 从语言切换器(简体中文/繁體中文/中文…)找同仓库的中文 README 路径。 */
+function findZhReadmePath(html: string, full: string, branch: string): string | null {
+  const malink = `https://github.com/${full}/blob/${branch}/`
+  const re = /<a\b[^>]*href="([^"]+)"[^>]*>([\s\S]{0,120}?)<\/a>/g
+  for (const m of html.matchAll(re)) {
+    const href = m[1]
+    const text = m[2].replace(/<[^>]+>/g, '')
+    if (!/简体中文|簡體中文|繁體中文|繁體中文|中文/.test(text)) continue
+    if (!/\.md$/i.test(href)) continue
+    if (href.startsWith(malink)) return href.slice(malink.length)
+  }
+  return null
+}
+
+async function renderMarkdownFile(full: string, path: string, branch: string): Promise<string | null> {
+  return githubHtml(
+    `https://api.github.com/repos/${full}/contents/${encodeURI(path)}?ref=${encodeURIComponent(branch)}`,
+  )
+}
+
+export async function fetchRepoReadme(full: string, locale = 'en'): Promise<string | null> {
+  if (!REPO_FULL_RE.test(full)) return null
+  const branch = await defaultBranch(full)
+  const baseHtml = await githubHtml(`https://api.github.com/repos/${full}/readme`)
+  if (!baseHtml) return null
+  const html = absolutizeMdHtml(baseHtml, full, branch, '')
+  if (locale === 'zh') {
+    const candidates: string[] = []
+    const zh = findZhReadmePath(html, full, branch)
+    if (zh) candidates.push(zh)
+    for (const p of ZH_README_PATHS) {
+      if (!candidates.includes(p)) candidates.push(p)
+    }
+    // 探测有上限:命中即回,未命中回落默认版;每次尝试都带服务端缓存,重复访问零新增成本
+    for (const p of candidates.slice(0, 9)) {
+      const zhHtml = await renderMarkdownFile(full, p, branch)
+      if (!zhHtml) continue
+      const dir = p.includes('/') ? p.slice(0, p.lastIndexOf('/')) : ''
+      return absolutizeMdHtml(zhHtml, full, branch, dir)
+    }
+  }
+  return html
+}
+
+/** 抽屉内就地翻页:渲染同仓库任意 md 文档(语言切换/文档链接点进来走这里)。 */
+export async function fetchRepoDoc(full: string, fromHref: string): Promise<string | null> {
+  if (!REPO_FULL_RE.test(full)) return null
+  // 相对链上的 ./ 与 ../ 段归一化为仓库根路径(与浏览器对 blob 页的解析一致)
+  const parts: string[] = []
+  for (const seg of fromHref.replace(/\\/g, '/').split('/')) {
+    if (!seg || seg === '.') continue
+    if (seg === '..') parts.pop()
+    else parts.push(seg)
+  }
+  const p = parts.join('/')
+  if (!/^[\w./-]{1,160}\.md$/i.test(p)) return null
+  const branch = await defaultBranch(full)
+  const html = await renderMarkdownFile(full, p, branch)
+  if (!html) return null
+  const dir = p.includes('/') ? p.slice(0, p.lastIndexOf('/')) : ''
+  return absolutizeMdHtml(html, full, branch, dir)
 }
 
 async function ghJson(url: string): Promise<unknown> {

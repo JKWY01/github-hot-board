@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import type { BoardItem, Locale } from '@/lib/types'
 import { fmtNum } from '@/lib/format'
@@ -41,6 +41,7 @@ export default function RepoDrawer({
   const [state, setState] = useState<'loading' | 'ok' | 'empty' | 'fail'>('loading')
   const cacheRef = useRef(new Map<string, string>())
   const closeBtnRef = useRef<HTMLButtonElement>(null)
+  const scrollBoxRef = useRef<HTMLDivElement>(null)
   const [entered, setEntered] = useState(false)
 
   useEffect(() => {
@@ -48,33 +49,58 @@ export default function RepoDrawer({
     return () => cancelAnimationFrame(id)
   }, [])
 
+  /** 首屏 README / 文档链就地翻页 / 显式语言切换,同一个内容缓存(键含文档路径或语言)。 */
+  const loadDoc = useCallback(
+    (docPath: string | null, forcedLg?: string) => {
+      const key = docPath
+        ? `${fullName}::${docPath}`
+        : forcedLg
+          ? `${fullName}::lg:${forcedLg}`
+          : fullName
+      const cached = cacheRef.current.get(key)
+      if (cached) {
+        setHtml(cached)
+        setState('ok')
+        requestAnimationFrame(() => scrollBoxRef.current?.scrollTo({ top: 0 }))
+        return
+      }
+      setHtml(null)
+      setState('loading')
+      const controller = new AbortController()
+      const url = docPath
+        ? `/api/repo?full=${encodeURIComponent(fullName)}&path=${encodeURIComponent(docPath)}`
+        : `/api/repo?full=${encodeURIComponent(fullName)}&lg=${forcedLg ?? locale}`
+      fetch(url, { signal: controller.signal })
+        .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+        .then((j) => {
+          const readme = (j?.readme as string | undefined) ?? null
+          if (readme) {
+            cacheRef.current.set(key, readme)
+            setHtml(readme)
+            setState('ok')
+            requestAnimationFrame(() => scrollBoxRef.current?.scrollTo({ top: 0 }))
+          } else if (docPath) {
+            // 文档链坏了(作者切换器指向不存在的文件之类):回落默认 README,不留在错误卡
+            loadDoc(null)
+          } else {
+            setState('empty')
+          }
+        })
+        .catch(() => {
+          if (!controller.signal.aborted) {
+            if (docPath) loadDoc(null)
+            else setState('fail')
+          }
+        })
+      return () => controller.abort()
+    },
+    [fullName, locale],
+  )
+
   useEffect(() => {
-    const cached = cacheRef.current.get(fullName)
-    if (cached) {
-      setHtml(cached)
-      setState('ok')
-      return
-    }
-    setHtml(null)
-    setState('loading')
-    const controller = new AbortController()
-    fetch(`/api/repo?full=${encodeURIComponent(fullName)}`, { signal: controller.signal })
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
-      .then((j) => {
-        const readme = (j?.readme as string | undefined) ?? null
-        if (readme) {
-          cacheRef.current.set(fullName, readme)
-          setHtml(readme)
-          setState('ok')
-        } else {
-          setState('empty')
-        }
-      })
-      .catch(() => {
-        if (!controller.signal.aborted) setState('fail')
-      })
-    return () => controller.abort()
-  }, [fullName])
+    const cleanup = loadDoc(null)
+    return cleanup
+  }, [loadDoc])
 
   useEffect(() => {
     closeBtnRef.current?.focus()
@@ -99,7 +125,7 @@ export default function RepoDrawer({
     const t = setTimeout(() => {
       for (const n of neighbors) {
         if (cacheRef.current.has(n)) continue
-        fetch(`/api/repo?full=${encodeURIComponent(n)}`)
+        fetch(`/api/repo?full=${encodeURIComponent(n)}&lg=${locale}`)
           .then((r) => (r.ok ? r.json() : null))
           .then((j) => {
             const readme = j?.readme as string | undefined
@@ -109,7 +135,7 @@ export default function RepoDrawer({
       }
     }, 700)
     return () => clearTimeout(t)
-  }, [open, state, neighbors])
+  }, [open, state, neighbors, locale])
 
   if (!item) return null
 
@@ -167,7 +193,7 @@ export default function RepoDrawer({
           </div>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto">
+        <div ref={scrollBoxRef} className="min-h-0 flex-1 overflow-y-auto">
           <div className="flex items-center gap-3 px-5 pt-4">
             <img
               src={item.avatarUrl}
@@ -221,11 +247,27 @@ export default function RepoDrawer({
                 const a = (e.target as HTMLElement).closest('a')
                 if (!a) return
                 const href = a.getAttribute('href') ?? ''
-                if (!href.startsWith('#')) return
-                const anchor = (e.currentTarget as HTMLElement).querySelector(`#${CSS.escape(href.slice(1))}`)
-                if (anchor) {
+                if (href.startsWith('#')) {
+                  const anchor = (e.currentTarget as HTMLElement).querySelector(`#${CSS.escape(href.slice(1))}`)
+                  if (anchor) {
+                    e.preventDefault()
+                    anchor.scrollIntoView({ block: 'start', behavior: 'smooth' })
+                  }
+                  return
+                }
+                // 语言切换器直译:中英两路显式换内容(仓库切换器链接常坏,直接换语言内容最稳)
+                const label = (a.textContent || '').trim()
+                const langLg = /简体中文|簡體中文/.test(label) ? 'zh' : label === 'English' ? 'en' : null
+                // 同仓库的 .md 文档链 → 抽屉内就地翻页,不出站
+                const m = href.match(/^https:\/\/github\.com\/([^/]+\/[^/]+)\/blob\/[^/]+\/(.+\.md)$/i)
+                if (langLg && (!m || m[1].toLowerCase() === fullName.toLowerCase())) {
                   e.preventDefault()
-                  anchor.scrollIntoView({ block: 'start', behavior: 'smooth' })
+                  loadDoc(null, langLg)
+                  return
+                }
+                if (m && m[1].toLowerCase() === fullName.toLowerCase()) {
+                  e.preventDefault()
+                  loadDoc(decodeURIComponent(m[2]))
                 }
               }}
               dangerouslySetInnerHTML={{ __html: html }}
