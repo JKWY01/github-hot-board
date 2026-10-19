@@ -146,70 +146,35 @@ export async function resolveAvatarUrl(owner: string): Promise<string> {
   return fallbackUrl
 }
 
-/** 点行抽屉的仓库档案(站内渲染用,不出站)。
- * 单次 /repos 调用,进程/边缘缓存 30 分钟 —— 多人看同一仓库共享一份请求。 */
-export interface RepoInfo {
-  fullName: string
-  htmlUrl: string
-  avatarUrl: string | null
-  description: string | null
-  stars: number
-  forks: number
-  issues: number
-  watchers: number
-  language: string | null
-  topics: string[]
-  createdAt: string | null
-  pushedAt: string | null
-  homepage: string | null
-  license: string | null
-}
-
+/** 行点击抽屉:读取 GitHub 官方渲染好的 README HTML(Accept: html+json)。
+ * GitHub 自己完成 markdown 渲染与消毒 —— 这正是打开仓库页面时看到的内容本体。
+ * 边缘缓存 1 小时:同一仓库的访客共享一份请求。返回 null = 没读到(无 README/网络失败)。
+ * 后处理:相对路径图片/链接补绝对;锚链接一律新标签打开,不出离抽屉。 */
 const REPO_FULL_RE = /^[^/\s\\]{1,100}\/[^/\s\\]{1,120}$/
 
-export async function fetchRepoInfo(full: string): Promise<RepoInfo | null> {
+export async function fetchRepoReadme(full: string): Promise<string | null> {
   if (!REPO_FULL_RE.test(full)) return null
   try {
     await quotaSlot(`repo:${full}`)
-    const res = await fetch(`https://api.github.com/repos/${full}`, {
-      headers: githubHeaders(),
+    const res = await fetch(`https://api.github.com/repos/${full}/readme`, {
+      headers: { ...githubHeaders(), Accept: 'application/vnd.github.html+json' },
       signal: AbortSignal.timeout(TIME_BUDGET_MS),
-      next: { revalidate: 1800 },
+      next: { revalidate: 3600 },
     })
     if (!res.ok) return null
-    const r = (await res.json()) as {
-      full_name: string
-      html_url: string
-      description: string | null
-      stargazers_count: number
-      forks_count: number
-      open_issues_count: number
-      subscribers_count?: number
-      language: string | null
-      topics?: string[]
-      created_at: string | null
-      pushed_at: string | null
-      homepage: string | null
-      license?: { spdx_id?: string } | null
-      owner?: { avatar_url?: string }
-    }
-    if (!r.full_name) return null
-    return {
-      fullName: r.full_name,
-      htmlUrl: r.html_url,
-      avatarUrl: r.owner?.avatar_url ?? null,
-      description: r.description ? cleanDesc(r.description) : null,
-      stars: r.stargazers_count,
-      forks: r.forks_count,
-      issues: r.open_issues_count,
-      watchers: r.subscribers_count ?? 0,
-      language: r.language,
-      topics: (r.topics ?? []).slice(0, 6),
-      createdAt: r.created_at,
-      pushedAt: r.pushed_at,
-      homepage: r.homepage && /^https?:\/\//.test(r.homepage) ? r.homepage : null,
-      license: r.license?.spdx_id && r.license.spdx_id !== 'NOASSERTION' ? r.license.spdx_id : null,
-    }
+    let html = await res.text()
+    // 防御性剥壳:html+json 理论上返回片段,若带了文档级标签一并去掉
+    html = html
+      .replace(/<!doctype[\s\S]*?>|<\/?(html|body)[^>]*>/gi, '')
+      .trim()
+    if (!html) return null
+    // 相对路径补全(GitHub 的 raw/blob 链接多为站内相对形式)
+    html = html
+      .replace(/(src|href)="\/([^/])/g, '$1="https://github.com/$2')
+      .replace(/(src|href)="#/g, '$1="#')
+    // 抽屉内所有外链新标签打开,浏览节奏不中断;页内锚点(#开头)保持原位交给客户端滚动
+    html = html.replace(/<a\b(?![^>]*\btarget=)(?![^>]*\bhref="#)/g, '<a target="_blank" rel="noopener noreferrer"')
+    return html
   } catch {
     return null
   }

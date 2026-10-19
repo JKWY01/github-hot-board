@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 
 import type { BoardItem, Locale, LivePatch } from '@/lib/types'
 import { fmtAgo, fmtDay, fmtNum, fmtSlope, fmtSigned } from '@/lib/format'
@@ -293,6 +293,14 @@ export default function LiveBoardList({
   }, [])
   const drawerIndex = drawerFull ? items.findIndex((i) => i.fullName === drawerFull) : -1
   const drawerRank = drawerIndex >= 0 ? drawerIndex + 1 : 0
+  // 邻居启发:抽屉稳定后预取上下名的 README,切换时省掉等待
+  const drawerNeighbors = useMemo(() => {
+    if (drawerIndex < 0) return []
+    const next: string[] = []
+    if (drawerIndex > 0) next.push(items[drawerIndex - 1].fullName)
+    if (drawerIndex < items.length - 1) next.push(items[drawerIndex + 1].fullName)
+    return next
+  }, [drawerIndex, drawerFull, items])
 
   useEffect(() => {
     if (drawerFull && drawerOpen) rowElsRef.current.get(drawerFull)?.scrollIntoView({ block: 'nearest' })
@@ -465,6 +473,7 @@ export default function LiveBoardList({
           locale={locale}
           strings={strings}
           open={drawerOpen}
+          neighbors={drawerNeighbors}
           onClose={closeDrawer}
           onPrev={() => {
             if (drawerIndex > 0) openDrawer(items[drawerIndex - 1].fullName, items[drawerIndex - 1])
