@@ -1,6 +1,6 @@
 import { cacheLife, cacheTag } from 'next/cache'
 
-import { RateLimitError, fetchTrendingPage, ghSearch, resolveAvatarUrl } from './github'
+import { RateLimitError, fetchTrendingPage, fetchZhDesc, ghSearch, resolveAvatarUrl } from './github'
 import { appendHistory, readPersistedBoard, savePersistedBoard } from './persist'
 import { readBoardHead } from './snapshot'
 import { cleanDesc, parseTrendingHtml } from './parse'
@@ -159,6 +159,14 @@ export async function getTrendingBoardData({ period, language }: TrendingParams)
           gained: entry.growth ?? undefined,
           sincePeriod: entry.period,
         }
+      }),
+    )
+    // zh 站点的行描述优先中文:把中文 README 首句带进载荷(descZh),行渲染按站点语言挑。
+    // 行数只有 10,且三次读取全走服务端缓存,同步成本可控。
+    await Promise.all(
+      items.map(async (it) => {
+        const zh = await fetchZhDesc(it.fullName)
+        if (zh) it.descZh = zh
       }),
     )
     return {

@@ -332,6 +332,8 @@ export default function LiveBoardList({
           const flag = flags[item.fullName]
           const crossed =
             variant === 'milestone' && item.milestoneTarget ? item.stars >= item.milestoneTarget : false
+          // 行描述按站点语言挑:zh 站点优先仓库中文 README 首句(同步时入库的 descZh)
+          const shown = (locale === 'zh' ? item.descZh || item.desc : item.desc) ?? null
           return (
             <li
               key={item.fullName}
@@ -383,9 +385,9 @@ export default function LiveBoardList({
                     {flag && flagBadge(flag.kind, flag.delta, strings)}
                   </div>
 
-                  {item.desc && (
+                  {shown && (
                     <p className={`mt-0.5 text-sub ${compact ? 'line-clamp-1 text-[12px]' : 'line-clamp-2 text-[13px]'}`}>
-                      {trimDesc(item.desc, compact ? 90 : 150)}
+                      {trimDesc(shown, compact ? 90 : 150)}
                     </p>
                   )}
 

@@ -16,10 +16,17 @@ const loadEnvValue = (key) => {
 const base = process.env.GHB_SITE || 'http://localhost:3000'
 const secret = process.env.CRON_SECRET || loadEnvValue('CRON_SECRET')
 
-const res = await fetch(`${base}/api/sync`, {
-  method: 'POST',
-  headers: secret ? { authorization: `Bearer ${secret}` } : {},
-})
+let res
+try {
+  res = await fetch(`${base}/api/sync`, {
+    method: 'POST',
+    headers: secret ? { authorization: `Bearer ${secret}` } : {},
+  })
+} catch {
+  // 同步在服务端可能仍在继续(head 写库逐 key 进行),别把进行中的同步说成失败
+  console.log('请求超时或中断:服务端同步可能仍在进行,稍后看 /api/boards/* 是否更新。')
+  process.exit(2)
+}
 const body = await res.text()
 console.log(`http ${res.status}`)
 console.log(body)

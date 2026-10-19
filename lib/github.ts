@@ -309,6 +309,42 @@ export async function fetchRepoDoc(full: string, fromHref: string): Promise<stri
   return absolutizeMdHtml(html, full, branch, dir)
 }
 
+/** zh 站点行描述:优先仓库自身中文 README 的首句。三次读取全吃服务端缓存
+ * (branch 6h、README 1h、中文文档 1h),与抽屉共享,重复同步几乎零成本。
+ * 只认语言切换器里明确给出的中文版;没有就不硬猜,把同步成本守住。 */
+export async function fetchZhDesc(full: string): Promise<string | null> {
+  if (!REPO_FULL_RE.test(full)) return null
+  try {
+    const branch = await defaultBranch(full)
+    const baseHtml = await githubHtml(`https://api.github.com/repos/${full}/readme`)
+    if (!baseHtml) return null
+    const zhPath = findZhReadmePath(absolutizeMdHtml(baseHtml, full, branch, ''), full, branch)
+    if (!zhPath) return null
+    const zhHtml = await renderMarkdownFile(full, zhPath, branch)
+    if (!zhHtml) return null
+    return pickLeadLine(zhHtml)
+  } catch {
+    return null
+  }
+}
+
+/** 取中文 README 第一段"像人话"的句子当行描述:要有足量 CJK、长度适中;
+ * 掉徽章汤(纯拉丁链)与语言切换器(整段 · 分隔的链接)。 */
+function pickLeadLine(html: string): string | null {
+  const ps = html.match(/<p\b[^>]*>([\s\S]*?)<\/p>/gi) ?? []
+  for (const p of ps) {
+    const t = p
+      .replace(/<[^>]+>/g, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+    if (t.length < 10 || t.length > 140) continue
+    if ((t.match(/[\u4e00-\u9fff]/g)?.length ?? 0) < 6) continue
+    if (/(^|\s)·(\s|$)/.test(t)) continue
+    return t
+  }
+  return null
+}
+
 async function ghJson(url: string): Promise<unknown> {
   await quotaSlot(url.slice(-40))
   const res = await fetch(url, {

@@ -8,6 +8,8 @@ export interface RepoLite {
   htmlUrl: string
   avatarUrl: string
   desc: string | null
+  /** zh 站点行描述优先用(仓库自身中文 README 首句,同步时提取;可能没有) */
+  descZh?: string | null
   stars: number
   forks: number
   /** GitHub 口径：含 PR */
