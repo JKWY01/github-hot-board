@@ -195,7 +195,7 @@ export const trDict: Dict = {
     drawerLoading: 'GitHub sayfası okunuyor…',
     drawerFail: 'Bu sayfa okunamadı — birazdan tekrar deneyin.',
     drawerNoReadme: 'Bu repoda README yok — tam sayfa GitHub’da.',
-    drawerOpen: 'GitHub’da aç',
+    drawerArchive: 'Arşivi gör', drawerOpen: 'GitHub’da aç',
     drawerClose: 'Kapat',
     drawerPrev: 'Önceki',
     drawerNext: 'Sonraki',

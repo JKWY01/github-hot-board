@@ -195,7 +195,7 @@ export const jaDict: Dict = {
     drawerLoading: 'GitHub のページを読み込み中…',
     drawerFail: 'ページを取得できませんでした。しばらくしてからもう一度お試しください。',
     drawerNoReadme: 'README がありません。全文は GitHub 上でどうぞ。',
-    drawerOpen: 'GitHub で開く',
+    drawerArchive: 'アーカイブを見る', drawerOpen: 'GitHub で開く',
     drawerClose: '閉じる',
     drawerPrev: '前へ',
     drawerNext: '次へ',

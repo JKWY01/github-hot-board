@@ -73,6 +73,17 @@ export function GlobeIcon({ size = 14, className = '' }: { size?: number; classN
   )
 }
 
+/** 档案页小图标(文档形状):行尾"进站内档案"用,与出站 GitHub 图标并列。 */
+export function ArchiveIcon({ size = 18, className = '' }: { size?: number; className?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+      <path d="M4 1.8h5.2L12.2 4.8v8.4a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2.8a1 1 0 0 1 1-1Z" />
+      <path d="M9.2 1.8v3h3" />
+      <path d="M5.6 8h4.8M5.6 10.6h3.2" />
+    </svg>
+  )
+}
+
 export function GithubIcon({ size = 18, className = '' }: { size?: number; className?: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 16 16" fill="currentColor" className={className} aria-hidden="true">

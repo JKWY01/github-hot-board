@@ -195,7 +195,7 @@ export const frDict: Dict = {
     drawerLoading: 'Lecture de la page GitHub…',
     drawerFail: 'Impossible de lire la page — réessayez plus tard.',
     drawerNoReadme: 'Pas de README ici — la page complète vit sur GitHub.',
-    drawerOpen: 'Ouvrir sur GitHub',
+    drawerArchive: 'Voir la fiche', drawerOpen: 'Ouvrir sur GitHub',
     drawerClose: 'Fermer',
     drawerPrev: 'Précédent',
     drawerNext: 'Suivant',

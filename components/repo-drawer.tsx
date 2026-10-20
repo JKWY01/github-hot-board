@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import Link from 'next/link'
 
 import type { BoardItem, Locale } from '@/lib/types'
 import { fmtNum } from '@/lib/format'
@@ -243,6 +244,10 @@ export default function RepoDrawer({
                   {fmtNum(item.forks, locale)}
                 </span>
                 {item.language && <span>{item.language}</span>}
+                {/* 站内档案 = 语义化排名页(SEO 与读者共用);不与抽屉行为冲突 */}
+                <Link href={`/${locale}/repo/${fullName}`} prefetch={false} className="text-accent transition-opacity hover:opacity-75">
+                  {drawer.archive}
+                </Link>
               </p>
             </div>
             <a

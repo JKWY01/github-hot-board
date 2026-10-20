@@ -195,7 +195,7 @@ export const viDict: Dict = {
     drawerLoading: 'Đang đọc trang GitHub…',
     drawerFail: 'Chưa đọc được trang này — thử lại sau.',
     drawerNoReadme: 'Repo này không có README — nội dung đầy đủ nằm trên GitHub.',
-    drawerOpen: 'Mở trên GitHub',
+    drawerArchive: 'Xem hồ sơ', drawerOpen: 'Mở trên GitHub',
     drawerClose: 'Đóng',
     drawerPrev: 'Trước',
     drawerNext: 'Sau',

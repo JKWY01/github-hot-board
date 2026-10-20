@@ -195,7 +195,7 @@ export const ptDict: Dict = {
     drawerLoading: 'Lendo a página do GitHub…',
     drawerFail: 'Não deu para ler a página — tenta de novo mais tarde.',
     drawerNoReadme: 'Sem README por aqui — o conteúdo completo está no GitHub.',
-    drawerOpen: 'Abrir no GitHub',
+    drawerArchive: 'Ver a ficha', drawerOpen: 'Abrir no GitHub',
     drawerClose: 'Fechar',
     drawerPrev: 'Anterior',
     drawerNext: 'Próximo',

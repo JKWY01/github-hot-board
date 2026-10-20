@@ -195,7 +195,7 @@ export const ruDict: Dict = {
     drawerLoading: 'Читаем страницу GitHub…',
     drawerFail: 'Страница не прочиталась — попробуйте позже.',
     drawerNoReadme: 'README здесь нет — вся страница на GitHub.',
-    drawerOpen: 'Открыть на GitHub',
+    drawerArchive: 'Открыть архив', drawerOpen: 'Открыть на GitHub',
     drawerClose: 'Закрыть',
     drawerPrev: 'Предыдущий',
     drawerNext: 'Следующий',

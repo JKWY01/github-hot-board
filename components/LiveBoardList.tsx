@@ -1,12 +1,13 @@
 'use client'
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import Link from 'next/link'
 
 import type { BoardItem, Locale, LivePatch } from '@/lib/types'
 import { fmtAgo, fmtDay, fmtNum, fmtSlope, fmtSigned } from '@/lib/format'
 import CountUp from './CountUp'
 import RepoDrawer from './repo-drawer'
-import { ArrowDownIcon, ArrowUpIcon, ClockIcon, ForkIcon, GithubIcon, IssueIcon, StarIcon } from './Icons'
+import { ArrowDownIcon, ArrowUpIcon, ArchiveIcon, ClockIcon, ForkIcon, GithubIcon, IssueIcon, StarIcon } from './Icons'
 import { celebrateBurst } from './celebrate'
 
 export type LiveStrings = Awaited<ReturnType<typeof import('@/app/[lang]/dictionaries').liveStrings>>
@@ -402,6 +403,15 @@ export default function LiveBoardList({
                     <span className={`truncate font-semibold tracking-tight text-ink ${compact ? 'text-[13.5px]' : 'text-[15px]'}`}>
                       {item.fullName}
                     </span>
+                    {/* 站内档案:SEO 可爬内链,也是读者进档案页的主入口;拦在 a 里不与行点击冲突 */}
+                    <Link
+                      href={`/${locale}/repo/${item.fullName}`}
+                      prefetch={false}
+                      aria-label={`${item.fullName} · 档案`}
+                      className="shrink-0 text-ink/28 transition-colors hover:text-accent"
+                    >
+                      <ArchiveIcon size={12} />
+                    </Link>
                     <a
                       href={item.htmlUrl}
                       target="_blank"

@@ -1,14 +1,15 @@
 'use client'
 
-import { usePathname, useRouter } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState, useTransition } from 'react'
 
 import { LOCALES, LOCALE_LABEL } from '@/lib/locales'
 import type { Locale } from '@/lib/types'
 
-/** 语言切换:16 语下拉菜单。语言名一律用它自己的字(不翻译),当前项打勾。 */
+/** 语言切换:16 语下拉菜单。语言名一律用它自己的字(不翻译),当前项打勾。
+ * 渲染期不读 usePathname()(运行时数据会让 ◐ 兜底预渲染失败);
+ * 跳转目标在点击处理器里从 window.location 现取,行为与 usePathname 完全一致。 */
 export default function LangSwitch({ current }: { current: Locale }) {
-  const pathname = usePathname() || '/'
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
@@ -33,6 +34,7 @@ export default function LangSwitch({ current }: { current: Locale }) {
 
   const goTo = (next: Locale) => {
     if (next === current || isPending) return
+    const pathname = window.location.pathname || '/'
     const parts = pathname.split('/')
     if (parts[1] === current) {
       parts[1] = next

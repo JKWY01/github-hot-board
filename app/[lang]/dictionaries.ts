@@ -107,6 +107,7 @@ export interface Dict {
     drawerFail: string
     drawerNoReadme: string
     drawerOpen: string
+    drawerArchive: string
     drawerClose: string
     drawerPrev: string
     drawerNext: string
@@ -193,6 +194,7 @@ export function liveStrings(locale: Locale) {
       fail: d.ui.drawerFail,
       noReadme: d.ui.drawerNoReadme,
       open: d.ui.drawerOpen,
+      archive: d.ui.drawerArchive,
       close: d.ui.drawerClose,
       prev: d.ui.drawerPrev,
       next: d.ui.drawerNext,

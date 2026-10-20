@@ -298,6 +298,91 @@ export async function readHistorySnapshot(board: string, day: string): Promise<H
   })) ?? null
 }
 
+/** sitemap 用:所有"曾经上榜过"的仓库(全量时间窗,不限现役)。 */
+export async function readDistinctRepos(): Promise<string[]> {
+  return (await withDb(async (sql) => {
+    const rows = await sql`SELECT DISTINCT repo FROM board_snapshots`
+    return (rows as unknown as Array<{ repo: string }>).map((r) => r.repo).sort()
+  })) ?? []
+}
+
+/** 仓库档案页读取:(repo) → 最近一拍的全部上榜记录 + 近 30 天基准口径每日名次。
+ * 站点档案页与 sitemap 共用;读路径零上游请求,只碰明细表(repo 索引直查)。 */
+export interface RepoAppearance {
+  board: string
+  language: string
+  rank: number
+  stars: number
+  forks: number
+  metric: number
+  source: string
+  degraded: boolean
+  takenAt: string
+  /** true = 3 天内仍在拍(现役);false = 退榜老兵最后一次的记录。 */
+  current: boolean
+}
+
+export interface RepoDayRank {
+  day: string
+  board: string
+  rank: number
+  metric: number
+}
+
+export async function readRepoArchiveRows(fullName: string): Promise<{
+  appearances: RepoAppearance[]
+  daily: RepoDayRank[]
+  lastSeenAt: string | null
+}> {
+  if (!/^[A-Za-z0-9_.-]{1,64}\/[A-Za-z0-9_.-]{1,64}$/.test(fullName)) {
+    return { appearances: [], daily: [], lastSeenAt: null }
+  }
+  const base: { appearances: RepoAppearance[]; daily: RepoDayRank[]; lastSeenAt: string | null } = { appearances: [], daily: [], lastSeenAt: null }
+  return (await withDb(async (sql) => {
+    // 每个 (榜, 语言) 的"最近一次在榜"记录 —— 不限时间窗:
+    // taken_at 在 3 天内 = 现役(current);更早 = 退榜老兵(档案页诚实展示最后一次数据)。
+    const rows = await sql`
+      SELECT DISTINCT ON (board, language)
+             board, language, rank, stars, forks, metric, source, degraded, taken_at
+      FROM board_snapshots
+      WHERE repo = ${fullName}
+      ORDER BY board, language, taken_at DESC`
+    const appearances = (rows as unknown as Array<{
+      board: string; language: string; rank: number; stars: number | string
+      forks: number; metric: number | string; source: string; degraded: boolean; taken_at: Date
+    }>).map((r) => {
+      const takenAt = new Date(r.taken_at)
+      return {
+        board: r.board,
+        language: r.language,
+        rank: Number(r.rank),
+        stars: Number(r.stars),
+        forks: Number(r.forks),
+        metric: Number(r.metric),
+        source: r.source,
+        degraded: r.degraded,
+        takenAt: takenAt.toISOString(),
+        current: Date.now() - takenAt.getTime() < 3 * 24 * 3600_000,
+      }
+    })
+
+    // 近 30 天、基准口径(language='')每日最后一拍的 (榜, 名次) 序列:档案页名次带用
+    const band = await sql`
+      SELECT DISTINCT ON (board, date_trunc('day', taken_at))
+             to_char(date_trunc('day', taken_at), 'YYYY-MM-DD') AS day,
+             board, rank, metric
+      FROM board_snapshots
+      WHERE repo = ${fullName} AND language = '' AND taken_at > now() - interval '30 days'
+      ORDER BY board, date_trunc('day', taken_at), taken_at DESC`
+    const daily = (band as unknown as Array<{ day: string; board: string; rank: number; metric: number | string }>).map(
+      (r) => ({ day: r.day, board: r.board, rank: Number(r.rank), metric: Number(r.metric) }),
+    )
+
+    const lastSeenAt = appearances.reduce<string | null>((m, a) => (m === null || a.takenAt > m ? a.takenAt : m), null)
+    return { appearances, daily, lastSeenAt }
+  })) ?? base
+}
+
 /** 仓库级多语描述(repo 粒度只存一份,横跨十张榜复用):payload = { [locale]: 首句描述 }。
  * 读路径合并进榜单载荷;缺口由访问驱动的后台补齐(lib/descfill)渐进写入。 */
 export async function readRepoDescs(

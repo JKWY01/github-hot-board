@@ -195,7 +195,7 @@ export const enDict: Dict = {
     drawerLoading: 'Reading the GitHub page…',
     drawerFail: 'Could not read the page — try again later.',
     drawerNoReadme: 'No README here — the full page lives on GitHub.',
-    drawerOpen: 'Open on GitHub',
+    drawerArchive: 'View archive', drawerOpen: 'Open on GitHub',
     drawerClose: 'Close',
     drawerPrev: 'Previous',
     drawerNext: 'Next',

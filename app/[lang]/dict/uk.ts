@@ -195,7 +195,7 @@ export const ukDict: Dict = {
     drawerLoading: 'Читаємо сторінку GitHub…',
     drawerFail: 'Сторінку не вдалося прочитати — спробуйте пізніше.',
     drawerNoReadme: 'README немає — вся сторінка на GitHub.',
-    drawerOpen: 'Відкрити на GitHub',
+    drawerArchive: 'Відкрити архів', drawerOpen: 'Відкрити на GitHub',
     drawerClose: 'Закрити',
     drawerPrev: 'Попередній',
     drawerNext: 'Наступний',

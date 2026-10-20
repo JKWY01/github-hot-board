@@ -1,7 +1,37 @@
 import { NextResponse, type NextRequest } from 'next/server'
 
+import postgres from 'postgres'
+
 import { BOARD_SLUGS, FACET_BOARDS, facetLangFromSlug, facetLangSlug } from '@/lib/facet'
 import { LOCALES, isLocale, matchLocaleFromTag, type Locale } from '@/lib/locales'
+
+/** repo 存在名单:TTL 内存缓存,5 分钟一刷(与 sync 节奏无关,多刷无意义)。
+ * 查库失败 → 放行给页面(页面自己也会 notFound,软 404 是可接受的降级,不拖垮站点)。 */
+let repoSet: Set<string> | null = null
+let repoSetAt = 0
+const REPO_SET_TTL = 5 * 60_000
+
+async function repoWasOnBoard(owner: string, repo: string): Promise<boolean | null> {
+  const fname = `${owner}/${repo}`
+  const now = Date.now()
+  if (repoSet === null || now - repoSetAt > REPO_SET_TTL) {
+    try {
+      const url = process.env.DATABASE_URL
+      if (!url) throw new Error('no DATABASE_URL')
+      const sql = postgres(url, { max: 2, idle_timeout: 20, connect_timeout: 8 })
+      try {
+        const rows = await sql`SELECT DISTINCT repo FROM board_snapshots`
+        repoSet = new Set(rows.map((r) => r.repo as string))
+        repoSetAt = now
+      } finally {
+        await sql.end()
+      }
+    } catch {
+      return null
+    }
+  }
+  return repoSet?.has(fname) ?? null
+}
 
 /** Accept-Language 最佳匹配; scraper/空头一律默认英文。 */
 function preferredLocale(request: NextRequest): Locale {
@@ -49,7 +79,7 @@ function notFound404(lang: string, pathname: string): NextResponse {
  * 2) 语言分面旧链接归一:'+'/'#'/百分号编码在路由匹配层就会失败(404 且被 ISR 缓存),
  *    必须在路由之前改写 —— raw 'c++'、'c%2B%2B'、被按空格解码的形态都 308 到 slug(/cpp);
  * 3) 未知榜单/语言参数直接给真 404(避免动态 fill 的 200 soft-404)。 */
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const seg = request.nextUrl.pathname.split('/')
 
   const langIsLocale = isLocale(seg[1] ?? '')
@@ -105,6 +135,19 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(url, 308)
   }
 
+  // /{lang}/repo/{owner}/{repo}:同 boards —— cacheComponents 的共享壳 fill 会把未知值
+  // 吐成 200 soft-404,所以必须路由前给真 404。名单只收"历史上过榜"的仓库
+  // (与 sitemap 同源),没上过榜的 URL 不存在,这正是产品的诚实 404 规则。
+  if (langIsLocale && seg[2] === 'repo') {
+    if (seg.length !== 5) return notFound404(seg[1], request.nextUrl.pathname)
+    if (!/^[A-Za-z0-9_.-]{1,64}\/[A-Za-z0-9_.-]{1,64}$/.test(`${seg[3]}/${seg[4]}`)) {
+      return notFound404(seg[1], request.nextUrl.pathname)
+    }
+    const known = await repoWasOnBoard(seg[3], seg[4])
+    if (known === false) return notFound404(seg[1], request.nextUrl.pathname)
+    return // 名单内有,或名单临时拿不到(降级放行,由页内 notFound 兜底)
+  }
+
   // /{lang}/history/{slug} 与 /{lang}/history/{slug}/{date}:未知榜 slug 与非法日期格式
   // 同样会经共享壳 fill 出 200 soft-404,必须在路由前给真 404。
   if (seg.length === 4 && langIsLocale && seg[2] === 'history') {
@@ -140,6 +183,6 @@ export const config = {
   // 排除 api/_next/静态资产,避免无谓地跑进 matcher。
   matcher: [
     '/',
-    '/((?!api|_next|favicon.ico|icon.svg|robots.txt|sitemap.xml|manifest.webmanifest).*)',
+    '/((?!api|_next|favicon.ico|icon.svg|robots.txt|sitemap|manifest.webmanifest).*)',
   ],
 }

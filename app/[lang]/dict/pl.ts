@@ -195,7 +195,7 @@ export const plDict: Dict = {
     drawerLoading: 'Czytamy stronę GitHuba…',
     drawerFail: 'Nie udało się odczytać strony — spróbuj później.',
     drawerNoReadme: 'README nie ma — pełna strona jest na GitHubie.',
-    drawerOpen: 'Otwórz na GitHubie',
+    drawerArchive: 'Zobacz kartę', drawerOpen: 'Otwórz na GitHubie',
     drawerClose: 'Zamknij',
     drawerPrev: 'Poprzedni',
     drawerNext: 'Następny',

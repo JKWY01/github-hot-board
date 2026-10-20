@@ -195,7 +195,7 @@ export const itDict: Dict = {
     drawerLoading: 'Sto leggendo la pagina GitHub…',
     drawerFail: 'Non sono riuscito a leggere la pagina — riprova più tardi.',
     drawerNoReadme: 'Nessun README qui — il contenuto completo sta su GitHub.',
-    drawerOpen: 'Apri su GitHub',
+    drawerArchive: 'Vedi la scheda', drawerOpen: 'Apri su GitHub',
     drawerClose: 'Chiudi',
     drawerPrev: 'Precedente',
     drawerNext: 'Successivo',

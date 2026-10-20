@@ -195,7 +195,7 @@ export const koDict: Dict = {
     drawerLoading: 'GitHub 페이지를 읽어오는 중…',
     drawerFail: '페이지를 읽지 못했습니다 — 잠시 후 다시 시도해 주세요.',
     drawerNoReadme: 'README가 없습니다 — 전문은 GitHub에서 확인하세요.',
-    drawerOpen: 'GitHub에서 열기',
+    drawerArchive: '아카이브 보기', drawerOpen: 'GitHub에서 열기',
     drawerClose: '닫기',
     drawerPrev: '이전',
     drawerNext: '다음',

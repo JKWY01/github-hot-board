@@ -195,7 +195,7 @@ export const esDict: Dict = {
     drawerLoading: 'Leyendo la página de GitHub…',
     drawerFail: 'No se pudo leer la página — inténtalo más tarde.',
     drawerNoReadme: 'Este repo no tiene README — el contenido completo está en GitHub.',
-    drawerOpen: 'Abrir en GitHub',
+    drawerArchive: 'Ver la ficha', drawerOpen: 'Abrir en GitHub',
     drawerClose: 'Cerrar',
     drawerPrev: 'Anterior',
     drawerNext: 'Siguiente',

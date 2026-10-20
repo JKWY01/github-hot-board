@@ -196,7 +196,7 @@ export const zhDict: Dict = {
     drawerLoading: '正在读取 GitHub 页面…',
     drawerFail: '这一页暂时没读到,稍后再试。',
     drawerNoReadme: '这个仓库没有 README,完整内容在 GitHub 上。',
-    drawerOpen: '在 GitHub 打开',
+    drawerArchive: '查看档案页', drawerOpen: '在 GitHub 打开',
     drawerClose: '关闭',
     drawerPrev: '上一名',
     drawerNext: '下一名',

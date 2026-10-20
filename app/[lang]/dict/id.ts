@@ -195,7 +195,7 @@ export const idDict: Dict = {
     drawerLoading: 'Membaca halaman GitHub…',
     drawerFail: 'Halaman ini tidak terbaca — coba lagi nanti.',
     drawerNoReadme: 'Tidak ada README di sini — halaman lengkapnya ada di GitHub.',
-    drawerOpen: 'Buka di GitHub',
+    drawerArchive: 'Lihat arsip', drawerOpen: 'Buka di GitHub',
     drawerClose: 'Tutup',
     drawerPrev: 'Sebelumnya',
     drawerNext: 'Berikutnya',

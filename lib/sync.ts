@@ -3,7 +3,7 @@ import type { BoardSlug } from './boards'
 import { prefillRepoDescs } from './descfill'
 import { FACET_LANGUAGES } from './facet'
 import { savePersistedBoard } from './persist'
-import { dbKey, pruneOld, writeHeadAndRows } from './snapshot'
+import { dbKey, pruneOld, upsertRepoDesc, writeHeadAndRows } from './snapshot'
 import type { BoardData } from './types'
 
 /** 数据同步任务:唯一的「进货」通道。定时触发(GitHub Actions 每 30 分钟 / 本地 npm run sync / 外部 cron),
@@ -45,6 +45,20 @@ async function fetchOne(target: SyncTarget): Promise<BoardData> {
 async function storeOne(target: SyncTarget, data: BoardData): Promise<void> {
   // 数据库(head + 明细)。库未配置/不可用时静默跳过,磁盘镜像照常。
   await writeHeadAndRows(target.slug, target.language, data)
+  // 原文描述就地入档(repo_desc.payload['en'],非破坏合并):
+  // 同步已经在手GitHub 返回的 description,不再花一次请求;仓库档案页与收割兜底共用。
+  if (process.env.DATABASE_URL) {
+    const withDesc = data.items.filter((it) => it.desc)
+    const pending: Promise<boolean>[] = []
+    for (let i = 0; i < withDesc.length; i += 50) {
+      pending.push(...withDesc.slice(i, i + 50).map((it) => upsertRepoDesc(it.fullName, 'en', it.desc as string)))
+      if (pending.length >= 200) {
+        await Promise.all(pending)
+        pending.length = 0
+      }
+    }
+    if (pending.length) await Promise.all(pending)
+  }
   // 磁盘镜像:本地冷启动水合 + 数据库不可用时的兜底。
   savePersistedBoard(dbKey(target.slug, target.language), data)
 }

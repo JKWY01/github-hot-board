@@ -195,7 +195,7 @@ export const deDict: Dict = {
     drawerLoading: 'GitHub-Seite wird gelesen…',
     drawerFail: 'Seite ließ sich nicht lesen – versuch es später nochmal.',
     drawerNoReadme: 'Kein README hier – die ganze Seite lebt auf GitHub.',
-    drawerOpen: 'Auf GitHub öffnen',
+    drawerArchive: 'Archiv ansehen', drawerOpen: 'Auf GitHub öffnen',
     drawerClose: 'Schließen',
     drawerPrev: 'Vorheriges',
     drawerNext: 'Nächstes',

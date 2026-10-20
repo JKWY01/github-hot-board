@@ -65,6 +65,10 @@ export default async function BoardStream({
 
   return (
     <div>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: itemListJsonLd(data.items, locale, slug, language) }}
+      />
       <div className="mb-3 flex flex-wrap items-center gap-2 px-1 text-[11.5px] text-sub">
         <span className="rounded-full border-[0.5px] border-black/10 bg-white px-2.5 py-1 font-medium text-ink/75">
           {data.source === 'github-trending'
@@ -111,6 +115,31 @@ export default async function BoardStream({
 }
 
 /** 取数失败时的显式标注卡：缓存的空榜 + 重试指引，cacheLife 到期后自愈。 */
+/** ItemList 结构化排名信号:让搜索引擎把每个仓库的站内档案页当"列表条目"理解。
+ * 链的是站内档案 URL(非 GitHub),条目名带官方名次与星数,页面上全部可见,无隐藏内容。 */
+function itemListJsonLd(
+  items: Array<{ fullName: string; stars: number }>,
+  locale: Locale,
+  slug: string,
+  language?: string,
+): string {
+  const base = (process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000').replace(/\/+$/, '')
+  const path = language ? `/${locale}/boards/${slug}/${language}` : `/${locale}/boards/${slug}`
+  return JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    '@id': `${base}${path}#items`,
+    name: 'GitHub Ranked',
+    numberOfItems: items.length,
+    itemListElement: items.slice(0, 150).map((it, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      url: `${base}/${locale}/repo/${it.fullName}`,
+      name: `${it.fullName} · #${index + 1} · ${it.stars}`,
+    })),
+  })
+}
+
 function BoardErrorCard({
   locale,
   slug,
