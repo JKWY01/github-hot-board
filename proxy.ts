@@ -1,13 +1,14 @@
 import { NextResponse, type NextRequest } from 'next/server'
 
 import { BOARD_SLUGS, FACET_BOARDS, facetLangFromSlug, facetLangSlug } from '@/lib/facet'
+import { LOCALES, isLocale, matchLocaleFromTag, type Locale } from '@/lib/locales'
 
-const LOCALES = ['zh', 'en'] as const
-
-function preferredLocale(request: NextRequest): (typeof LOCALES)[number] {
+/** Accept-Language 最佳匹配; scraper/空头一律默认英文。 */
+function preferredLocale(request: NextRequest): Locale {
   const header = request.headers.get('accept-language') || ''
-  let best = ''
   let bestQ = 0
+  let best: Locale = 'en'
+  let matched = false
   for (const part of header.split(',')) {
     const [tag, ...params] = part.trim().split(';')
     let q = 1
@@ -17,12 +18,14 @@ function preferredLocale(request: NextRequest): (typeof LOCALES)[number] {
         q = Number.parseFloat(trimmed.slice(2)) || 0
       }
     }
-    if (q > bestQ) {
-      best = tag.toLowerCase()
+    const hit = matchLocaleFromTag(tag)
+    if (hit && q > bestQ) {
+      best = hit
       bestQ = q
+      matched = true
     }
   }
-  return best.startsWith('zh') ? 'zh' : 'en'
+  return matched ? best : 'en'
 }
 
 /** 真状态码的 404。cacheComponents 下动态参数的未知值会经共享壳 fill 出 200 soft-404,
@@ -49,10 +52,19 @@ function notFound404(lang: string, pathname: string): NextResponse {
 export function proxy(request: NextRequest) {
   const seg = request.nextUrl.pathname.split('/')
 
-  const isLocale = seg[1] === 'zh' || seg[1] === 'en'
+  const langIsLocale = isLocale(seg[1] ?? '')
+
+  // 未知语言段却带着榜单/历史路径 → 真 404(共享壳 fill 会把未知值吐成 200 软 404)
+  if (
+    !langIsLocale &&
+    seg[1] &&
+    (seg[2] === 'boards' || seg[2] === 'history')
+  ) {
+    return notFound404(seg[1], request.nextUrl.pathname)
+  }
 
   // /{lang}/boards/{slug}
-  if (seg.length === 4 && isLocale && seg[2] === 'boards') {
+  if (seg.length === 4 && langIsLocale && seg[2] === 'boards') {
     if (!(BOARD_SLUGS as readonly string[]).includes(seg[3])) {
       return notFound404(seg[1], request.nextUrl.pathname)
     }
@@ -60,7 +72,7 @@ export function proxy(request: NextRequest) {
   }
 
   // /{lang}/boards/{slug}/{language}
-  if (seg.length === 5 && isLocale && seg[2] === 'boards') {
+  if (seg.length === 5 && langIsLocale && seg[2] === 'boards') {
     if (!(BOARD_SLUGS as readonly string[]).includes(seg[3])) {
       return notFound404(seg[1], request.nextUrl.pathname)
     }
@@ -95,13 +107,13 @@ export function proxy(request: NextRequest) {
 
   // /{lang}/history/{slug} 与 /{lang}/history/{slug}/{date}:未知榜 slug 与非法日期格式
   // 同样会经共享壳 fill 出 200 soft-404,必须在路由前给真 404。
-  if (seg.length === 4 && isLocale && seg[2] === 'history') {
+  if (seg.length === 4 && langIsLocale && seg[2] === 'history') {
     if (!(BOARD_SLUGS as readonly string[]).includes(seg[3])) {
       return notFound404(seg[1], request.nextUrl.pathname)
     }
     return
   }
-  if (seg.length === 5 && isLocale && seg[2] === 'history') {
+  if (seg.length === 5 && langIsLocale && seg[2] === 'history') {
     if (!(BOARD_SLUGS as readonly string[]).includes(seg[3])) {
       return notFound404(seg[1], request.nextUrl.pathname)
     }
@@ -124,15 +136,10 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
+  // 语言段开放给全部注册语种,枚举交给 proxy 内部判定;
+  // 排除 api/_next/静态资产,避免无谓地跑进 matcher。
   matcher: [
     '/',
-    '/zh/boards/:slug',
-    '/en/boards/:slug',
-    '/zh/boards/:slug/:language',
-    '/en/boards/:slug/:language',
-    '/zh/history/:slug',
-    '/en/history/:slug',
-    '/zh/history/:slug/:date',
-    '/en/history/:slug/:date',
+    '/((?!api|_next|favicon.ico|icon.svg|robots.txt|sitemap.xml|manifest.webmanifest).*)',
   ],
 }

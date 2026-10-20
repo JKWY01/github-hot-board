@@ -1,3 +1,4 @@
+import { LOCALES } from '@/lib/locales'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { connection } from 'next/server'
@@ -12,7 +13,7 @@ export const instant = false
 
 /** Next 16 要求根参数(lang)至少给一档;slug 与 date 留给运行时按需渲染。 */
 export async function generateStaticParams() {
-  return (['zh', 'en'] as const).map((lang) => ({ lang }))
+  return LOCALES.map((lang) => ({ lang }))
 }
 
 /** 任意日期的往日榜:运行时首次访问回源库(读 cacheLife 5 分钟),之后走缓存。 */

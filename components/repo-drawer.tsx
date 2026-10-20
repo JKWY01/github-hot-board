@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 
 import type { BoardItem, Locale } from '@/lib/types'
 import { fmtNum } from '@/lib/format'
+import { LANG_LINK_TEXT } from '@/lib/locales'
 import { ForkIcon, StarIcon } from './Icons'
 import type { LiveStrings } from './LiveBoardList'
 
@@ -281,9 +282,9 @@ export default function RepoDrawer({
                   }
                   return
                 }
-                // 语言切换器直译:中英两路显式换内容(仓库切换器链接常坏,直接换语言内容最稳)
+                // 语言切换器:锚文本按共用表映射站点语言,显式换内容(仓库切换链常坏,直接换语言内容最稳)
                 const label = (a.textContent || '').trim()
-                const langLg = /简体中文|簡體中文/.test(label) ? 'zh' : label === 'English' ? 'en' : null
+                const langLg = LANG_LINK_TEXT.find(({ re }) => re.test(label))?.lg ?? null
                 // 同仓库的 .md 文档链 → 抽屉内就地翻页,不出站
                 const m = href.match(/^https:\/\/github\.com\/([^/]+\/[^/]+)\/blob\/[^/]+\/(.+\.md)$/i)
                 if (langLg && (!m || m[1].toLowerCase() === fullName.toLowerCase())) {

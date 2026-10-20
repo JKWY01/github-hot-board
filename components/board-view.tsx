@@ -5,6 +5,8 @@ import type { Metadata } from 'next'
 
 import { BOARD_META, BOARD_ORDER, FACET_LANGUAGES, facetDisplay, isBoardSlug, facetLangSlug, type BoardSlug } from '@/lib/boards'
 import { getDict, isLocale, type BoardCopy } from '@/app/[lang]/dictionaries'
+import { altLangs } from '@/lib/locales'
+import type { Locale } from '@/lib/types'
 import BoardStream from '@/components/BoardStream'
 import PendingChip from '@/components/PendingChip'
 
@@ -160,7 +162,7 @@ export function boardTitle(lang: string, slug: BoardSlug, language?: string): st
 }
 
 export function boardMetadata(
-  lang: 'zh' | 'en',
+  lang: Locale,
   slug: BoardSlug,
   language?: string,
 ): Metadata {
@@ -174,11 +176,7 @@ export function boardMetadata(
     description: copy.desc,
     alternates: {
       canonical: localePath(lang),
-      languages: {
-        zh: localePath('zh'),
-        en: localePath('en'),
-        'x-default': localePath('en'),
-      },
+      languages: altLangs(`/boards/${slug}${language ? `/${facetLangSlug(language)}` : ''}`),
     },
     openGraph: {
       title,

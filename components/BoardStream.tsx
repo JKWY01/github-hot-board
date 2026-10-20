@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 
 import { getBoardDataCached, type BoardSlug } from '@/lib/boards'
+import { hydrateBoardDescs } from '@/lib/descfill'
 import { RateLimitError } from '@/lib/github'
 import { getDict, isLocale, liveStrings, type BoardCopy } from '@/app/[lang]/dictionaries'
 import type { Locale } from '@/lib/types'
@@ -51,6 +52,7 @@ export default async function BoardStream({
   let data
   try {
     data = await getBoardDataCached(slug, language)
+    if (locale !== 'en') data = await hydrateBoardDescs(data, locale)
   } catch (error) {
     // cached 包装层不应失败；这里仅为防御性兜底
     const limited = error instanceof RateLimitError

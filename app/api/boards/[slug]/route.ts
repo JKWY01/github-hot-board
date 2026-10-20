@@ -1,3 +1,4 @@
+import { hydrateBoardDescs, viewerLocale } from '@/lib/descfill'
 import { getBoardDataCached, isBoardSlug } from '@/lib/boards'
 import { RateLimitError } from '@/lib/github'
 import type { LivePatch } from '@/lib/types'
@@ -26,7 +27,9 @@ export async function GET(
   const language = SUPPORTS_LANGUAGE.has(slug) ? languageParam : undefined
 
   try {
-    const data = await getBoardDataCached(slug, language)
+    const viewer = viewerLocale(url.searchParams.get('lg'))
+    const base = await getBoardDataCached(slug, language)
+    const data = viewer ? await hydrateBoardDescs(base, viewer) : base
     const patch: LivePatch = {
       slug,
       language,

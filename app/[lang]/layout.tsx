@@ -5,6 +5,7 @@ import '../globals.css'
 import Nav from '@/components/Nav'
 import Footer from '@/components/Footer'
 import { getDict, isLocale } from './dictionaries'
+import { LOCALE_HTML_LANG } from '@/lib/locales'
 
 export async function generateMetadata({ params }: LayoutProps<'/[lang]'>): Promise<Metadata> {
   const { lang } = await params
@@ -31,7 +32,7 @@ export default async function RootLayout({
   const dict = getDict(lang)
 
   return (
-    <html lang={dict.htmlLang}>
+    <html lang={LOCALE_HTML_LANG[lang]}>
       <body className="bg-white text-ink antialiased">
         <script
           dangerouslySetInnerHTML={{ __html: "document.documentElement.classList.add('js')" }}

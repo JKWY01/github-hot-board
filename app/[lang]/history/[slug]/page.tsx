@@ -1,3 +1,4 @@
+import { LOCALES } from '@/lib/locales'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { connection } from 'next/server'
@@ -12,7 +13,7 @@ export const instant = false
 
 /** Next 16 要求根参数(lang)至少给一档;slug 留给运行时阻塞渲染。 */
 export async function generateStaticParams() {
-  return (['zh', 'en'] as const).map((lang) => ({ lang }))
+  return LOCALES.map((lang) => ({ lang }))
 }
 
 export async function generateMetadata({

@@ -1,3 +1,4 @@
+import { LOCALES } from '@/lib/locales'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 
@@ -7,7 +8,7 @@ import BoardPageView, { boardMetadata } from '@/components/board-view'
 
 export async function generateStaticParams() {
   const out: Array<{ lang: string; slug: string }> = []
-  for (const lang of ['zh', 'en']) {
+  for (const lang of LOCALES) {
     for (const slug of Object.keys(BOARD_META)) {
       out.push({ lang, slug })
     }

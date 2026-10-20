@@ -84,6 +84,13 @@ async function withDb<T>(fn: (sql: Sql) => Promise<T>): Promise<T | undefined> {
         await sql`ALTER TABLE board_snapshots ADD COLUMN IF NOT EXISTS degraded BOOLEAN NOT NULL DEFAULT false`
         await sql`CREATE INDEX IF NOT EXISTS board_snapshots_repo_time ON board_snapshots (repo, taken_at DESC)`
         await sql`CREATE INDEX IF NOT EXISTS board_snapshots_board_time ON board_snapshots (board, language, taken_at DESC)`
+        // 仓库级多语描述缓存(访问驱动渐进填充,跨全榜复用)
+        await sql`
+          CREATE TABLE IF NOT EXISTS repo_desc (
+            full_name  TEXT PRIMARY KEY,
+            payload    JSONB NOT NULL DEFAULT '{}'::jsonb,
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+          )`
         tableReady = true
       }
       return await fn(sql)
@@ -263,4 +270,34 @@ export async function readHistorySnapshot(board: string, day: string): Promise<H
       })),
     }
   })) ?? null
+}
+
+/** 仓库级多语描述(repo 粒度只存一份,横跨十张榜复用):payload = { [locale]: 首句描述 }。
+ * 读路径合并进榜单载荷;缺口由访问驱动的后台补齐(lib/descfill)渐进写入。 */
+export async function readRepoDescs(
+  fullNames: string[],
+): Promise<Map<string, Record<string, string>>> {
+  const out: Map<string, Record<string, string>> = new Map()
+  if (fullNames.length === 0) return out
+  await withDb(async (sql) => {
+    const rows = await sql`SELECT full_name, payload FROM repo_desc WHERE full_name = ANY(${fullNames})`
+    for (const row of rows) {
+      out.set(String(row.full_name), (row.payload ?? {}) as Record<string, string>)
+    }
+  })
+  return out
+}
+
+/** 单语写入(jsonb 合并,不动其他语种已得结果)。 */
+export async function upsertRepoDesc(fullName: string, locale: string, desc: string): Promise<boolean> {
+  if (!fullName || !locale || !desc) return false
+  return await withDb(async (sql) => {
+    const fresh = sql.json({ [locale]: desc } as Record<string, string>)
+    await sql`
+      INSERT INTO repo_desc (full_name, payload) VALUES (${fullName}, ${fresh})
+      ON CONFLICT (full_name) DO UPDATE SET
+        payload = repo_desc.payload || ${fresh},
+        updated_at = now()`
+    return true
+  }) ?? false
 }

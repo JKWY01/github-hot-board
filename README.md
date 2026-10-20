@@ -27,6 +27,15 @@
 
 总榜、周榜、月榜有语言分榜(javascript / typescript / python / go / rust / java / c / c++),URL 形如 `/zh/boards/weekly/python`。`c++` 在路径里写成 `/cpp`,因为 `+` 进路径段会在路由匹配层直接死掉——查询时仍用 GitHub 原生语言名,旧链接由 `proxy.ts` 在路由前 308 归一。
 
+## 站点语言(16 种)
+
+`/en /zh /zh-TW /ja /ko /de /fr /es /pt /it /ru /uk /pl /tr /vi /id`,根路径默认进英文(带 Accept-Language 时按浏览器语言挑)。全部 UI 文案逐语种成套(`app/[lang]/dict/`),SEO 每页带全语 hreflang + canonical,sitemap 覆盖 16 语 × 全榜。
+
+行描述与抽屉 README 按站点语言取仓库自身的本地化版本(切换器解析 + 命名候选两级),读不到就诚实回退仓库原文。描述缓存在 `repo_desc` 表(仓库粒度),由浏览行为驱动补齐:访客打开哪个语言,哪个语言的描述就近补上,60 秒轮询自动送达;同步管线零描述成本。
+
+> The site ships in 16 languages (default English). UI copy is fully translated per locale; row descriptions and the in-drawer README follow the repo's own localized files when available, falling back to the original text. Descriptions are cached per repo (`repo_desc`) and backfilled on demand — no sync cost.
+
+
 ## 数据架构
 
 一句话:**卖货的通道不进货。**

@@ -85,7 +85,11 @@ export default function LiveBoardList({
     if (busyRef.current) return
     busyRef.current = true
     try {
-      const query = currentLanguage ? `?language=${encodeURIComponent(currentLanguage)}` : ''
+      const params = new URLSearchParams()
+      if (currentLanguage) params.set('language', currentLanguage)
+      // 站点语言随请求带上:服务端按视角合并 descLng 并在后台补齐缺口
+      params.set('lg', locale)
+      const query = params.size > 0 ? `?${params.toString()}` : ''
       const res = await fetch(`/api/boards/${slug}${query}`, {
         cache: 'no-store',
         headers: { accept: 'application/json' },
@@ -332,8 +336,8 @@ export default function LiveBoardList({
           const flag = flags[item.fullName]
           const crossed =
             variant === 'milestone' && item.milestoneTarget ? item.stars >= item.milestoneTarget : false
-          // 行描述按站点语言挑:zh 站点优先仓库中文 README 首句(同步时入库的 descZh)
-          const shown = (locale === 'zh' ? item.descZh || item.desc : item.desc) ?? null
+          // 行描述按站点语言挑:载荷里备好的对应语言描述(descLng),没有就回仓库原文
+          const shown = item.descLng?.[locale] || item.desc || null
           return (
             <li
               key={item.fullName}

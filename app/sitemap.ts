@@ -1,25 +1,25 @@
 import type { MetadataRoute } from 'next'
 
 import { BOARD_META, FACET_LANGUAGES, facetLangSlug } from '@/lib/boards'
+import { LOCALES } from '@/lib/locales'
 
 const BASE = (process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000').replace(/\/+$/, '')
 
-/** 每条 URL 携带 zh/en/x-default 三件套,与页面 <link rel="alternate"> 一致,降低双语文档的归并错误率。 */
+/** 每条 URL 携带全部语言 + x-default 的 alternate 套件,与页面 <link rel="alternate"> 一致。 */
 function alternates(pathNoLang: string): MetadataRoute.Sitemap[number]['alternates'] {
-  return {
-    languages: {
-      zh: `${BASE}/zh${pathNoLang}`,
-      en: `${BASE}/en${pathNoLang}`,
-      'x-default': `${BASE}/en${pathNoLang}`,
-    },
+  const languages: Record<string, string> = {}
+  for (const locale of LOCALES) {
+    languages[locale] = `${BASE}/${locale}${pathNoLang}`
   }
+  languages['x-default'] = `${BASE}/en${pathNoLang}`
+  return { languages }
 }
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date()
   const entries: MetadataRoute.Sitemap = []
 
-  for (const lang of ['zh', 'en'] as const) {
+  for (const lang of LOCALES) {
     entries.push({
       url: `${BASE}/${lang}`,
       lastModified: now,

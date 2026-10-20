@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 import { cleanDesc } from './parse'
+import { LANG_LINK_TEXT, type Locale } from './locales'
 
 const TOKEN = (process.env.GITHUB_TOKEN ?? '').trim()
 
@@ -157,25 +158,36 @@ export async function resolveAvatarUrl(owner: string): Promise<string> {
  *   图片    → https://raw.githubusercontent.com/{full}/{branch}/{dir}/{path}(CDN 直链)
  *   外部链接 → 一律新标签;页内锚点保持原文,交给客户端就地滚动。
  *
- * 语言协商:站点为 zh 且仓库提供中文 README(切换器或常见命名)时优先取中文版。 */
+ * 语言协商:站点语言(16 语)优先取仓库对应语言的 README(切换器解析+命名候选)。 */
 const REPO_FULL_RE = /^[^/\s\\]{1,100}\/[^/\s\\]{1,120}$/
 
-const ZH_README_PATHS = [
-  'README_zh-CN.md',
-  'README.zh-CN.md',
-  'README_zh.md',
-  'README.zh.md',
-  'README_zh-Hans.md',
-  'README.zh-Hans.md',
-  'README_CN.md',
-  'README-zh.md',
-  'docs/README_zh-CN.md',
-  'docs/README_zh.md',
-  'docs/readme/README_zh-CN.md',
-  'docs/readme/README_zh.md',
-  'doc/README_zh.md',
-  'docs/zh/README.md',
-]
+/** 各语言的 README 常见命名候选:切换器没给路径时按惯例兜底。
+ * 只登记站点语言;组合覆盖 _/-/. 分隔与语言子标签,目录只收 docs/、docs/readme/、doc/ 三个高发位。 */
+const LANG_README_PATHS: Partial<Record<Locale, string[]>> = {
+  zh: [
+    'README_zh-CN.md', 'README.zh-CN.md', 'README_zh.md', 'README.zh.md',
+    'README_zh-Hans.md', 'README_CN.md', 'README-zh.md',
+    'docs/README_zh-CN.md', 'docs/README_zh.md',
+  ],
+  'zh-TW': [
+    'README_zh-TW.md', 'README.zh-TW.md', 'README_zh-Hant.md', 'README.zh-Hant.md',
+    'README_TW.md', 'README_zh-tw.md', 'README-zh-TW.md',
+    'docs/README_zh-TW.md', 'docs/readme/README_zh-TW.md', 'doc/README_zh-TW.md',
+  ],
+  ja: ['README_ja.md', 'README.ja.md', 'README_ja-JP.md', 'README.ja-JP.md', 'README_JA.md', 'README-ja.md', 'docs/README_ja.md', 'docs/readme/README_ja.md', 'doc/README_ja.md'],
+  ko: ['README_ko.md', 'README.ko.md', 'README_ko-KR.md', 'README.ko-KR.md', 'README_KR.md', 'README-ko.md', 'docs/README_ko.md', 'docs/readme/README_ko.md'],
+  de: ['README_de.md', 'README.de.md', 'README_de-DE.md', 'README.de-DE.md', 'README.German.md', 'README-DE.md', 'docs/README_de.md', 'docs/readme/README_de.md'],
+  fr: ['README_fr.md', 'README.fr.md', 'README_fr-FR.md', 'README.fr-FR.md', 'README.French.md', 'docs/README_fr.md', 'docs/readme/README_fr.md'],
+  es: ['README_es.md', 'README.es.md', 'README_es-ES.md', 'README.es-ES.md', 'README.Spanish.md', 'docs/README_es.md', 'docs/readme/README_es.md'],
+  pt: ['README_pt-BR.md', 'README.pt-BR.md', 'README_pt.md', 'README.pt.md', 'README_pt-PT.md', 'README-PT.md', 'docs/README_pt-BR.md', 'docs/readme/README_pt-BR.md'],
+  it: ['README_it.md', 'README.it.md', 'README_it-IT.md', 'README.Italian.md', 'docs/README_it.md', 'docs/readme/README_it.md'],
+  ru: ['README_ru.md', 'README.ru.md', 'README_ru-RU.md', 'README-Russian.md', 'docs/README_ru.md', 'docs/readme/README_ru.md'],
+  uk: ['README_uk.md', 'README.uk.md', 'README_ua.md', 'README_UA.md', 'README-ua.md', 'docs/README_uk.md', 'docs/readme/README_uk.md'],
+  pl: ['README_pl.md', 'README.pl.md', 'README_pl-PL.md', 'README.Polish.md', 'docs/README_pl.md', 'docs/readme/README_pl.md'],
+  tr: ['README_tr.md', 'README.tr.md', 'README_tr-TR.md', 'README.Turkish.md', 'docs/README_tr.md', 'docs/readme/README_tr.md'],
+  vi: ['README_vi.md', 'README.vi.md', 'README_vn.md', 'README_VN.md', 'README-vi.md', 'docs/README_vi.md', 'docs/readme/README_vi.md'],
+  id: ['README_id.md', 'README.id.md', 'README_id-ID.md', 'README_in.md', 'README-id.md', 'docs/README_id.md', 'docs/readme/README_id.md'],
+}
 
 async function githubHtml(url: string): Promise<string | null> {
   try {
@@ -246,14 +258,17 @@ function absolutizeMdHtml(html: string, full: string, branch: string, dir: strin
   return out
 }
 
-/** 从语言切换器(简体中文/繁體中文/中文…)找同仓库的中文 README 路径。 */
-function findZhReadmePath(html: string, full: string, branch: string): string | null {
+/** 从语言切换器找同仓库的目标语言 README 路径。锚文本走 locales 的共用表,长正文不算。 */
+function findLocalizedReadmePath(html: string, full: string, branch: string, locale: Locale): string | null {
+  const rule = LANG_LINK_TEXT.find((r) => r.lg === locale)
+  if (!rule) return null
   const malink = `https://github.com/${full}/blob/${branch}/`
   const re = /<a\b[^>]*href="([^"]+)"[^>]*>([\s\S]{0,120}?)<\/a>/g
   for (const m of html.matchAll(re)) {
     const href = m[1]
-    const text = m[2].replace(/<[^>]+>/g, '')
-    if (!/简体中文|簡體中文|繁體中文|繁體中文|中文/.test(text)) continue
+    const text = m[2].replace(/<[^>]+>/g, '').trim()
+    if (!text || text.length > 24) continue
+    if (!rule.re.test(text)) continue
     if (!/\.md$/i.test(href)) continue
     if (href.startsWith(malink)) return href.slice(malink.length)
   }
@@ -266,28 +281,36 @@ async function renderMarkdownFile(full: string, path: string, branch: string): P
   )
 }
 
-export async function fetchRepoReadme(full: string, locale = 'en'): Promise<string | null> {
-  if (!REPO_FULL_RE.test(full)) return null
+/** 仓库页面(默认 README/目标语言 README),站点语言协商共用。
+ * 切换器命中优先,命名候选兜底;全链路走服务端缓存(分支 6h、文档 1h),重复访问零新增成本。
+ * 返回 localized:是否真的读到了该语言的版本 —— 行描述只认本地化版,
+ * 默认英文版只给抽屉兜底,冒充 "某种语言的描述" 会把英文原句错标进语言槽。 */
+async function fetchLocalizedReadme(full: string, locale: Locale): Promise<{ html: string | null; localized: boolean }> {
+  if (!REPO_FULL_RE.test(full)) return { html: null, localized: false }
   const branch = await defaultBranch(full)
   const baseHtml = await githubHtml(`https://api.github.com/repos/${full}/readme`)
-  if (!baseHtml) return null
+  if (!baseHtml) return { html: null, localized: false }
   const html = absolutizeMdHtml(baseHtml, full, branch, '')
-  if (locale === 'zh') {
-    const candidates: string[] = []
-    const zh = findZhReadmePath(html, full, branch)
-    if (zh) candidates.push(zh)
-    for (const p of ZH_README_PATHS) {
-      if (!candidates.includes(p)) candidates.push(p)
-    }
-    // 探测有上限:命中即回,未命中回落默认版;每次尝试都带服务端缓存,重复访问零新增成本
-    for (const p of candidates.slice(0, 9)) {
-      const zhHtml = await renderMarkdownFile(full, p, branch)
-      if (!zhHtml) continue
-      const dir = p.includes('/') ? p.slice(0, p.lastIndexOf('/')) : ''
-      return absolutizeMdHtml(zhHtml, full, branch, dir)
-    }
+  if (locale === 'en') return { html, localized: false }
+  const candidates: string[] = []
+  const hit = findLocalizedReadmePath(html, full, branch, locale)
+  if (hit) candidates.push(hit)
+  for (const p of LANG_README_PATHS[locale] ?? []) {
+    if (!candidates.includes(p)) candidates.push(p)
   }
-  return html
+  // 探测有上限:切换器给了路径就多备几个命名候选兜底;没有切换器的仓库只浅探 3 个,
+  // 否则无翻译的仓库会为每个语言打一串注定 404 的探测,把配额吃穿。
+  for (const p of candidates.slice(0, hit ? 10 : 3)) {
+    const localized = await renderMarkdownFile(full, p, branch)
+    if (!localized) continue
+    const dir = p.includes('/') ? p.slice(0, p.lastIndexOf('/')) : ''
+    return { html: absolutizeMdHtml(localized, full, branch, dir), localized: true }
+  }
+  return { html, localized: false }
+}
+
+export async function fetchRepoReadme(full: string, locale: Locale = 'en'): Promise<string | null> {
+  return (await fetchLocalizedReadme(full, locale)).html
 }
 
 /** 抽屉内就地翻页:渲染同仓库任意 md 文档(语言切换/文档链接点进来走这里)。 */
@@ -309,28 +332,37 @@ export async function fetchRepoDoc(full: string, fromHref: string): Promise<stri
   return absolutizeMdHtml(html, full, branch, dir)
 }
 
-/** zh 站点行描述:优先仓库自身中文 README 的首句。三次读取全吃服务端缓存
- * (branch 6h、README 1h、中文文档 1h),与抽屉共享,重复同步几乎零成本。
- * 只认语言切换器里明确给出的中文版;没有就不硬猜,把同步成本守住。 */
-export async function fetchZhDesc(full: string): Promise<string | null> {
-  if (!REPO_FULL_RE.test(full)) return null
-  try {
-    const branch = await defaultBranch(full)
-    const baseHtml = await githubHtml(`https://api.github.com/repos/${full}/readme`)
-    if (!baseHtml) return null
-    const zhPath = findZhReadmePath(absolutizeMdHtml(baseHtml, full, branch, ''), full, branch)
-    if (!zhPath) return null
-    const zhHtml = await renderMarkdownFile(full, zhPath, branch)
-    if (!zhHtml) return null
-    return pickLeadLine(zhHtml)
-  } catch {
-    return null
+/** 站点给定语言的行描述:取该语言 README 的首句。en 不用取(默认版即英文)。
+ * 读取全吃服务端缓存(分支 6h、README 1h、语言文档 1h),与抽屉共享。 */
+export async function fetchDescLng(full: string, locale: Locale): Promise<string | null> {
+  if (locale === 'en') return null
+  const { html, localized } = await fetchLocalizedReadme(full, locale)
+  return localized && html ? pickLeadLine(html, locale) : null
+}
+
+/** 判定一句摘文属于目标语言:按文字系统给下限,徽章汤/英文正文混不进来。 */
+function scriptOk(locale: string, t: string): boolean {
+  const count = (re: RegExp) => (t.match(re)?.length ?? 0)
+  switch (locale) {
+    case 'zh':
+    case 'zh-TW':
+      return count(/[\u3400-\u9fff\uf900-\ufaff]/g) >= 6
+    case 'ja':
+      return count(/[\u3040-\u30ff]/g) >= 2 || count(/[\u3400-\u9fff]/g) >= 8
+    case 'ko':
+      return count(/[\uac00-\ud7af]/g) >= 4
+    case 'ru':
+    case 'uk':
+      return count(/[\u0400-\u04ff]/g) >= 8
+    default:
+      // 拉丁系:词数与字母量双下限,广告行/占位串基本被挡在外面
+      return t.split(' ').length >= 5 && count(/[A-Za-z\u00c0-\u017f]/g) >= 14
   }
 }
 
-/** 取中文 README 第一段"像人话"的句子当行描述:要有足量 CJK、长度适中;
- * 掉徽章汤(纯拉丁链)与语言切换器(整段 · 分隔的链接)。 */
-function pickLeadLine(html: string): string | null {
+/** 取"像人话"的首段当行描述:落在语言文字系统内、长度适中;
+ * 排掉徽章汤与语言切换器(整段 · 分隔的链接)。 */
+function pickLeadLine(html: string, locale: string): string | null {
   const ps = html.match(/<p\b[^>]*>([\s\S]*?)<\/p>/gi) ?? []
   for (const p of ps) {
     const t = p
@@ -338,7 +370,7 @@ function pickLeadLine(html: string): string | null {
       .replace(/\s+/g, ' ')
       .trim()
     if (t.length < 10 || t.length > 140) continue
-    if ((t.match(/[\u4e00-\u9fff]/g)?.length ?? 0) < 6) continue
+    if (!scriptOk(locale, t)) continue
     if (/(^|\s)·(\s|$)/.test(t)) continue
     return t
   }

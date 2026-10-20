@@ -1,3 +1,4 @@
+import { LOCALES } from '@/lib/locales'
 import { notFound, redirect } from 'next/navigation'
 import type { Metadata } from 'next'
 
@@ -15,7 +16,7 @@ interface LanguageParams {
  * 数据层使用 GitHub 原生语言名。 */
 export async function generateStaticParams() {
   const out: Array<{ lang: string; slug: string; language: string }> = []
-  for (const lang of ['zh', 'en']) {
+  for (const lang of LOCALES) {
     for (const [slug, meta] of Object.entries(BOARD_META)) {
       if (!meta.facets) continue
       for (const language of FACET_LANGUAGES) {

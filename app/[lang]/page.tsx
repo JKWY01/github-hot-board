@@ -5,13 +5,15 @@ import type { Metadata } from 'next'
 
 import { getBoardDataCached } from '@/lib/boards'
 import { getDict, isLocale } from './dictionaries'
+import { LOCALES, altLangs } from '@/lib/locales'
+import type { Locale } from '@/lib/types'
 import BoardStream from '@/components/BoardStream'
 import { BoardSkeleton } from '@/components/board-view'
 import Reveal from '@/components/Reveal'
 import { fmtNum } from '@/lib/format'
 
 export async function generateStaticParams() {
-  return [{ lang: 'zh' }, { lang: 'en' }]
+  return LOCALES.map((lang) => ({ lang }))
 }
 
 export async function generateMetadata({
@@ -27,7 +29,7 @@ export async function generateMetadata({
     keywords: dict.meta.homeKeywords.split('，').map((part) => part.trim()).filter(Boolean),
     alternates: {
       canonical: `/${lang}`,
-      languages: { zh: '/zh', en: '/en', 'x-default': '/en' },
+      languages: altLangs(''),
     },
     openGraph: {
       type: 'website',
@@ -230,7 +232,7 @@ export default async function HomePage({
   )
 }
 
-async function HeroStats({ locale }: { locale: 'zh' | 'en' }) {
+async function HeroStats({ locale }: { locale: Locale }) {
   const dict = getDict(locale)
   let statA = '—'
   let statB = '—'
