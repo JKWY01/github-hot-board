@@ -327,6 +327,8 @@ export interface RepoDayRank {
   board: string
   rank: number
   metric: number
+  /** 拍摄当时的仓库全量星数(与所在榜无关):档案页 star 走势线的数据源。 */
+  stars: number
 }
 
 export async function readRepoArchiveRows(fullName: string): Promise<{
@@ -366,16 +368,17 @@ export async function readRepoArchiveRows(fullName: string): Promise<{
       }
     })
 
-    // 近 30 天、基准口径(language='')每日最后一拍的 (榜, 名次) 序列:档案页名次带用
+    // 近 30 天、基准口径(language='')每日最后一拍的 (榜, 名次, 星总量) 序列:档案页走势图用。
+    // stars = 拍摄当时的仓库全量星数(与所在榜无关),所以星线可以跨榜拼接。
     const band = await sql`
       SELECT DISTINCT ON (board, date_trunc('day', taken_at))
              to_char(date_trunc('day', taken_at), 'YYYY-MM-DD') AS day,
-             board, rank, metric
+             board, rank, metric, stars
       FROM board_snapshots
       WHERE repo = ${fullName} AND language = '' AND taken_at > now() - interval '30 days'
       ORDER BY board, date_trunc('day', taken_at), taken_at DESC`
-    const daily = (band as unknown as Array<{ day: string; board: string; rank: number; metric: number | string }>).map(
-      (r) => ({ day: r.day, board: r.board, rank: Number(r.rank), metric: Number(r.metric) }),
+    const daily = (band as unknown as Array<{ day: string; board: string; rank: number; metric: number | string; stars: number | string }>).map(
+      (r) => ({ day: r.day, board: r.board, rank: Number(r.rank), metric: Number(r.metric), stars: Number(r.stars) }),
     )
 
     const lastSeenAt = appearances.reduce<string | null>((m, a) => (m === null || a.takenAt > m ? a.takenAt : m), null)
