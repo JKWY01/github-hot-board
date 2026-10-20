@@ -31,7 +31,9 @@ export function dbUrlConfigured(): boolean {
   return DATABASE_URL !== ''
 }
 
-/** 连接常驻(模块级单例):避免每次读库重建 TLS 握手(实测省 1-3s/次)。max=2 全站够用。 */
+/** 连接常驻(模块级单例):避免每次读库重建 TLS 握手(实测省 1-3s/次)。
+ * max=8:同步风暴(writeHeadAndRows 逐榜大事务)+ 访客读(RSC 洞)/api 读同时上线,
+ * 2 条会被写队列把读请求拖到秒级,导航洞渲染变长(体感就是切榜卡)。Neon 免费层上限远高于此。 */
 let sqlSingleton: import('postgres').Sql | null = null
 
 async function withDb<T>(fn: (sql: Sql) => Promise<T>): Promise<T | undefined> {
@@ -40,7 +42,7 @@ async function withDb<T>(fn: (sql: Sql) => Promise<T>): Promise<T | undefined> {
     if (!sqlSingleton) {
       const postgres = (await import('postgres')).default
       sqlSingleton = postgres(DATABASE_URL, {
-        max: 2,
+        max: 8,
         idle_timeout: 30,
         connect_timeout: 10,
         // 诊断开关:GHB_SQL_DEBUG=1 时打印实际发送的 SQL 与参数个数
