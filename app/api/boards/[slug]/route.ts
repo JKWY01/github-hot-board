@@ -6,6 +6,9 @@ import type { LivePatch } from '@/lib/types'
 /** 支持语言分面的榜单（与 UI 路由一致）。 */
 const SUPPORTS_LANGUAGE = new Set(['overall', 'weekly', 'monthly'])
 
+/** 给 after() 里的描述补齐留时间(Vercel 上按平台上限取小;本地无感)。 */
+export const maxDuration = 60
+
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ slug: string }> },

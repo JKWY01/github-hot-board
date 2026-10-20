@@ -1,3 +1,4 @@
+import { after } from 'next/server'
 import { fetchDescLng } from './github'
 import { isLocale, type Locale } from './locales'
 import { readRepoDescs, upsertRepoDesc } from './snapshot'
@@ -17,8 +18,8 @@ const inFlight = new Set<string>()
 const failedAt = new Map<string, number>()
 const FAIL_BACKOFF_MS = 10 * 60_000
 
-/** 每次榜单读请求最多学徒补齐的仓库数:配额节奏下 60s 内可见增量。 */
-const FILL_BATCH = 8
+/** 每次榜单读请求最多排入补齐的仓库数:3 路并发 + 配额节奏下,首访约 40s 内全批收敛。 */
+const FILL_BATCH = 12
 
 export async function hydrateBoardDescs(base: BoardData, viewer: Locale): Promise<BoardData> {
   // en 视角 = 仓库原文,零合并零补齐;构建期不打库不排队
@@ -38,7 +39,9 @@ export async function hydrateBoardDescs(base: BoardData, viewer: Locale): Promis
     }
     return { ...it, descLng: { ...(it.descLng ?? {}), [viewer]: desc } }
   })
-  if (wants.length > 0) void fillQueue(wants, viewer)
+  // Vercel serverless 下裸浮动 Promise 会随响应被冻结——必须用 after() 挂在响应之后继续跑,
+  // 本地长驻进程行为不变;构建期/静态预渲染时(IN_BUILD 门禁)本分支不可达。
+  if (wants.length > 0) after(() => fillQueue(wants, viewer))
   return { ...base, items }
 }
 

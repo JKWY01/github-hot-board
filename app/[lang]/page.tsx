@@ -8,6 +8,9 @@ import { getDict, isLocale } from './dictionaries'
 import { LOCALES, altLangs } from '@/lib/locales'
 import type { Locale } from '@/lib/types'
 import BoardStream from '@/components/BoardStream'
+
+/** 页内 BoardStream 用 after() 挂描述补齐,给它留出执行时间(Vercel 按平台上限取小)。 */
+export const maxDuration = 60
 import { BoardSkeleton } from '@/components/board-view'
 import Reveal from '@/components/Reveal'
 import { fmtNum } from '@/lib/format'
