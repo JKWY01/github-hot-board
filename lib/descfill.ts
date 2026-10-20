@@ -1,7 +1,7 @@
 import { after } from 'next/server'
-import { fetchDescLng } from './github'
-import { isLocale, type Locale } from './locales'
-import { readRepoDescs, upsertRepoDesc } from './snapshot'
+import { fetchDescLng, harvestRepoDescs } from './github'
+import { isLocale, LOCALES, type Locale } from './locales'
+import { readAllHeadRepos, readProbes, readRepoDescs, upsertProbe, upsertRepoDesc } from './snapshot'
 import type { BoardData } from './types'
 
 /** 访问驱动的仓库描述本地化。
@@ -89,4 +89,47 @@ async function fillQueue(fullNames: string[], viewer: Locale): Promise<void> {
 export function viewerLocale(raw: string | null): Locale | null {
   if (!raw || raw === 'en') return null
   return isLocale(raw) ? raw : null
+}
+
+/** 探测结论的新鲜期:resolved=true 的 (仓库, 语言) 30 天内不再探测,
+ * 到期后会再收割一次,顺带接住上游新加的翻译。 */
+export const PROBE_FRESH_MS = 30 * 24 * 3600_000
+
+/** 同步期主动收割:库里缺、上游有的语种描述,随每轮同步收进 repo_desc(站点读取路径依旧只查库)。
+ * 队列 = 各榜头合并出仓库集合,按热度分(榜序×10000+行号)升序 —— overall 首位、分面榜其后。
+ * 单仓扫描一次拿齐全部站点语言;已决且未过期的仓库整仓跳过;
+ * 预算内尽力而为,收不完的下一轮继续(Actions 每 30 分钟一轮,几天内全库收敛)。 */
+export async function prefillRepoDescs(opts: {
+  boardOrder: string[]
+  budgetMs?: number
+}): Promise<{ repos: number; descs: number }> {
+  const stat = { repos: 0, descs: 0 }
+  if (IN_BUILD || !process.env.DATABASE_URL) return stat
+  const deadline = Date.now() + (opts.budgetMs ?? 180_000)
+  const queue = await readAllHeadRepos(opts.boardOrder)
+  if (queue.length === 0) return stat
+  const siteLocales = LOCALES.filter((l) => l !== 'en')
+  const resolved = await readProbes(
+    queue,
+    // 只读当前轮可能要处理的头部(预算有限,后面大概率轮不到;读多无益也无害)
+    PROBE_FRESH_MS,
+  )
+  for (const full of queue) {
+    if (Date.now() > deadline) break
+    if (siteLocales.every((l) => resolved.get(`${full}|${l}`) === true)) continue
+    try {
+      const h = await harvestRepoDescs(full)
+      stat.repos += 1
+      const got = Object.keys(h.descs).length
+      if (got > 0) console.error(`[prefill] ${full} +${got}/${siteLocales.length}`)
+      for (const locale of h.resolved) {
+        await upsertProbe(full, locale, true)
+        const desc = h.descs[locale]
+        if (desc && (await upsertRepoDesc(full, locale, desc))) stat.descs += 1
+      }
+    } catch {
+      // 单仓失败不断整轮:该仓未决语种下一轮自动重试
+    }
+  }
+  return stat
 }

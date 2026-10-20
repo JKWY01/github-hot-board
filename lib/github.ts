@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 import { cleanDesc } from './parse'
-import { LANG_LINK_TEXT, type Locale } from './locales'
+import { LOCALES, LANG_LINK_TEXT, type Locale } from './locales'
 
 const TOKEN = (process.env.GITHUB_TOKEN ?? '').trim()
 
@@ -338,6 +338,69 @@ export async function fetchDescLng(full: string, locale: Locale): Promise<string
   if (locale === 'en') return null
   const { html, localized } = await fetchLocalizedReadme(full, locale)
   return localized && html ? pickLeadLine(html, locale) : null
+}
+
+/** 根目录 README* 文件名一次列表(按仓库收割用):一次调用同时覆盖全部语言的命名候选,
+ * 替代逐语言试错式探测 —— 无翻译的仓库不再为每种语言打一串注定 404 的调用。 */
+async function listRootReadmeNames(full: string): Promise<string[]> {
+  try {
+    await quotaSlot(`rootlist:${full}`)
+    const res = await fetch(`https://api.github.com/repos/${full}/contents/`, {
+      headers: githubHeaders(),
+      signal: AbortSignal.timeout(TIME_BUDGET_MS),
+      next: { revalidate: 3600 },
+    })
+    if (!res.ok) return []
+    const arr = (await res.json()) as Array<{ name?: string }>
+    return (Array.isArray(arr) ? arr : [])
+      .map((f) => (typeof f?.name === 'string' ? f.name : ''))
+      .filter((n) => /^readme/i.test(n))
+  } catch {
+    return []
+  }
+}
+
+/** 按仓库一次性收割全部站点语言的行描述(同步期主动补齐用)。
+ * 每仓固定 2 个上游调用(默认 README 渲染 + 根目录列表),语言文件确实命中才再花 1 次。
+ * resolved = 给出确定结论的语种(拿到描述 / 有翻译但无可用首句 / 切换器与命名都没有);
+ * 渲染失败那次不给结论,由调用方判为未决、下一轮同步重试。 */
+export interface RepoHarvest {
+  descs: Partial<Record<Locale, string>>
+  resolved: Locale[]
+}
+
+export async function harvestRepoDescs(full: string): Promise<RepoHarvest> {
+  const out: RepoHarvest = { descs: {}, resolved: [] }
+  if (!REPO_FULL_RE.test(full)) return out
+  const branch = await defaultBranch(full)
+  const base = await githubHtml(`https://api.github.com/repos/${full}/readme`)
+  if (!base) return out
+  const baseHtml = absolutizeMdHtml(base, full, branch, '')
+  const rootReadmes = await listRootReadmeNames(full)
+  const lowerRoot = new Set(rootReadmes.map((n) => n.toLowerCase()))
+  for (const locale of LOCALES) {
+    if (locale === 'en') continue
+    let path = findLocalizedReadmePath(baseHtml, full, branch, locale)
+    if (!path) {
+      for (const cand of LANG_README_PATHS[locale] ?? []) {
+        if (!cand.includes('/') && lowerRoot.has(cand.toLowerCase())) {
+          path = cand
+          break
+        }
+      }
+    }
+    if (!path) {
+      out.resolved.push(locale)
+      continue
+    }
+    const file = await renderMarkdownFile(full, path, branch)
+    if (!file) continue
+    const dir = path.includes('/') ? path.slice(0, path.lastIndexOf('/')) : ''
+    const lead = pickLeadLine(absolutizeMdHtml(file, full, branch, dir), locale)
+    if (lead) out.descs[locale] = lead
+    out.resolved.push(locale)
+  }
+  return out
 }
 
 /** 判定一句摘文属于目标语言:按文字系统给下限,徽章汤/英文正文混不进来。 */

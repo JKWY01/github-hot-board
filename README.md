@@ -31,9 +31,9 @@
 
 `/en /zh /zh-TW /ja /ko /de /fr /es /pt /it /ru /uk /pl /tr /vi /id`,根路径默认进英文(带 Accept-Language 时按浏览器语言挑)。全部 UI 文案逐语种成套(`app/[lang]/dict/`),SEO 每页带全语 hreflang + canonical,sitemap 覆盖 16 语 × 全榜。
 
-行描述与抽屉 README 按站点语言取仓库自身的本地化版本(切换器解析 + 命名候选两级),读不到就诚实回退仓库原文。描述缓存在 `repo_desc` 表(仓库粒度),由浏览行为驱动补齐:访客打开哪个语言,哪个语言的描述就近补上,60 秒轮询自动送达;同步管线零描述成本。
+行描述与抽屉 README 按站点语言取仓库自身的本地化版本(切换器解析 + 命名候选两级),读不到就诚实回退仓库原文。描述缓存在 `repo_desc` 表(仓库粒度),两条填充通道:浏览行为驱动(访客打开哪个语言就近补上,60 秒轮询自动送达)与同步期主动收割(每轮同步尾部按热度序扫描全部榜头仓库,一次拿齐 15 种语言,探测结论 30 天免重试;站点读取路径依旧只查库)。
 
-> The site ships in 16 languages (default English). UI copy is fully translated per locale; row descriptions and the in-drawer README follow the repo's own localized files when available, falling back to the original text. Descriptions are cached per repo (`repo_desc`) and backfilled on demand — no sync cost.
+> The site ships in 16 languages (default English). UI copy is fully translated per locale; row descriptions and the in-drawer README follow the repo's own localized files when available, falling back to the original text. Descriptions are cached per repo (`repo_desc`) and filled two ways — on demand by visitors, and proactively at the tail of every sync run (one sweep per repo covers all 15 locales; resolved probes are skipped for 30 days). The serving path always reads from the database only.
 
 
 ## 数据架构

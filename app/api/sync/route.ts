@@ -9,16 +9,18 @@ export const POST = handle
 /** 数据同步端点(唯一的进货通道):cron Actions 每 30 分钟敲一次,也可手动触发。
  * CRON_SECRET 配置后需要 Bearer 头;未配置时仅限本地/内网使用。 */
 async function handle(request: Request): Promise<Response> {
+  const url = new URL(request.url)
   const secret = process.env.CRON_SECRET
   if (secret) {
-    const url = new URL(request.url)
     const auth = request.headers.get('authorization') ?? ''
     const q = url.searchParams.get('secret') ?? ''
     if (auth !== `Bearer ${secret}` && q !== secret) {
       return Response.json({ error: 'unauthorized' }, { status: 401 })
     }
   }
-  const summary = await syncAllBoards()
+  // ?boards=0(或环境 GHB_SYNC_BOARDS=0):跳过榜单本体、只跑描述收割
+  const boardsOnly = url.searchParams.get('boards') === '0' || process.env.GHB_SYNC_BOARDS === '0'
+  const summary = await syncAllBoards({ boardsOnly })
   return Response.json({
     net: dbUrlConfigured() ? 'database' : 'no-database-url (disk-only)',
     ok: summary.failed.length === 0,

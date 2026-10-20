@@ -1,5 +1,6 @@
 import { BOARD_META, BOARD_ORDER, getBoardData } from './boards'
 import type { BoardSlug } from './boards'
+import { prefillRepoDescs } from './descfill'
 import { FACET_LANGUAGES } from './facet'
 import { savePersistedBoard } from './persist'
 import { dbKey, pruneOld, writeHeadAndRows } from './snapshot'
@@ -20,6 +21,7 @@ export interface SyncSummary {
   itemsWritten: number
   pruned: number
   durationMs: number
+  descPrefill?: { repos: number; descs: number }
 }
 
 interface SyncTarget {
@@ -47,7 +49,9 @@ async function storeOne(target: SyncTarget, data: BoardData): Promise<void> {
   savePersistedBoard(dbKey(target.slug, target.language), data)
 }
 
-export async function syncAllBoards(): Promise<SyncSummary> {
+export async function syncAllBoards(
+  opts?: { boardsOnly?: boolean },
+): Promise<SyncSummary> {
   const started = Date.now()
   const targets = allSyncTargets()
   const failed: string[] = []
@@ -69,13 +73,17 @@ export async function syncAllBoards(): Promise<SyncSummary> {
     }
   }
 
-  for (const target of targets) {
+  // 跳过榜单本体(沿用库里现存榜头)、只跑尾部描述收割:调用方传 boardsOnly 或 GHB_SYNC_BOARDS=0。
+  // 本地手动触发时环境变量经 HTTP 传不到服务端进程,用 ?boards=0 参数才可靠。
+  const doBoards = !(opts?.boardsOnly ?? process.env.GHB_SYNC_BOARDS === '0')
+
+  for (const target of doBoards ? targets : []) {
     if (await runTarget(target)) ok += 1
     else failed.push(dbKey(target.slug, target.language))
   }
 
   // 补一轮重试(限流窗口常为分钟级,整轮跑完通常已过冷却)
-  if (failed.length > 0) {
+  if (doBoards && failed.length > 0) {
     const retryTargets = targets.filter((t) => failed.includes(dbKey(t.slug, t.language)))
     for (const target of retryTargets) {
       if (await runTarget(target)) {
@@ -86,5 +94,22 @@ export async function syncAllBoards(): Promise<SyncSummary> {
   }
 
   const pruned = await pruneOld()
-  return { total: targets.length, ok, failed, itemsWritten: ok, pruned, durationMs: Date.now() - started }
+
+  // 同步尾部:主动收割仓库描述(库里缺、上游有的语种收进 repo_desc)。
+  // Vercel 需给 route 的 300s 预算留余量;本地无单请求上限,放宽到 20 分钟收更多仓库。
+  let descPrefill: SyncSummary['descPrefill']
+  try {
+    const tailCeiling = process.env.VERCEL ? 240_000 : 1_200_000
+    descPrefill = await prefillRepoDescs({
+      boardOrder: BOARD_ORDER,
+      budgetMs: Math.max(20_000, tailCeiling - (Date.now() - started)),
+    })
+    console.error(
+      `[sync] desc-prefill repos=${descPrefill.repos} descs=${descPrefill.descs}`,
+    )
+  } catch (error) {
+    console.error('[sync] desc-prefill FAILED', error instanceof Error ? error.message : error)
+  }
+
+  return { total: targets.length, ok, failed, itemsWritten: ok, pruned, durationMs: Date.now() - started, descPrefill }
 }

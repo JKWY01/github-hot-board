@@ -91,6 +91,17 @@ async function withDb<T>(fn: (sql: Sql) => Promise<T>): Promise<T | undefined> {
             payload    JSONB NOT NULL DEFAULT '{}'::jsonb,
             updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
           )`
+        // 收割进度:(仓库, 语言) 的探测结论。resolved=true 表示有确定结论
+        // (拿到描述 / 有翻译但无可用首句 / 该语言不存在),新鲜期内不再探测;
+        // false 表示上次探测被网络/限流打断,下一轮同步立即重试。
+        await sql`
+          CREATE TABLE IF NOT EXISTS repo_desc_probe (
+            full_name  TEXT NOT NULL,
+            locale     TEXT NOT NULL,
+            resolved   BOOLEAN NOT NULL,
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+            PRIMARY KEY (full_name, locale)
+          )`
         tableReady = true
       }
       return await fn(sql)
@@ -300,4 +311,51 @@ export async function upsertRepoDesc(fullName: string, locale: string, desc: str
         updated_at = now()`
     return true
   }) ?? false
+}
+
+/** 读收割进度(新鲜期内的 resolved 行):`repo|locale` → 是否已有确定结论。 */
+export async function readProbes(fullNames: string[], maxAgeMs: number): Promise<Map<string, boolean>> {
+  const out: Map<string, boolean> = new Map()
+  if (fullNames.length === 0) return out
+  await withDb(async (sql) => {
+    const secs = Math.max(1, Math.round(maxAgeMs / 1000))
+    const rows = await sql`
+      SELECT full_name, locale, resolved FROM repo_desc_probe
+      WHERE full_name = ANY(${fullNames})
+        AND updated_at > now() - ${secs} * interval '1 second'`
+    for (const row of rows) out.set(`${row.full_name}|${row.locale}`, Boolean(row.resolved))
+  })
+  return out
+}
+
+/** 写一条探测结论:resolved=true = 有确定结论(30 天免重试);false = 中断,下一轮立即重试。 */
+export async function upsertProbe(fullName: string, locale: string, resolved: boolean): Promise<void> {
+  await withDb(async (sql) => {
+    await sql`
+      INSERT INTO repo_desc_probe (full_name, locale, resolved, updated_at)
+      VALUES (${fullName}, ${locale}, ${resolved}, now())
+      ON CONFLICT (full_name, locale) DO UPDATE SET
+        resolved = ${resolved}, updated_at = now()`
+  })
+}
+
+/** 汇总全部榜头条目出收割队列:仓库 → 最佳热度分(榜序 × 10000 + 行号),升序返回仓库列表。 */
+export async function readAllHeadRepos(boardOrder: string[]): Promise<string[]> {
+  const best: Map<string, number> = new Map()
+  await withDb(async (sql) => {
+    const rows = await sql`SELECT board, payload FROM board_head WHERE item_count > 0`
+    for (const row of rows) {
+      const idx = boardOrder.indexOf(String(row.board))
+      if (idx < 0) continue
+      const items = (row.payload?.items ?? []) as Array<{ fullName?: string }>
+      for (let rank = 0; rank < items.length; rank++) {
+        const full = items[rank]?.fullName
+        if (!full) continue
+        const score = idx * 10000 + rank
+        const prev = best.get(full)
+        if (prev === undefined || score < prev) best.set(full, score)
+      }
+    }
+  })
+  return [...best.entries()].sort((a, b) => a[1] - b[1]).map(([full]) => full)
 }

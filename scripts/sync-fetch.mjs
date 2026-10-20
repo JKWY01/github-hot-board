@@ -15,10 +15,12 @@ const loadEnvValue = (key) => {
 
 const base = process.env.GHB_SITE || 'http://localhost:3000'
 const secret = process.env.CRON_SECRET || loadEnvValue('CRON_SECRET')
+// --prefill-only:POST ?boards=0 —— 跳过榜单本体,只跑库中现存榜头的描述收割(运修用)。
+const boardsOnly = process.argv.includes('--prefill-only') ? '?boards=0' : ''
 
 let res
 try {
-  res = await fetch(`${base}/api/sync`, {
+  res = await fetch(`${base}/api/sync${boardsOnly}`, {
     method: 'POST',
     headers: secret ? { authorization: `Bearer ${secret}` } : {},
   })
