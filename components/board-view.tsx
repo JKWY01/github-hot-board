@@ -91,6 +91,7 @@ export default async function BoardPageView({
             <li key={next}>
               <Link
                 href={`/${lang}/boards/${next}`}
+                prefetch={false}
                 className="inline-flex items-center gap-2 rounded-full border-[0.5px] border-black/10 bg-white px-3.5 py-2 text-[13px] font-medium text-ink/80 transition-colors hover:border-accent/40 hover:text-accent"
               >
                 {dict.shortBoards[next]}

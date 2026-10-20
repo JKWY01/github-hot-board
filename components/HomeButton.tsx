@@ -8,6 +8,7 @@ export default function HomeButton({ className = '' }: { className?: string }) {
   return (
     <Link
       href="/"
+      prefetch={false}
       className={`inline-flex items-center rounded-full bg-accent px-5 py-2.5 text-[13.5px] font-medium text-white transition-opacity hover:opacity-85 ${className}`}
     >
       <PendingDot>回到首页 · Back home</PendingDot>

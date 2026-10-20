@@ -56,6 +56,7 @@ export function HistoryView({
                 <Link
                   key={d.day}
                   href={`/${lang}/history/${slug}/${d.day}`}
+                  prefetch={false}
                   aria-current={active ? 'true' : undefined}
                   className={`rounded-full px-3 py-1.5 transition-colors ${
                     active ? 'bg-ink font-semibold text-white ring-[0.5px] ring-black/25' : 'font-medium text-ink/70 hover:bg-black/8 hover:text-ink'
@@ -118,7 +119,7 @@ export function HistoryView({
               </ul>
               <p className="mt-4 text-[12.5px] leading-relaxed text-ink/45">{h.note}</p>
               <p className="mt-6">
-                <Link href={`/${lang}/boards/${slug}`} className="text-[13px] font-medium text-accent-strong hover:underline">
+                <Link href={`/${lang}/boards/${slug}`} prefetch={false} className="text-[13px] font-medium text-accent-strong hover:underline">
                   ← {h.backToBoard}
                 </Link>
               </p>

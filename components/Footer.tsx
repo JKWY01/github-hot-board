@@ -24,7 +24,7 @@ export default function Footer({ dict }: { dict: Dict }) {
             <ul className="mt-3 grid grid-cols-2 gap-x-6 gap-y-2 text-[13px] text-ink/65">
               {BOARD_ORDER.map((slug) => (
                 <li key={slug}>
-                  <Link className="transition-colors hover:text-accent" href={`/${locale}/boards/${slug}`}>
+                  <Link className="transition-colors hover:text-accent" href={`/${locale}/boards/${slug}`} prefetch={false}>
                     {dict.shortBoards[slug]}
                   </Link>
                 </li>
@@ -40,6 +40,7 @@ export default function Footer({ dict }: { dict: Dict }) {
             <Link
               className="mt-4 inline-block text-[13px] text-ink/65 transition-colors hover:text-accent-strong"
               href={`/${locale}/history/overall`}
+              prefetch={false}
             >
               {dict.history.title} →
             </Link>

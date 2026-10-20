@@ -12,7 +12,7 @@ export default function Nav({ locale }: { locale: Locale }) {
   return (
     <header className="sticky top-0 z-50 border-b-[0.5px] border-black/10 bg-white/75 backdrop-blur-xl">
       <div className="mx-auto flex h-12 max-w-6xl items-center gap-3 px-4 sm:px-6">
-        <Link href={`/${locale}`} className="flex shrink-0 items-center gap-2" aria-label={dict.meta.siteName}>
+        <Link href={`/${locale}`} prefetch={false} className="flex shrink-0 items-center gap-2" aria-label={dict.meta.siteName}>
           <LogoMark size={20} />
           <span className="text-[15px] font-semibold tracking-tight">{dict.meta.siteName}</span>
         </Link>

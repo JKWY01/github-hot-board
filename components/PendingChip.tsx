@@ -32,6 +32,7 @@ export default function PendingChip({
   return (
     <Link
       href={href}
+      prefetch={false}
       aria-current={active ? 'page' : undefined}
       className={`language-chip ${active ? 'language-chip-active' : ''}`}
     >

@@ -78,12 +78,14 @@ export default async function HomePage({
           >
             <Link
               href={`/${locale}/boards/weekly`}
+              prefetch={false}
               className="inline-flex items-center rounded-full bg-accent px-6 py-3 text-[14px] font-medium text-white transition-opacity hover:opacity-85"
             >
               {dict.boards.weekly.name}
             </Link>
             <Link
               href={`/${locale}/boards/overall`}
+              prefetch={false}
               className="inline-flex items-center rounded-full border-[0.5px] border-black/15 bg-white px-6 py-3 text-[14px] font-medium text-ink transition-colors hover:border-accent hover:text-accent"
             >
               {dict.boards.overall.name}
@@ -110,6 +112,7 @@ export default async function HomePage({
               </div>
               <Link
                 href={`/${locale}/boards/weekly`}
+                prefetch={false}
                 className="text-[13.5px] font-medium text-accent-strong transition-opacity hover:opacity-75"
               >
                 {dict.ui.viewAll} &rarr;
@@ -132,6 +135,7 @@ export default async function HomePage({
             </div>
             <Link
               href={`/${locale}/boards/overall`}
+              prefetch={false}
               className="text-[13.5px] font-medium text-accent-strong transition-opacity hover:opacity-75"
             >
               {dict.ui.viewAll} &rarr;
@@ -157,6 +161,7 @@ export default async function HomePage({
               </div>
               <Link
                 href={`/${locale}/boards/milestone`}
+                prefetch={false}
                 className="text-[13.5px] font-medium text-accent-strong transition-opacity hover:opacity-75"
               >
                 {dict.ui.viewAll} &rarr;
@@ -194,6 +199,7 @@ export default async function HomePage({
                 <Reveal delay={(index % 3) * 60} className="h-full">
                   <Link
                     href={`/${locale}/boards/${board.slug}`}
+                    prefetch={false}
                     className="group flex h-full flex-col justify-between rounded-[22px] border-[0.5px] border-black/10 bg-white p-6 transition-shadow hover:shadow-[0_10px_36px_rgba(0,0,0,0.08)]"
                   >
                     <div>
