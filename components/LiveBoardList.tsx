@@ -70,6 +70,36 @@ export default function LiveBoardList({
   const rowElsRef = useRef(new Map<string, HTMLLIElement>())
   const itemsRef = useRef(items)
   itemsRef.current = items
+
+  // #r=owner/name:仓库档案页"跳转到榜"的锚。数据在客户端撑出来(轮询流),
+  // 浏览器原生 hash 跳转对不上动态行 —— 数据到货后自己滚动到目标行并划光一次。
+  const locateRef = useRef<string | null | undefined>(undefined)
+  useEffect(() => {
+    if (locateRef.current === undefined) {
+      const m = window.location.hash.match(/^#r=([^&]+)/)
+      locateRef.current = m ? decodeURIComponent(m[1]) : null
+    }
+  }, [])
+  useEffect(() => {
+    const target = locateRef.current
+    if (!target || items.length === 0) return
+    const el = rowElsRef.current.get(target)
+    if (!el) return // 不在当前页面上限内的名次不滚,保持诚实
+    locateRef.current = null
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    // 客户端导航后 Next 会先做自己的滚动处理(hash 目标不存在时回顶),
+    // 延迟一拍再定位,避免被 Next 的 scroll 覆盖。
+    const scrollTimer = window.setTimeout(() => {
+      el.scrollIntoView({ block: 'center', behavior: reduced ? 'auto' : 'smooth' })
+    }, 180)
+    el.classList.add('row-locate')
+    const flashTimer = window.setTimeout(() => el.classList.remove('row-locate'), 2800)
+    return () => {
+      window.clearTimeout(scrollTimer)
+      window.clearTimeout(flashTimer)
+      el.classList.remove('row-locate')
+    }
+  }, [items])
   const pendingRef = useRef<{
     order: Map<string, number>
     rects: Map<string, number>

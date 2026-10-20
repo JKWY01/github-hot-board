@@ -165,6 +165,11 @@
     animation: podium-glow 1.6s ease-out 1;
   }
 
+  /* 档案页跳榜定位 (#r=) 的目标行铺底 */
+  .row-locate {
+    animation: row-locate 2.4s ease-out 1;
+  }
+
   /* toast 提示 */
   .toast-in {
     animation: toast-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
@@ -186,6 +191,13 @@
   0% { box-shadow: 0 0 0 0 rgba(0, 113, 227, 0); }
   35% { box-shadow: 0 0 0 5px rgba(0, 113, 227, 0.16); }
   100% { box-shadow: 0 0 0 0 rgba(0, 113, 227, 0); }
+}
+
+/* 档案页 #r= 锚点定位:目标行以一次淡入淡出的蓝色铺底提示位置 */
+@keyframes row-locate {
+  0% { background-color: rgba(0, 103, 212, 0.13); }
+  55% { background-color: rgba(0, 103, 212, 0.06); }
+  100% { background-color: transparent; }
 }
 
 @keyframes toast-in {

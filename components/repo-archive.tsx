@@ -8,7 +8,7 @@ import { fmtDay, fmtNum } from '@/lib/format'
 import { altLangs } from '@/lib/locales'
 import type { RepoArchive } from '@/lib/repoarchive'
 import type { Locale } from '@/lib/types'
-import { ArchiveIcon, ForkIcon, StarIcon } from './Icons'
+import { ArchiveIcon, GithubIcon } from './Icons'
 
 type BoardSlug = (typeof BOARD_ORDER)[number]
 
@@ -16,27 +16,29 @@ type BoardSlug = (typeof BOARD_ORDER)[number]
 const KNOWN: readonly string[] = BOARD_ORDER
 type ArchRow = Omit<RepoArchive['appearances'][number], 'board'> & { board: BoardSlug }
 
-/** 16 语短文案(新组件自持,不动 16 份字典文件)。metaT 使用 {n}/{k}/{stars} 占位。 */
+const PLATE = 'rounded-[20px] border-[0.5px] border-black/10 bg-[#f5f5f7]'
+
+/** 16 语短文案(self-contained)。metaT 使用 {n}/{k}/{stars} 占位。 */
 const T: Record<
   Locale,
-  { kicker: string; current: string; history: string; offBoard: string; noDesc: string; updated: string; starUnit: string; forkUnit: string; back: string; bestAt: string; descNote: string; metaT: string; starTrend: string; rankTrend: string; noHistory: string }
+  { kicker: string; current: string; history: string; offBoard: string; noDesc: string; updated: string; starUnit: string; back: string; bestAt: string; descNote: string; metaT: string; starTrend: string; rankTrend: string; noHistory: string; starCap: string; forkCap: string; daysOn: string }
 > = {
-  en: { kicker: 'Repository archive', current: 'Current rankings', history: 'Rank, past 30 days', offBoard: 'Currently off the boards', noDesc: 'No translatable description yet — one arrives as the harvest finds it.', updated: 'Data at', starUnit: 'stars', forkUnit: 'forks', back: 'Back to boards', bestAt: 'Best', descNote: 'This description comes from the repository itself.', metaT: 'Real GitHub data: ranked on {n} board entries, best #{k}, {stars} stars — with a 30-day rank history.', starTrend: 'Cumulative stars', rankTrend: 'Rank movement', noHistory: 'No leaderboard records in the last 30 days.' },
-  zh: { kicker: '仓库档案', current: '当前上榜', history: '近 30 天势头', offBoard: '当前未上榜', noDesc: '暂无该语言的简介——收割到会自动出现。', updated: '数据截至', starUnit: '星', forkUnit: 'fork', back: '回到榜单', bestAt: '最好成绩', descNote: '简介来自仓库自身文档。', metaT: 'GitHub 真实数据:上榜记录 {n} 条,最好 #第{k}名,累计 {stars} 星,附近 30 天名次历史。', starTrend: '累计 Star 走势', rankTrend: '名次走势', noHistory: '近 30 天没有上榜记录。' },
-  'zh-TW': { kicker: '倉庫檔案', current: '當前上榜', history: '近 30 天勢頭', offBoard: '當前未上榜', noDesc: '尚無該語言的簡介——收割到會自動出現。', updated: '資料截至', starUnit: '星', forkUnit: 'fork', back: '回到榜單', bestAt: '最好成績', descNote: '簡介來自倉庫自身文件。', metaT: 'GitHub 真實資料:上榜紀錄 {n} 條,最好 #第{k}名,累計 {stars} 星,附近 30 天名次歷史。', starTrend: '累計 Star 走勢', rankTrend: '名次走勢', noHistory: '近 30 天沒有上榜紀錄。' },
-  ja: { kicker: 'リポジトリアーカイブ', current: '現在のランクイン', history: '直近30日の推移', offBoard: '現在ランク外', noDesc: 'この言語の説明はまだありません。取得後に自動で表示されます。', updated: 'データ時点', starUnit: 'スター', forkUnit: 'フォーク', back: 'ランキングへ戻る', bestAt: '最高順位', descNote: '説明はリポジトリ自身のドキュメント由来です。', metaT: 'GitHub の実データ:{n} ランキングに登場、最高 #{k}、スター {stars}。直近 30 日の順位履歴付き。', starTrend: 'スター累計の推移', rankTrend: 'ランキング推移', noHistory: '直近 30 日間のランクイン記録はありません。' },
-  ko: { kicker: '저장소 아카이브', current: '현재 순위', history: '최근 30일 추이', offBoard: '현재 순위 밖', noDesc: '이 언어 소개가 아직 없습니다. 수집되면 자동 표시됩니다.', updated: '데이터 기준', starUnit: '스타', forkUnit: '포크', back: '랭킹으로', bestAt: '최고 순위', descNote: '소개는 저장소 자체 문서에서 왔습니다.', metaT: 'GitHub 실제 데이터: {n}개 랭킹 등재, 최고 #{k}, 별 {stars}. 최근 30일 순위 기록 포함.', starTrend: '누적 스타 추이', rankTrend: '순위 추이', noHistory: '최근 30일간 기록이 없습니다.' },
-  de: { kicker: 'Repo-Archiv', current: 'Aktuelle Platzierungen', history: 'Verlauf der letzten 30 Tage', offBoard: 'Derzeit nicht in den Boards', noDesc: 'Noch keine Beschreibung in dieser Sprache – kommt automatisch.', updated: 'Datenstand', starUnit: 'Sterne', forkUnit: 'Forks', back: 'Zu den Boards', bestAt: 'Bestplatzierung', descNote: 'Diese Beschreibung stammt vom Repository.', metaT: 'Echte GitHub-Daten: auf {n} Boards gelistet, Bestplatzierung #{k}, {stars} Sterne – mit 30-Tage-Rankingverlauf.', starTrend: 'Kumulierte Sterne', rankTrend: 'Platzierungsverlauf', noHistory: 'Keine Ranglisten-Einträge in den letzten 30 Tagen.' },
-  fr: { kicker: 'Archive du dépôt', current: 'Classements actuels', history: 'Évolution sur 30 jours', offBoard: 'Actuellement hors classements', noDesc: 'Pas encore de description dans cette langue — elle apparaîtra automatiquement.', updated: 'Données au', starUnit: 'stars', forkUnit: 'forks', back: 'Retour aux classements', bestAt: 'Meilleur rang', descNote: 'Cette description provient du dépôt lui-même.', metaT: 'Données GitHub réelles : classé sur {n} classements, meilleur rang #{k}, {stars} stars — avec l’historique sur 30 jours.', starTrend: 'Étoiles cumulées', rankTrend: 'Évolution du rang', noHistory: 'Aucun classement au cours des 30 derniers jours.' },
-  es: { kicker: 'Archivo del repositorio', current: 'Clasificaciones actuales', history: 'Evolución de los últimos 30 días', offBoard: 'Fuera de los rankings actualmente', noDesc: 'Aún no hay descripción en este idioma — aparecerá automáticamente.', updated: 'Datos al', starUnit: 'estrellas', forkUnit: 'forks', back: 'Volver a los rankings', bestAt: 'Mejor puesto', descNote: 'Esta descripción procede del propio repositorio.', metaT: 'Datos reales de GitHub: en {n} rankings, mejor #{k}, {stars} estrellas — con historial de 30 días.', starTrend: 'Estrellas acumuladas', rankTrend: 'Evolución del puesto', noHistory: 'Sin registros en los últimos 30 días.' },
-  pt: { kicker: 'Arquivo do repositório', current: 'Colocações atuais', history: 'Evolução em 30 dias', offBoard: 'Fora dos rankings no momento', noDesc: 'Ainda sem descrição neste idioma — aparece automaticamente.', updated: 'Dados de', starUnit: 'estrelas', forkUnit: 'forks', back: 'Voltar aos rankings', bestAt: 'Melhor colocação', descNote: 'Esta descrição vem do próprio repositório.', metaT: 'Dados reais do GitHub: em {n} rankings, melhor #{k}, {stars} estrelas — com histórico de 30 dias.', starTrend: 'Estrelas acumuladas', rankTrend: 'Evolução da posição', noHistory: 'Sem registros nos últimos 30 dias.' },
-  it: { kicker: 'Archivio repository', current: 'Classifiche attuali', history: 'Andamento degli ultimi 30 giorni', offBoard: 'Attualmente fuori classifica', noDesc: 'Ancora nessuna descrizione in questa lingua — arriverà automaticamente.', updated: 'Dati al', starUnit: 'stelle', forkUnit: 'fork', back: 'Torna alle classifiche', bestAt: 'Miglior posizione', descNote: 'Questa descrizione proviene dal repository.', metaT: 'Dati reali da GitHub: in {n} classifiche, miglior #{k}, {stars} stelle — con cronologia di 30 giorni.', starTrend: 'Stelle cumulate', rankTrend: 'Andamento della posizione', noHistory: 'Nessun record negli ultimi 30 giorni.' },
-  ru: { kicker: 'Архив репозитория', current: 'Текущие места', history: 'Динамика за 30 дней', offBoard: 'Сейчас вне рейтингов', noDesc: 'Описания на этом языке пока нет — появится автоматически.', updated: 'Данные на', starUnit: 'звёзд', forkUnit: 'форков', back: 'К рейтингам', bestAt: 'Лучшее место', descNote: 'Описание взято из самого репозитория.', metaT: 'Реальные данные GitHub: в {n} рейтингах, лучшее #{k}, {stars} звёзд — с историей за 30 дней.', starTrend: 'Накопленные звёзды', rankTrend: 'Динамика мест', noHistory: 'Нет записей за последние 30 дней.' },
-  uk: { kicker: 'Архів репозиторію', current: 'Поточні місця', history: 'Динаміка за 30 днів', offBoard: 'Наразі поза рейтингами', noDesc: 'Опису цією мовою ще немає — з’явиться автоматично.', updated: 'Дані на', starUnit: 'зірок', forkUnit: 'форків', back: 'До рейтингів', bestAt: 'Найкраще місце', descNote: 'Опис узято з самого репозиторію.', metaT: 'Реальні дані GitHub: у {n} рейтингах, найкраще #{k}, {stars} зірок — з історією за 30 днів.', starTrend: 'Накоплені зірки', rankTrend: 'Динаміка місць', noHistory: 'Немає записів за останні 30 днів.' },
-  pl: { kicker: 'Archiwum repozytorium', current: 'Aktualne miejsca', history: 'Przebieg z 30 dni', offBoard: 'Obecnie poza rankingami', noDesc: 'Opisu w tym języku jeszcze nie ma — pojawi się automatycznie.', updated: 'Dane na', starUnit: 'gwiazdek', forkUnit: 'forków', back: 'Powrót do rankingów', bestAt: 'Najlepsze miejsce', descNote: 'Opis pochodzi z samego repozytorium.', metaT: 'Prawdziwe dane GitHub: w {n} rankingach, najlepsze #{k}, {stars} gwiazdek — z historią 30 dni.', starTrend: 'Skumulowane gwiazdki', rankTrend: 'Przebieg miejsc', noHistory: 'Brak wpisów w ostatnich 30 dniach.' },
-  tr: { kicker: 'Depo arşivi', current: 'Mevcut sıralamalar', history: 'Son 30 gün grafiği', offBoard: 'Şu an sıralamalarda yok', noDesc: 'Bu dilde henüz açıklama yok — otomatik görünecek.', updated: 'Veri tarihi', starUnit: 'yıldız', forkUnit: 'fork', back: 'Sıralamalara dön', bestAt: 'En iyi sıra', descNote: 'Bu açıklama depodan gelir.', metaT: 'Gerçek GitHub verisi: {n} sıralamada, en iyi #{k}, {stars} yıldız — 30 günlük geçmişle.', starTrend: 'Toplam yıldız', rankTrend: 'Sıra grafiği', noHistory: 'Son 30 günde sıralama kaydı yok.' },
-  vi: { kicker: 'Hồ sơ kho lưu trữ', current: 'Thứ hạng hiện tại', history: 'Diễn biến 30 ngày', offBoard: 'Hiện không có trong bảng xếp hạng', noDesc: 'Chưa có mô tả ngôn ngữ này — sẽ tự xuất hiện.', updated: 'Dữ liệu tại', starUnit: 'sao', forkUnit: 'fork', back: 'Về bảng xếp hạng', bestAt: 'Thứ hạng tốt nhất', descNote: 'Mô tả đến từ chính kho lưu trữ.', metaT: 'Dữ liệu GitHub thật: có mặt trên {n} bảng, cao nhất #{k}, {stars} sao — kèm lịch sử 30 ngày.', starTrend: 'Tổng số sao', rankTrend: 'Diễn biến thứ hạng', noHistory: 'Không có bản ghi nào trong 30 ngày qua.' },
-  id: { kicker: 'Arsip repositori', current: 'Peringkat saat ini', history: 'Grafik 30 hari', offBoard: 'Saat ini tidak ada di papan', noDesc: 'Belum ada deskripsi untuk bahasa ini — muncul otomatis.', updated: 'Data per', starUnit: 'bintang', forkUnit: 'fork', back: 'Kembali ke papan', bestAt: 'Peringkat terbaik', descNote: 'Deskripsi berasal dari repositori itu sendiri.', metaT: 'Data nyata GitHub: masuk {n} papan, terbaik #{k}, {stars} bintang — dengan riwayat 30 hari.', starTrend: 'Jumlah bintang kumulatif', rankTrend: 'Pergerakan peringkat', noHistory: 'Tidak ada catatan dalam 30 hari terakhir.' },
+  en: { kicker: 'Repository archive', current: 'Current rankings', history: 'Momentum, past 30 days', offBoard: 'Currently off the boards', noDesc: 'No translatable description yet — one arrives as the harvest finds it.', updated: 'Data at', starUnit: 'stars', back: 'Back to boards', bestAt: 'Best', descNote: 'This description comes from the repository itself.', metaT: 'Real GitHub data: ranked on {n} board entries, best #{k}, {stars} stars — with a 30-day rank history.', starCap: 'Total stars', forkCap: 'Total forks', daysOn: 'Days on boards (30d)', starTrend: 'Cumulative stars', rankTrend: 'Rank movement', noHistory: 'No leaderboard records in the last 30 days.' },
+  zh: { kicker: '仓库档案', current: '当前上榜', history: '近 30 天势头', offBoard: '当前未上榜', noDesc: '暂无该语言的简介——收割到会自动出现。', updated: '数据截至', starUnit: '星', back: '回到榜单', bestAt: '最好成绩', descNote: '简介来自仓库自身文档。', metaT: 'GitHub 真实数据:上榜记录 {n} 条,最好 #第{k}名,累计 {stars} 星,附近 30 天名次历史。', starCap: '累计 Star', forkCap: 'Fork 总数', daysOn: '近 30 天在榜天数', starTrend: '累计 Star 走势', rankTrend: '名次走势', noHistory: '近 30 天没有上榜记录。' },
+  'zh-TW': { kicker: '倉庫檔案', current: '當前上榜', history: '近 30 天勢頭', offBoard: '當前未上榜', noDesc: '尚無該語言的簡介——收割到會自動出現。', updated: '資料截至', starUnit: '星', back: '回到榜單', bestAt: '最好成績', descNote: '簡介來自倉庫自身文件。', metaT: 'GitHub 真實資料:上榜紀錄 {n} 條,最好 #第{k}名,累計 {stars} 星,附近 30 天名次歷史。', starCap: '累計 Star', forkCap: 'Fork 總數', daysOn: '近 30 天在榜天數', starTrend: '累計 Star 走勢', rankTrend: '名次走勢', noHistory: '近 30 天沒有上榜紀錄。' },
+  ja: { kicker: 'リポジトリアーカイブ', current: '現在のランクイン', history: '直近30日の推移', offBoard: '現在ランク外', noDesc: 'この言語の説明はまだありません。取得後に自動で表示されます。', updated: 'データ時点', starUnit: 'スター', back: 'ランキングへ戻る', bestAt: '最高順位', descNote: '説明はリポジトリ自身のドキュメント由来です。', metaT: 'GitHub の実データ:{n} ランキングに登場、最高 #{k}、スター {stars}。直近 30 日の順位履歴付き。', starCap: '累計スター', forkCap: 'フォーク数', daysOn: '直近 30 日のランクイン日数', starTrend: 'スター累計の推移', rankTrend: 'ランキング推移', noHistory: '直近 30 日間のランクイン記録はありません。' },
+  ko: { kicker: '저장소 아카이브', current: '현재 순위', history: '최근 30일 추이', offBoard: '현재 순위 밖', noDesc: '이 언어 소개가 아직 없습니다. 수집되면 자동 표시됩니다.', updated: '데이터 기준', starUnit: '스타', back: '랭킹으로', bestAt: '최고 순위', descNote: '소개는 저장소 자체 문서에서 왔습니다.', metaT: 'GitHub 실제 데이터: {n}개 랭킹 등재, 최고 #{k}, 별 {stars}. 최근 30일 순위 기록 포함.', starCap: '누적 스타', forkCap: '포크 수', daysOn: '최근 30일 기록 일수', starTrend: '누적 스타 추이', rankTrend: '순위 추이', noHistory: '최근 30일간 기록이 없습니다.' },
+  de: { kicker: 'Repo-Archiv', current: 'Aktuelle Platzierungen', history: 'Verlauf der letzten 30 Tage', offBoard: 'Derzeit nicht in den Boards', noDesc: 'Noch keine Beschreibung in dieser Sprache – kommt automatisch.', updated: 'Datenstand', starUnit: 'Sterne', back: 'Zu den Boards', bestAt: 'Bestplatzierung', descNote: 'Diese Beschreibung stammt vom Repository.', metaT: 'Echte GitHub-Daten: auf {n} Boards gelistet, Bestplatzierung #{k}, {stars} Sterne – mit 30-Tage-Rankingverlauf.', starCap: 'Sterne total', forkCap: 'Forks total', daysOn: 'Ranking-Tage (30 T.)', starTrend: 'Kumulierte Sterne', rankTrend: 'Platzierungsverlauf', noHistory: 'Keine Ranglisten-Einträge in den letzten 30 Tagen.' },
+  fr: { kicker: 'Archive du dépôt', current: 'Classements actuels', history: 'Évolution sur 30 jours', offBoard: 'Actuellement hors classements', noDesc: 'Pas encore de description dans cette langue — elle apparaîtra automatiquement.', updated: 'Données au', starUnit: 'stars', back: 'Retour aux classements', bestAt: 'Meilleur rang', descNote: 'Cette description provient du dépôt lui-même.', metaT: 'Données GitHub réelles : classé sur {n} classements, meilleur rang #{k}, {stars} stars — avec l’historique sur 30 jours.', starCap: 'Étoiles totales', forkCap: 'Forks totaux', daysOn: 'Jours classés (30 j)', starTrend: 'Étoiles cumulées', rankTrend: 'Évolution du rang', noHistory: 'Aucun classement au cours des 30 derniers jours.' },
+  es: { kicker: 'Archivo del repositorio', current: 'Clasificaciones actuales', history: 'Evolución de los últimos 30 días', offBoard: 'Fuera de los rankings actualmente', noDesc: 'Aún no hay descripción en este idioma — aparecerá automáticamente.', updated: 'Datos al', starUnit: 'estrellas', back: 'Volver a los rankings', bestAt: 'Mejor puesto', descNote: 'Esta descripción procede del propio repositorio.', metaT: 'Datos reales de GitHub: en {n} rankings, mejor #{k}, {stars} estrellas — con historial de 30 días.', starCap: 'Estrellas totales', forkCap: 'Forks totales', daysOn: 'Días en rankings (30 d)', starTrend: 'Estrellas acumuladas', rankTrend: 'Evolución del puesto', noHistory: 'Sin registros en los últimos 30 días.' },
+  pt: { kicker: 'Arquivo do repositório', current: 'Colocações atuais', history: 'Evolução em 30 dias', offBoard: 'Fora dos rankings no momento', noDesc: 'Ainda sem descrição neste idioma — aparece automaticamente.', updated: 'Dados de', starUnit: 'estrelas', back: 'Voltar aos rankings', bestAt: 'Melhor colocação', descNote: 'Esta descrição vem do próprio repositório.', metaT: 'Dados reais do GitHub: em {n} rankings, melhor #{k}, {stars} estrelas — com histórico de 30 dias.', starCap: 'Total de estrelas', forkCap: 'Total de forks', daysOn: 'Dias nos rankings (30 d)', starTrend: 'Estrelas acumuladas', rankTrend: 'Evolução da posição', noHistory: 'Sem registros nos últimos 30 dias.' },
+  it: { kicker: 'Archivio repository', current: 'Classifiche attuali', history: 'Andamento degli ultimi 30 giorni', offBoard: 'Attualmente fuori classifica', noDesc: 'Ancora nessuna descrizione in questa lingua — arriverà automaticamente.', updated: 'Dati al', starUnit: 'stelle', back: 'Torna alle classifiche', bestAt: 'Miglior posizione', descNote: 'Questa descrizione proviene dal repository.', metaT: 'Dati reali da GitHub: in {n} classifiche, miglior #{k}, {stars} stelle — con cronologia di 30 giorni.', starCap: 'Stelle totali', forkCap: 'Fork totali', daysOn: 'Giorni in classifica (30 g)', starTrend: 'Stelle cumulate', rankTrend: 'Andamento della posizione', noHistory: 'Nessun record negli ultimi 30 giorni.' },
+  ru: { kicker: 'Архив репозитория', current: 'Текущие места', history: 'Динамика за 30 дней', offBoard: 'Сейчас вне рейтингов', noDesc: 'Описания на этом языке пока нет — появится автоматически.', updated: 'Данные на', starUnit: 'звёзд', back: 'К рейтингам', bestAt: 'Лучшее место', descNote: 'Описание взято из самого репозитория.', metaT: 'Реальные данные GitHub: в {n} рейтингах, лучшее #{k}, {stars} звёзд — с историей за 30 дней.', starCap: 'Всего звёзд', forkCap: 'Всего форков', daysOn: 'Дней в рейтингах (30 дн.)', starTrend: 'Накопленные звёзды', rankTrend: 'Динамика мест', noHistory: 'Нет записей за последние 30 дней.' },
+  uk: { kicker: 'Архів репозиторію', current: 'Поточні місця', history: 'Динаміка за 30 днів', offBoard: 'Наразі поза рейтингами', noDesc: 'Опису цією мовою ще немає — з’явиться автоматично.', updated: 'Дані на', starUnit: 'зірок', back: 'До рейтингів', bestAt: 'Найкраще місце', descNote: 'Опис узято з самого репозиторію.', metaT: 'Реальні дані GitHub: у {n} рейтингах, найкраще #{k}, {stars} зірок — з історією за 30 днів.', starCap: 'Усього зірок', forkCap: 'Усього форків', daysOn: 'Днів у рейтингах (30 дн.)', starTrend: 'Накоплені зірки', rankTrend: 'Динаміка місць', noHistory: 'Немає записів за останні 30 днів.' },
+  pl: { kicker: 'Archiwum repozytorium', current: 'Aktualne miejsca', history: 'Przebieg z 30 dni', offBoard: 'Obecnie poza rankingami', noDesc: 'Opisu w tym języku jeszcze nie ma — pojawi się automatycznie.', updated: 'Dane na', starUnit: 'gwiazdek', back: 'Powrót do rankingów', bestAt: 'Najlepsze miejsce', descNote: 'Opis pochodzi z samego repozytorium.', metaT: 'Prawdziwe dane GitHub: w {n} rankingach, najlepsze #{k}, {stars} gwiazdek — z historią 30 dni.', starCap: 'Wszystkich gwiazdek', forkCap: 'Wszystkich forków', daysOn: 'Dni w rankingach (30 d)', starTrend: 'Skumulowane gwiazdki', rankTrend: 'Przebieg miejsc', noHistory: 'Brak wpisów w ostatnich 30 dniach.' },
+  tr: { kicker: 'Depo arşivi', current: 'Mevcut sıralamalar', history: 'Son 30 gün grafiği', offBoard: 'Şu an sıralamalarda yok', noDesc: 'Bu dilde henüz açıklama yok — otomatik görünecek.', updated: 'Veri tarihi', starUnit: 'yıldız', back: 'Sıralamalara dön', bestAt: 'En iyi sıra', descNote: 'Bu açıklama depodan gelir.', metaT: 'Gerçek GitHub verisi: {n} sıralamada, en iyi #{k}, {stars} yıldız — 30 günlük geçmişle.', starCap: 'Toplam yıldız', forkCap: 'Toplam fork', daysOn: 'Son 30 günde sıralama günü', starTrend: 'Toplam yıldız', rankTrend: 'Sıra grafiği', noHistory: 'Son 30 günde sıralama kaydı yok.' },
+  vi: { kicker: 'Hồ sơ kho lưu trữ', current: 'Thứ hạng hiện tại', history: 'Diễn biến 30 ngày', offBoard: 'Hiện không có trong bảng xếp hạng', noDesc: 'Chưa có mô tả ngôn ngữ này — sẽ tự xuất hiện.', updated: 'Dữ liệu tại', starUnit: 'sao', back: 'Về bảng xếp hạng', bestAt: 'Thứ hạng tốt nhất', descNote: 'Mô tả đến từ chính kho lưu trữ.', metaT: 'Dữ liệu GitHub thật: có mặt trên {n} bảng, cao nhất #{k}, {stars} sao — kèm lịch sử 30 ngày.', starCap: 'Tổng sao', forkCap: 'Tổng fork', daysOn: 'Số ngày có mặt (30 ngày)', starTrend: 'Tổng số sao', rankTrend: 'Diễn biến thứ hạng', noHistory: 'Không có bản ghi nào trong 30 ngày qua.' },
+  id: { kicker: 'Arsip repositori', current: 'Peringkat saat ini', history: 'Grafik 30 hari', offBoard: 'Saat ini tidak ada di papan', noDesc: 'Belum ada deskripsi untuk bahasa ini — muncul otomatis.', updated: 'Data per', starUnit: 'bintang', back: 'Kembali ke papan', bestAt: 'Peringkat terbaik', descNote: 'Deskripsi berasal dari repositori itu sendiri.', metaT: 'Data nyata GitHub: masuk {n} papan, terbaik #{k}, {stars} bintang — dengan riwayat 30 hari.', starCap: 'Total bintang', forkCap: 'Total fork', daysOn: 'Hari di papan (30 hari)', starTrend: 'Jumlah bintang kumulatif', rankTrend: 'Pergerakan peringkat', noHistory: 'Tidak ada catatan dalam 30 hari terakhir.' },
 }
 
 /** 先现役、后老兵,每种语言/榜只保留"最近一次"记录,顺序 = 榜单官方顺序。 */
@@ -67,13 +69,15 @@ export default function RepoArchiveView({
   const rows = sortedAppearances(archive)
   const hasCurrent = archive.appearances.some((a) => a.current)
   const best = rows.reduce((m, a) => (a.rank < m.rank ? a : m), rows[0])
+  const topPlate = best.rank <= 3
   const boardLabel = (a: { board: BoardSlug; language: string }) => {
     const base = dict.boards[a.board]?.name ?? a.board
     return a.language ? `${base} · ${facetDisplay(a.language)}` : base
   }
   const shortBoard = (board: BoardSlug) => dict.shortBoards[board] ?? dict.boards[board]?.name ?? board
+  // 跳榜锚点:LiveBoardList 数据到货后滚到对应行并划光
+  const anchor = `#r=${encodeURIComponent(archive.fullName)}`
 
-  // 图表数据:star = 每日取各榜里最大的全量星数(同一拍,值恒等,跨榜拼接无伪);rank = 每榜一条线。
   const starByDay = new Map<string, number>()
   for (const d of archive.daily) {
     const cur = starByDay.get(d.day) ?? 0
@@ -82,16 +86,17 @@ export default function RepoArchiveView({
   const starPoints = [...starByDay.entries()]
     .sort((a, b) => a[0].localeCompare(b[0]))
     .map(([day, value]) => ({ day, value }))
+  const daysOnBoard = starPoints.length
   const rankGroups: ChartSeries[] = dailyGroups(archive)
     .map(([board, points]) => ({
       board,
       label: shortBoard(board),
       points: points.map((p) => ({ day: p.day, value: p.rank })),
     }))
-    .reverse() // 官方榜序:总榜在前
+    .reverse()
 
   return (
-    <div className="mx-auto max-w-3xl px-5 pb-20 pt-12 sm:px-6">
+    <div className="mx-auto max-w-4xl px-5 pb-20 pt-12 sm:px-6">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: softwareJsonLd(archive, locale, descText) }}
@@ -101,64 +106,92 @@ export default function RepoArchiveView({
         dangerouslySetInnerHTML={{ __html: breadcrumbJsonLd(archive, locale) }}
       />
 
-      <p className="kicker">{dict.meta.siteName} · {t.kicker}</p>
-      <h1 className="hero-title mt-2 break-all">
-        <ArchiveIcon size={26} className="mr-2 inline-block align-[-3px] text-accent" />
-        {archive.fullName}
-      </h1>
+      {/* —— 英雄区:左名头右名牌 —— */}
+      <div className="grid items-start gap-8 md:grid-cols-[1fr_auto]">
+        <div className="min-w-0">
+          <p className="kicker">{dict.meta.siteName} · {t.kicker}</p>
+          <h1 className="hero-title mt-2 break-all">
+            <ArchiveIcon size={26} className="mr-2 inline-block align-[-3px] text-accent" />
+            {archive.fullName}
+          </h1>
+          {descText ? (
+            <p className="mt-4 max-w-2xl text-[15.5px] leading-relaxed text-ink/80">
+              {descText}
+              {' '}
+              <span className="text-[12px] text-sub">({t.descNote})</span>
+            </p>
+          ) : (
+            <p className="mt-4 max-w-2xl text-[14px] text-sub">{t.noDesc}</p>
+          )}
+          <p className="mt-4 flex items-center gap-x-4 gap-y-1 text-[13px] text-sub">
+            <span className="inline-flex items-center gap-1.5">
+              <span aria-hidden className={`inline-block h-1.5 w-1.5 rounded-full ${hasCurrent ? 'bg-good' : 'bg-black/30'}`} />
+              {t.updated} {fmtDay(archive.updatedAt, locale)}
+            </span>
+            <a href={archive.htmlUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 font-medium text-accent-strong hover:underline">
+              <GithubIcon size={13} />
+              {archive.fullName.split('/')[0]}
+            </a>
+          </p>
+        </div>
 
-      {descText ? (
-        <p className="mt-4 max-w-2xl text-[16px] leading-relaxed text-ink/80">
-          {descText}
-          {' '}
-          <span className="text-[12px] text-sub">({t.descNote})</span>
-        </p>
-      ) : (
-        <p className="mt-4 max-w-2xl text-[14.5px] text-sub">{t.noDesc}</p>
-      )}
+        {/* 名牌:档案页的视觉锚 —— 最好名次大数字 */}
+        <div className={`${PLATE} w-full max-w-[210px] px-6 py-6 text-center md:w-[210px] ${topPlate ? 'ring-1 ring-accent/35' : ''}`}>
+          <p className="text-[11.5px] font-semibold uppercase tracking-[0.18em] text-sub">{t.bestAt}</p>
+          <p className={`mt-1 text-[52px] font-bold leading-none tracking-tight tabular-nums ${topPlate ? 'text-accent' : 'text-ink'}`}>
+            #{best.rank}
+          </p>
+          <p className="mt-2 truncate text-[12.5px] text-sub">{boardLabel(best)}</p>
+        </div>
+      </div>
 
-      <p className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-sub">
-        <span className="inline-flex items-center gap-1 font-medium text-ink/70">
-          <StarIcon size={12} className="text-accent" />
-          {fmtNum(archive.totalStars ?? 0, locale)} {t.starUnit}
-        </span>
-        <span className="inline-flex items-center gap-1 font-medium text-ink/70">
-          <ForkIcon size={12} />
-          {fmtNum(archive.totalForks ?? 0, locale)} {t.forkUnit}
-        </span>
-        {best && (
-          <span className="font-medium text-ink/70">{t.bestAt}: #{best.rank} · {boardLabel(best)}</span>
-        )}
-        <span className="inline-flex items-center gap-1">
-          <span aria-hidden className={`inline-block h-1.5 w-1.5 rounded-full ${hasCurrent ? 'bg-good' : 'bg-black/30'}`} />
-          {t.updated} {fmtDay(archive.updatedAt, locale)}
-        </span>
-        <a href={archive.htmlUrl} target="_blank" rel="noopener noreferrer" className="font-medium text-accent-strong hover:underline">
-          GitHub ↗
-        </a>
-      </p>
+      {/* —— 三联砖 —— */}
+      <div className="mt-6 grid gap-3 sm:grid-cols-3">
+        <div className="card px-5 py-4">
+          <p className="text-[30px] font-bold leading-none tabular-nums tracking-tight text-ink">{fmtNum(archive.totalStars ?? 0, locale)}</p>
+          <p className="mt-2 text-[12.5px] text-sub">{t.starCap}</p>
+        </div>
+        <div className="card px-5 py-4">
+          <p className="text-[30px] font-bold leading-none tabular-nums tracking-tight text-ink">{fmtNum(archive.totalForks ?? 0, locale)}</p>
+          <p className="mt-2 text-[12.5px] text-sub">{t.forkCap}</p>
+        </div>
+        <div className="card px-5 py-4">
+          <p className="text-[30px] font-bold leading-none tabular-nums tracking-tight text-ink">{daysOnBoard}</p>
+          <p className="mt-2 text-[12.5px] text-sub">{t.daysOn}</p>
+        </div>
+      </div>
 
+      {/* —— 当前上榜:名次芯片 + 跳榜定位 —— */}
       <section className="mt-10">
         <h2 className="section-title">{t.current}</h2>
         {!hasCurrent && (
-          <p className="mt-2 text-[13px] text-sub">
+          <p className={`${PLATE} mt-3 flex items-center gap-2 px-4 py-3 text-[13px] text-sub`}>
+            <span aria-hidden className="inline-block h-1.5 w-1.5 rounded-full bg-black/30" />
             {t.offBoard}
             {archive.lastSeenAt ? ` · ${t.updated} ${fmtDay(archive.lastSeenAt, locale)}` : ''}
           </p>
         )}
         <ul className="card mt-4 divide-y-[0.5px] divide-black/6">
           {rows.map((a) => (
-            <li key={`${a.board}:${a.language}`} className="flex flex-wrap items-baseline gap-x-3 gap-y-1 px-4 py-3 sm:px-5">
-              <span className={`tabular-nums font-semibold ${a.rank <= 3 ? 'text-accent' : 'text-ink/80'}`}>#{a.rank}</span>
-              <span className="font-medium text-ink">{boardLabel(a)}</span>
-              <span className="text-[12.5px] text-sub">
-                {fmtNum(a.stars, locale)} {t.starUnit} · {fmtNum(a.forks, locale)} {t.forkUnit} · {dict.boards[a.board]?.metricLabel}
-                {!a.current && ` · ${fmtDay(a.takenAt, locale)}`}
+            <li key={`${a.board}:${a.language}`} className="flex items-center gap-3 px-4 py-3.5 sm:px-5">
+              <span
+                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-[#f5f5f7] text-[14px] font-semibold tabular-nums ${
+                  a.rank <= 3 ? 'text-accent' : 'text-ink/70'
+                }`}
+              >
+                {a.rank}
               </span>
+              <div className="min-w-0">
+                <p className="truncate text-[14.5px] font-medium text-ink">{boardLabel(a)}{!a.current && <span className="text-sub"> · {t.offBoard}</span>}</p>
+                <p className="text-[12.5px] text-sub">
+                  {fmtNum(a.stars, locale)} {t.starUnit} · {fmtNum(a.forks, locale)} fork · {dict.boards[a.board]?.metricLabel}
+                  {!a.current && ` · ${fmtDay(a.takenAt, locale)}`}
+                </p>
+              </div>
               <Link
-                href={a.language ? `/${locale}/boards/${a.board}/${facetLangSlug(a.language)}` : `/${locale}/boards/${a.board}`}
+                href={a.language ? `/${locale}/boards/${a.board}/${facetLangSlug(a.language)}${anchor}` : `/${locale}/boards/${a.board}${anchor}`}
                 prefetch={false}
-                className="ml-auto text-[12.5px] font-medium text-accent-strong hover:underline"
+                className="ml-auto text-[13px] font-medium text-accent-strong hover:underline"
                 aria-label={`${archive.fullName} · ${boardLabel(a)}`}
               >
                 {shortBoard(a.board)} {a.language ? `· ${facetDisplay(a.language)}` : ''} →
@@ -168,6 +201,7 @@ export default function RepoArchiveView({
         </ul>
       </section>
 
+      {/* —— 走势图 —— */}
       <section className="mt-10">
         <h2 className="section-title">{t.history}</h2>
         {archive.daily.length === 0 || starPoints.length === 0 ? (
@@ -195,7 +229,7 @@ export default function RepoArchiveView({
   )
 }
 
-/** 每榜的名次带:day 升序点列(走向图直接消费)。 */
+/** 每榜的名次带:day 升序点列。 */
 type DayPoint = { day: string; rank: number }
 
 function dailyGroups(archive: RepoArchive): Array<[BoardSlug, DayPoint[]]> {
