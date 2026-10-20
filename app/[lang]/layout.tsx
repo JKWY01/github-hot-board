@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation'
 import '../globals.css'
 import Nav from '@/components/Nav'
 import Footer from '@/components/Footer'
+import NavProgress from '@/components/NavProgress'
 import { getDict, isLocale } from './dictionaries'
 import { LOCALE_HTML_LANG } from '@/lib/locales'
 
@@ -37,6 +38,7 @@ export default async function RootLayout({
         <script
           dangerouslySetInnerHTML={{ __html: "document.documentElement.classList.add('js')" }}
         />
+        <NavProgress />
         <Nav locale={dict.locale} />
         <main className="min-h-[70vh]">{children}</main>
         <Footer dict={dict} />

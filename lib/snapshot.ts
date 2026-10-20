@@ -23,8 +23,6 @@ import type { BoardData } from './types'
 const DATABASE_URL = (process.env.DATABASE_URL ?? '').trim()
 const RETENTION_DAYS = Number(process.env.SNAPSHOT_RETENTION_DAYS) || 60
 
-let tableReady = false
-
 type Sql = import('postgres').Sql
 
 export function dbUrlConfigured(): boolean {
@@ -35,6 +33,59 @@ export function dbUrlConfigured(): boolean {
  * max=8:同步风暴(writeHeadAndRows 逐榜大事务)+ 访客读(RSC 洞)/api 读同时上线,
  * 2 条会被写队列把读请求拖到秒级,导航洞渲染变长(体感就是切榜卡)。Neon 免费层上限远高于此。 */
 let sqlSingleton: import('postgres').Sql | null = null
+let tableReady = false
+
+/** 全部 DDL 收拢到这里。访客读路径不再主动建表(冷启动省 1-6s),表缺失时按 42P01 自愈。 */
+async function migrate(sql: Sql): Promise<void> {
+  await sql`
+    CREATE TABLE IF NOT EXISTS board_head (
+      key          TEXT PRIMARY KEY,
+      board        TEXT NOT NULL,
+      language     TEXT NOT NULL DEFAULT '',
+      source       TEXT NOT NULL,
+      degraded     BOOLEAN NOT NULL DEFAULT false,
+      item_count   INTEGER NOT NULL DEFAULT 0,
+      generated_at TIMESTAMPTZ NOT NULL,
+      taken_at     TIMESTAMPTZ NOT NULL,
+      payload      JSONB NOT NULL
+    )`
+  await sql`
+    CREATE TABLE IF NOT EXISTS board_snapshots (
+      taken_at        TIMESTAMPTZ NOT NULL,
+      board           TEXT        NOT NULL,
+      language        TEXT        NOT NULL DEFAULT '',
+      source          TEXT        NOT NULL DEFAULT '',
+      rank            INTEGER     NOT NULL,
+      repo            TEXT        NOT NULL,
+      stars           BIGINT      NOT NULL,
+      forks           INTEGER     NOT NULL,
+      metric          DOUBLE PRECISION NOT NULL DEFAULT 0,
+      repo_created_at TIMESTAMPTZ
+    )`
+  // 往日榜(2026-10-19 起):明细表补 degraded 列(老库幂等迁移)
+  await sql`ALTER TABLE board_snapshots ADD COLUMN IF NOT EXISTS degraded BOOLEAN NOT NULL DEFAULT false`
+  await sql`CREATE INDEX IF NOT EXISTS board_snapshots_repo_time ON board_snapshots (repo, taken_at DESC)`
+  await sql`CREATE INDEX IF NOT EXISTS board_snapshots_board_time ON board_snapshots (board, language, taken_at DESC)`
+  // 仓库级多语描述缓存(访问驱动渐进填充,跨全榜复用)
+  await sql`
+    CREATE TABLE IF NOT EXISTS repo_desc (
+      full_name  TEXT PRIMARY KEY,
+      payload    JSONB NOT NULL DEFAULT '{}'::jsonb,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )`
+  // 收割进度:(仓库, 语言) 的探测结论。resolved=true 表示有确定结论
+  // (拿到描述 / 有翻译但无可用首句 / 该语言不存在),新鲜期内不再探测;
+  // false 表示上次探测被网络/限流打断,下一轮同步立即重试。
+  await sql`
+    CREATE TABLE IF NOT EXISTS repo_desc_probe (
+      full_name  TEXT NOT NULL,
+      locale     TEXT NOT NULL,
+      resolved   BOOLEAN NOT NULL,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      PRIMARY KEY (full_name, locale)
+    )`
+  tableReady = true
+}
 
 async function withDb<T>(fn: (sql: Sql) => Promise<T>): Promise<T | undefined> {
   if (!DATABASE_URL) return undefined
@@ -56,67 +107,23 @@ async function withDb<T>(fn: (sql: Sql) => Promise<T>): Promise<T | undefined> {
     }
     const sql = sqlSingleton
     try {
-      if (!tableReady) {
-        await sql`
-          CREATE TABLE IF NOT EXISTS board_head (
-            key          TEXT PRIMARY KEY,
-            board        TEXT NOT NULL,
-            language     TEXT NOT NULL DEFAULT '',
-            source       TEXT NOT NULL,
-            degraded     BOOLEAN NOT NULL DEFAULT false,
-            item_count   INTEGER NOT NULL DEFAULT 0,
-            generated_at TIMESTAMPTZ NOT NULL,
-            taken_at     TIMESTAMPTZ NOT NULL,
-            payload      JSONB NOT NULL
-      )`
-        await sql`
-          CREATE TABLE IF NOT EXISTS board_snapshots (
-            taken_at        TIMESTAMPTZ NOT NULL,
-            board           TEXT        NOT NULL,
-            language        TEXT        NOT NULL DEFAULT '',
-            source          TEXT        NOT NULL DEFAULT '',
-            rank            INTEGER     NOT NULL,
-            repo            TEXT        NOT NULL,
-            stars           BIGINT      NOT NULL,
-            forks           INTEGER     NOT NULL,
-            metric          DOUBLE PRECISION NOT NULL DEFAULT 0,
-            repo_created_at TIMESTAMPTZ
-          )`
-        // 往日榜(2026-10-19 起):明细表补 degraded 列(老库幂等迁移)
-        await sql`ALTER TABLE board_snapshots ADD COLUMN IF NOT EXISTS degraded BOOLEAN NOT NULL DEFAULT false`
-        await sql`CREATE INDEX IF NOT EXISTS board_snapshots_repo_time ON board_snapshots (repo, taken_at DESC)`
-        await sql`CREATE INDEX IF NOT EXISTS board_snapshots_board_time ON board_snapshots (board, language, taken_at DESC)`
-        // 仓库级多语描述缓存(访问驱动渐进填充,跨全榜复用)
-        await sql`
-          CREATE TABLE IF NOT EXISTS repo_desc (
-            full_name  TEXT PRIMARY KEY,
-            payload    JSONB NOT NULL DEFAULT '{}'::jsonb,
-            updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
-          )`
-        // 收割进度:(仓库, 语言) 的探测结论。resolved=true 表示有确定结论
-        // (拿到描述 / 有翻译但无可用首句 / 该语言不存在),新鲜期内不再探测;
-        // false 表示上次探测被网络/限流打断,下一轮同步立即重试。
-        await sql`
-          CREATE TABLE IF NOT EXISTS repo_desc_probe (
-            full_name  TEXT NOT NULL,
-            locale     TEXT NOT NULL,
-            resolved   BOOLEAN NOT NULL,
-            updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-            PRIMARY KEY (full_name, locale)
-          )`
-        tableReady = true
-      }
       return await fn(sql)
     } catch (error) {
-      // 库不可用/连接死亡时绝不拖垮调用方(读路径会自动回退磁盘/现场拉取);
-      // 丢弃单例连接,下一次调用用全新客户端重建(建表语句 IF NOT EXISTS 幂等)。
-      sqlSingleton = null
-      tableReady = false
-      console.error('[snapshot]', error instanceof Error ? error.message : error)
-      return undefined
+      // 访客冷启动跳过了建表:撞到"表不存在"(42P01)时补一次迁移再重试,
+      // 之后 tableReady 置位,正常路径零额外往返。
+      const code = (error as { code?: string })?.code
+      const msg = error instanceof Error ? error.message : String(error)
+      if ((code === '42P01' || msg.includes('does not exist')) && !tableReady) {
+        await migrate(sql)
+        return await fn(sql)
+      }
+      throw error
     }
   } catch (error) {
-    // 配置/建连失败:静默回退
+    // 库不可用/连接死亡时绝不拖垮调用方(读路径会自动回退磁盘/现场拉取);
+    // 丢弃单例连接,下一次调用用全新客户端重建(建表语句 IF NOT EXISTS 幂等)。
+    sqlSingleton = null
+    tableReady = false
     console.error('[snapshot]', error instanceof Error ? error.message : error)
     return undefined
   }
@@ -343,16 +350,26 @@ export async function readRepoArchiveRows(fullName: string): Promise<{
   return (await withDb(async (sql) => {
     // 每个 (榜, 语言) 的"最近一次在榜"记录 —— 不限时间窗:
     // taken_at 在 3 天内 = 现役(current);更早 = 退榜老兵(档案页诚实展示最后一次数据)。
-    const rows = await sql`
-      SELECT DISTINCT ON (board, language)
-             board, language, rank, stars, forks, metric, source, degraded, taken_at
-      FROM board_snapshots
-      WHERE repo = ${fullName}
-      ORDER BY board, language, taken_at DESC`
-    const appearances = (rows as unknown as Array<{
-      board: string; language: string; rank: number; stars: number | string
-      forks: number; metric: number | string; source: string; degraded: boolean; taken_at: Date
-    }>).map((r) => {
+    // 两查无依赖,并行发(省一次 Neon 往返串行,冷访明显变快)。
+    const [rows, band] = await Promise.all([
+      sql`
+        SELECT DISTINCT ON (board, language)
+               board, language, rank, stars, forks, metric, source, degraded, taken_at
+        FROM board_snapshots
+        WHERE repo = ${fullName}
+        ORDER BY board, language, taken_at DESC`,
+      sql`
+        SELECT DISTINCT ON (board, date_trunc('day', taken_at))
+               to_char(date_trunc('day', taken_at), 'YYYY-MM-DD') AS day,
+               board, rank, metric, stars
+        FROM board_snapshots
+        WHERE repo = ${fullName} AND language = '' AND taken_at > now() - interval '30 days'
+        ORDER BY board, date_trunc('day', taken_at), taken_at DESC`,
+    ]) as unknown as [
+      Array<{ board: string; language: string; rank: number; stars: number | string; forks: number; metric: number | string; source: string; degraded: boolean; taken_at: Date }>,
+      Array<{ day: string; board: string; rank: number; metric: number | string; stars: number | string }>,
+    ]
+    const appearances = rows.map((r) => {
       const takenAt = new Date(r.taken_at)
       return {
         board: r.board,
@@ -370,14 +387,7 @@ export async function readRepoArchiveRows(fullName: string): Promise<{
 
     // 近 30 天、基准口径(language='')每日最后一拍的 (榜, 名次, 星总量) 序列:档案页走势图用。
     // stars = 拍摄当时的仓库全量星数(与所在榜无关),所以星线可以跨榜拼接。
-    const band = await sql`
-      SELECT DISTINCT ON (board, date_trunc('day', taken_at))
-             to_char(date_trunc('day', taken_at), 'YYYY-MM-DD') AS day,
-             board, rank, metric, stars
-      FROM board_snapshots
-      WHERE repo = ${fullName} AND language = '' AND taken_at > now() - interval '30 days'
-      ORDER BY board, date_trunc('day', taken_at), taken_at DESC`
-    const daily = (band as unknown as Array<{ day: string; board: string; rank: number; metric: number | string; stars: number | string }>).map(
+    const daily = band.map(
       (r) => ({ day: r.day, board: r.board, rank: Number(r.rank), metric: Number(r.metric), stars: Number(r.stars) }),
     )
 

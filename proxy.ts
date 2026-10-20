@@ -15,22 +15,38 @@ async function repoWasOnBoard(owner: string, repo: string): Promise<boolean | nu
   const fname = `${owner}/${repo}`
   const now = Date.now()
   if (repoSet === null || now - repoSetAt > REPO_SET_TTL) {
-    try {
-      const url = process.env.DATABASE_URL
-      if (!url) throw new Error('no DATABASE_URL')
-      const sql = postgres(url, { max: 2, idle_timeout: 20, connect_timeout: 8 })
-      try {
-        const rows = await sql`SELECT DISTINCT repo FROM board_snapshots`
-        repoSet = new Set(rows.map((r) => r.repo as string))
-        repoSetAt = now
-      } finally {
-        await sql.end()
-      }
-    } catch {
-      return null
+    // 刷新不再挡请求:用过期名单先答(没有就降级放行),查库在后台续。省掉一次
+    // 串行 Neon 往返——此前每次 TTL 过期的档案访问都要先吃 0.5-1.5s。
+    if (repoSet !== null) {
+      repoSetAt = now // 防止并发下每次都再挂后台刷新
+      void refreshRepoSet()
+      return repoSet.has(fname) ?? null
     }
+    await refreshRepoSet()
   }
   return repoSet?.has(fname) ?? null
+}
+
+let refreshing = false
+async function refreshRepoSet(): Promise<void> {
+  if (refreshing) return
+  refreshing = true
+  try {
+    const url = process.env.DATABASE_URL
+    if (!url) throw new Error('no DATABASE_URL')
+    const sql = postgres(url, { max: 2, idle_timeout: 20, connect_timeout: 8 })
+    try {
+      const rows = await sql`SELECT DISTINCT repo FROM board_snapshots`
+      repoSet = new Set(rows.map((r) => r.repo as string))
+      repoSetAt = Date.now()
+    } finally {
+      await sql.end()
+    }
+  } catch {
+    // 拿不到就保持旧名单;真的没有名单时让页内 notFound 兜底
+  } finally {
+    refreshing = false
+  }
 }
 
 /** Accept-Language 最佳匹配; scraper/空头一律默认英文。 */

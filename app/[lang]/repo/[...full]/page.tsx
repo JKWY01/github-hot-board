@@ -55,11 +55,15 @@ export default async function RepoPage({
   const fullName = fullNameOf(full)
   if (!fullName) notFound()
 
-  const archive = await getRepoArchiveCached(fullName)
+  // 档案与描述两读无依赖,并行省一次 Neon 往返串行(冷访 1.7s→约减半)
+  const [archive, descsMap] = await Promise.all([
+    getRepoArchiveCached(fullName),
+    readRepoDescs([fullName]),
+  ])
   if (!archive) notFound()
 
   // 视角语言描述合并在缓存外(与榜单洞同一纪律):zh 页面用 zh 描述,缺翻译回落 en 原文。
-  const descs = (await readRepoDescs([fullName])).get(fullName)
+  const descs = descsMap.get(fullName)
   const descText = descs?.[lang] ?? descs?.en ?? null
 
   return <RepoArchiveView archive={archive} locale={lang} descText={descText} />

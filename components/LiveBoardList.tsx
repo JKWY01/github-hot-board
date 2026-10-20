@@ -448,19 +448,26 @@ export default function LiveBoardList({
                     <Link
                       href={`/${locale}/repo/${item.fullName}`}
                       prefetch={false}
-                      aria-label={`${item.fullName} · 档案`}
-                      className="shrink-0 text-ink/28 transition-colors hover:text-accent"
+                      aria-label={`${item.fullName} · ${strings.drawer.archive}`}
+                      className="inline-flex h-7 shrink-0 items-center rounded-full bg-[#f5f5f7] px-2.5 text-ink/65 transition-colors hover:bg-black/8 hover:text-ink"
+                      // 悬停预热:普通 GET 会在服务端把 'use cache' 档案缓存烧热,
+                      // 真正点击时大概率是热渲染(只省时,不碰 RSC 路由,与 #412 无关)
+                      onMouseEnter={() => {
+                        fetch(`/${locale}/repo/${item.fullName}`).catch(() => {})
+                      }}
                     >
-                      <ArchiveIcon size={12} />
+                      <ArchiveIcon size={14} />
                     </Link>
+                    {/* GitHub 门:黑底胶囊 + 字标,一眼可点(出站查看仓库详情) */}
                     <a
                       href={item.htmlUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       aria-label={`GitHub · ${item.fullName}`}
-                      className="shrink-0 text-ink/28 transition-colors hover:text-accent"
+                      className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full bg-ink px-3 text-[12px] font-semibold tracking-tight text-white transition-opacity hover:opacity-80"
                     >
-                      <GithubIcon size={12} />
+                      <GithubIcon size={14} />
+                      GitHub
                     </a>
                     {flag && flagBadge(flag.kind, flag.delta, strings)}
                   </div>
