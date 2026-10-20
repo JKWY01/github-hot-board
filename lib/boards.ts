@@ -116,12 +116,12 @@ function toItems(repos: PoolRepo[], decorate?: (item: BoardItem, repo: PoolRepo)
 
 export async function getOverallData(language?: string): Promise<BoardData> {
   const q = `stars:>1000 fork:false${language ? ` language:${language}` : ''}`
-  // 按星排序的第 1 页本身就是 Top100，无需更多页
-  const repos = await ghSearch(q, { pages: 1 })
+  // 星数排序第 2 页到 Top200(每页多 1 次 Search 调用,池子节奏下很便宜)
+  const repos = await ghSearch(q, { pages: 2 })
   repos.sort((a, b) => b.stars - a.stars)
   return {
     slug: 'overall',
-    items: toItems(repos).slice(0, 100),
+    items: toItems(repos).slice(0, 200),
     language,
     source: 'github-search',
     generatedAt: new Date().toISOString(),
@@ -137,6 +137,7 @@ export async function getTrendingBoardData({ period, language }: TrendingParams)
   let firstError: unknown = null
   try {
     const html = await fetchTrendingPage({ since: period, language })
+    // 注:trending 官方页无真实分页(?page=2 回吐同页,实测 2026-10),行数即官方当日口径,不掺水。
     const parsed = parseTrendingHtml(html, period)
     if (parsed.length === 0) throw new Error('trending parse returned 0 items')
 
@@ -195,22 +196,22 @@ export async function getTrendingBoardData({ period, language }: TrendingParams)
 
 export async function getAnnualData(): Promise<BoardData> {
   // 同总榜：第 1 页即今年的星数 Top100
-  const repos = await ghSearch(`created:>${YEAR_START} stars:>10 fork:false`, { pages: 1 })
+  const repos = await ghSearch(`created:>${YEAR_START} stars:>10 fork:false`, { pages: 2 })
   repos.sort((a, b) => b.stars - a.stars)
   return {
     slug: 'annual',
-    items: toItems(repos).slice(0, 100),
+    items: toItems(repos).slice(0, 200),
     source: 'github-search',
     generatedAt: new Date().toISOString(),
   }
 }
 
 export async function getRisingData(): Promise<BoardData> {
-  const repos = await ghSearch(`created:>${isoDaysAgo(90)} stars:>10 fork:false`, { pages: 2 })
+  const repos = await ghSearch(`created:>${isoDaysAgo(90)} stars:>10 fork:false`, { pages: 3 })
   repos.sort((a, b) => (slopeStarsPerDay(b as PoolRepo) ?? 0) - (slopeStarsPerDay(a as PoolRepo) ?? 0))
   return {
     slug: 'rising',
-    items: toItems(repos).slice(0, 100),
+    items: toItems(repos).slice(0, 200),
     source: 'github-search',
     generatedAt: new Date().toISOString(),
   }
@@ -228,7 +229,7 @@ export async function getDarkData(): Promise<BoardData> {
   const filtered = repos
     .filter((repo) => repo.stars >= 30 && repo.stars <= 1500 && (slopeStarsPerDay(repo) ?? 0) > 0)
     .sort((a, b) => (slopeStarsPerDay(b) ?? 0) - (slopeStarsPerDay(a) ?? 0))
-    .slice(0, 80)
+    .slice(0, 100)
   return {
     slug: 'dark',
     items: toItems(filtered),
@@ -241,12 +242,12 @@ export async function getDarkData(): Promise<BoardData> {
 export async function getOverlookedData(): Promise<BoardData> {
   const repos = await ghSearch(
     `pushed:>${isoDaysAgo(30)} stars:100..800 fork:false`,
-    { pages: 1, order: 'asc' },
+    { pages: 2, order: 'asc' },
   )
   repos.sort((a, b) => a.stars - b.stars)
   return {
     slug: 'overlooked',
-    items: toItems(repos).slice(0, 100),
+    items: toItems(repos).slice(0, 200),
     source: 'github-search',
     generatedAt: new Date().toISOString(),
     degraded: !repos.length ? true : undefined,
@@ -262,7 +263,7 @@ export async function getControversialData(): Promise<BoardData> {
       score: (item.forks * 2 + item.issues) / Math.max(1, item.stars),
     }))
     .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
-    .slice(0, 60)
+    .slice(0, 100)
   return {
     slug: 'controversial',
     items: repos,
@@ -273,11 +274,11 @@ export async function getControversialData(): Promise<BoardData> {
 
 export async function getForksData(): Promise<BoardData> {
   // 同总榜：按 fork 排序第 1 页即 Top100
-  const repos = await ghSearch('forks:>500 fork:false', { sort: 'forks', pages: 1 })
+  const repos = await ghSearch('forks:>500 fork:false', { sort: 'forks', pages: 2 })
   repos.sort((a, b) => b.forks - a.forks)
   return {
     slug: 'forks',
-    items: toItems(repos).slice(0, 100),
+    items: toItems(repos).slice(0, 200),
     source: 'github-search',
     generatedAt: new Date().toISOString(),
   }
@@ -296,7 +297,7 @@ export async function getMilestoneData(): Promise<BoardData> {
     MILESTONE_THRESHOLDS.map((threshold) =>
       // 只搜未过线区间 [t-80, t-1]:窗口顶那种已跨线的仓库不占"差 0"位置
       ghSearch(`stars:${threshold - 80}..${threshold - 1} pushed:>${tenDaysAgo} fork:false`, {
-        perPage: 30,
+        perPage: 50,
         pages: 1,
       }),
     ),
@@ -329,7 +330,7 @@ export async function getMilestoneData(): Promise<BoardData> {
   items.sort((a, b) => remainingToTarget(a) - remainingToTarget(b))
   return {
     slug: 'milestone',
-    items: items.slice(0, 90),
+    items: items.slice(0, 200),
     source: 'github-search',
     generatedAt: new Date().toISOString(),
   }

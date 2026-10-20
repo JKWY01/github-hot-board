@@ -73,10 +73,11 @@ npm run dev
 
 | 环境变量 | 必填? | 说明 |
 |---|---|---|
-| `GITHUB_TOKEN` | 建议填 | classic PAT,不勾任何权限即可。Search API 从 60 次/时升到 5000 次/时 |
+| `GITHUB_TOKENS` | 可选 | **多账号池**:`GITHUB_TOKENS=ghp_a,ghp_b,ghp_c`(逗号/空白分隔),一枚烧完自动换下一枚,取数节奏随池子规模等比放宽;不填则回落单枚 `GITHUB_TOKEN`,都没有走匿名降速 |
+| `GITHUB_TOKEN` | 建议填 | classic PAT(不勾任何权限)或多枚时令其作为单枚兜底。Search API 从 60 次/时升到 5000 次/时 |
 | `NEXT_PUBLIC_SITE_URL` | 部署时填 | canonical / sitemap / OG 用的最终域名 |
 | `DATABASE_URL` | 部署时填 | Neon Postgres 连接串。表首次写入时自动建 |
-| `CRON_SECRET` | 可选 | /api/sync /api/refresh 的门锁 |
+| `CRON_SECRET` | 可选 | /api/sync /api/refresh 的门锁;`?only=榜名` 单榜重灌、`?boards=0` 只跑描述收割 |
 
 本地调试开关:`GHB_FILL_DEBUG=1` 看读路(数据库命中还是水合),`GHB_SQL_DEBUG=1` 看发往库的 SQL。
 

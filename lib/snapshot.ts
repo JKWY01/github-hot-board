@@ -132,10 +132,23 @@ export async function writeHeadAndRows(slug: string, language: string | undefine
   const takenAt = data.generatedAt ? new Date(data.generatedAt) : new Date()
   const key = dbKey(slug, language)
   return (await withDb(async (sql) => {
+    // 上一拍名次先读出来,嵌进本拍载荷(board_head 只留最新,payload 里带 prevRank,
+    // 任何访客打开页面都能直接看到相对上一轮同步的爬/掉榜,而不必恰好守在换拍一刻)
+    const rows = await sql`SELECT payload FROM board_head WHERE key = ${key} LIMIT 1`
+    const prevItems = (rows[0] as { payload?: BoardData } | undefined)?.payload?.items ?? []
+    const prevOrder = new Map<string, number>()
+    prevItems.forEach((it, i) => prevOrder.set(it.fullName, i))
+    const items = data.items.map((item, index) => {
+      const prev = prevOrder.get(item.fullName)
+      if (prev === undefined || prev === index) return item
+      return { ...item, prevRank: prev }
+    })
+    const written: BoardData = { ...data, items }
+
     await sql`
       INSERT INTO board_head (key, board, language, source, degraded, item_count, generated_at, taken_at, payload)
-      VALUES (${key}, ${slug}, ${language ?? ''}, ${data.source}, ${data.degraded ?? false}, ${data.items.length},
-              ${takenAt}, ${takenAt}, ${sql.json(data as unknown as Parameters<typeof sql.json>[0])})
+      VALUES (${key}, ${slug}, ${language ?? ''}, ${written.source}, ${written.degraded ?? false}, ${written.items.length},
+              ${takenAt}, ${takenAt}, ${sql.json(written as unknown as Parameters<typeof sql.json>[0])})
       ON CONFLICT (key) DO UPDATE SET
         board = EXCLUDED.board, language = EXCLUDED.language, source = EXCLUDED.source,
         degraded = EXCLUDED.degraded, item_count = EXCLUDED.item_count,

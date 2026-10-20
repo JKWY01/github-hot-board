@@ -6,12 +6,22 @@ import { join } from 'node:path'
 import { cleanDesc } from './parse'
 import { LOCALES, LANG_LINK_TEXT, type Locale } from './locales'
 
-const TOKEN = (process.env.GITHUB_TOKEN ?? '').trim()
+/** 多账号池:GITHUB_TOKENS(逗号/空白分隔,一枚或一万枚)或 GITHUB_TOKEN(单枚,向后兼容)。
+ * 每枚独立冷却;一枚烧完(主配额尽)自动换下一枚,进程内全局节奏随池子规模放宽。 */
+const TOKENS = [
+  ...new Set(
+    (process.env.GITHUB_TOKENS ?? process.env.GITHUB_TOKEN ?? '')
+      .split(/[\s,]+/)
+      .map((t) => t.trim())
+      .filter(Boolean),
+  ),
+]
+const TOKEN = TOKENS[0] ?? ''
 
 /** Data Cache 生命周期：有 token 冷却 5 分钟；匿名放宽到 15 分钟。 */
-export const GH_TTL_SECONDS = TOKEN ? 300 : 900
+export const GH_TTL_SECONDS = TOKENS.length ? 300 : 900
 export const TRENDING_TTL_SECONDS = 900
-export const HAS_GITHUB_TOKEN = Boolean(TOKEN)
+export const HAS_GITHUB_TOKEN = Boolean(TOKENS.length)
 
 export class RateLimitError extends Error {
   constructor(message = 'GitHub rate limit exceeded') {
@@ -25,8 +35,35 @@ function githubHeaders(): HeadersInit {
     Accept: 'application/vnd.github+json',
     'User-Agent': 'github-hot-board(+https://github.com)',
   }
-  if (TOKEN) headers.Authorization = `Bearer ${TOKEN}`
+  const current = TOKENS[tokenIdx % TOKENS.length]
+  if (current) headers.Authorization = `Bearer ${current}`
   return headers
+}
+
+/* ------------------------------ 多账号发牌 ------------------------------ */
+
+let tokenIdx = 0
+const tokenCooldown = new Map<string, number>()
+
+/** 发牌轮转:冷却中的账号靠边,其余按序轮换;全部冷却时沿用当前(反正配额也换不到)。 */
+function advanceToken(): void {
+  for (let i = 1; i <= Math.min(TOKENS.length, 8); i++) {
+    const idx = (tokenIdx + i) % TOKENS.length
+    if ((tokenCooldown.get(TOKENS[idx]!) ?? 0) <= Date.now()) {
+      tokenIdx = idx
+      return
+    }
+  }
+}
+
+/** 一枚账号被上游拒绝(403/429)时挂冷却:主配额尽 → 冷却到 reset;次级限流(不扣配额)→ 60s。 */
+function markTokenCooldown(res: Response): void {
+  const current = TOKENS[tokenIdx % TOKENS.length]
+  if (!current) return
+  const remaining = res.headers.get('x-ratelimit-remaining')
+  const resetSec = Number(res.headers.get('x-ratelimit-reset')) || 0
+  if (remaining === '0' && resetSec > 0) tokenCooldown.set(current, resetSec * 1000)
+  else tokenCooldown.set(current, Date.now() + 60_000)
 }
 
 interface GhSearchRepo {
@@ -67,7 +104,14 @@ const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms))
 async function quotaSlot(label: string): Promise<void> {
   const trending = label.startsWith('trending:')
   const interval = Number(process.env.GHB_FETCH_INTERVAL_MS)
-    || (trending ? 650 : TOKEN ? 2_100 : 6_200)
+    || (trending
+      ? 650
+      : TOKENS.length === 0
+        ? 6_200
+        : TOKENS.length === 1
+          ? 2_100
+          // 池子越大,聚合配额越高:节奏按池子规模放宽(Search 每账号仍 30/min,地板 650ms)
+          : Math.max(650, Math.round(2_100 / TOKENS.length)))
   const deadline = Date.now() + 45_000
   for (;;) {
     try {
@@ -88,6 +132,8 @@ async function quotaSlot(label: string): Promise<void> {
         } catch {
           return
         }
+        // 时隙与账号同时发牌:轮转移到冷却外的账号
+        if (TOKENS.length > 0) advanceToken()
         // 末位写入者独得时间片：他人以更晚时刻覆盖 → 回炉重排
         if (statSync(marker).mtimeMs > now + 2) continue
         if (process.env.GHB_QUOTA_DEBUG) {
@@ -190,23 +236,33 @@ const LANG_README_PATHS: Partial<Record<Locale, string[]>> = {
 }
 
 async function githubHtml(url: string): Promise<string | null> {
-  try {
-    await quotaSlot(`md:${url.slice(-60)}`)
-    const res = await fetch(url, {
-      headers: { ...githubHeaders(), Accept: 'application/vnd.github.html+json' },
-      signal: AbortSignal.timeout(TIME_BUDGET_MS),
-      next: { revalidate: 3600 },
-    })
-    if (!res.ok) return null
-    const text = await res.text()
-    // 防御性剥壳:预期返回片段,但若带了文档级标签一并去掉
-    const cleaned = text
-      .replace(/<!doctype[\s\S]*?>|<\/?(html|body)[^>]*>/gi, '')
-      .trim()
-    return cleaned || null
-  } catch {
-    return null
+  const attempts = Math.max(1, TOKENS.length)
+  for (let i = 0; i < attempts; i++) {
+    try {
+      await quotaSlot(`md:${url.slice(-60)}`)
+      const res = await fetch(url, {
+        headers: { ...githubHeaders(), Accept: 'application/vnd.github.html+json' },
+        signal: AbortSignal.timeout(TIME_BUDGET_MS),
+        next: { revalidate: 3600 },
+      })
+      if (!res.ok) {
+        if (res.status === 403 || res.status === 429) {
+          markTokenCooldown(res)
+          continue
+        }
+        return null
+      }
+      const text = await res.text()
+      // 防御性剥壳:预期返回片段,但若带了文档级标签一并去掉
+      const cleaned = text
+        .replace(/<!doctype[\s\S]*?>|<\/?(html|body)[^>]*>/gi, '')
+        .trim()
+      return cleaned || null
+    } catch {
+      return null
+    }
   }
+  return null
 }
 
 async function defaultBranch(full: string): Promise<string> {
@@ -441,19 +497,24 @@ function pickLeadLine(html: string, locale: string): string | null {
 }
 
 async function ghJson(url: string): Promise<unknown> {
-  await quotaSlot(url.slice(-40))
-  const res = await fetch(url, {
-    headers: githubHeaders(),
-    signal: AbortSignal.timeout(TIME_BUDGET_MS),
-    next: { revalidate: GH_TTL_SECONDS },
-  })
-  if (res.status === 403 || res.status === 429) {
-    throw new RateLimitError(`GitHub rate limited [${res.status}] ${url}`)
+  const attempts = Math.max(1, TOKENS.length)
+  for (let i = 0; i < attempts; i++) {
+    await quotaSlot(url.slice(-40))
+    const res = await fetch(url, {
+      headers: githubHeaders(),
+      signal: AbortSignal.timeout(TIME_BUDGET_MS),
+      next: { revalidate: GH_TTL_SECONDS },
+    })
+    if (res.status === 403 || res.status === 429) {
+      // 该账号被拒:挂上冷却(主配额尽 / 次级限流),池里还有就换下一枚立刻重试
+      markTokenCooldown(res)
+      if (i < attempts - 1) continue
+      throw new RateLimitError(`GitHub rate limited [${res.status}] ${url}`)
+    }
+    if (!res.ok) throw new Error(`GitHub API ${res.status} on ${url}`)
+    return res.json()
   }
-  if (!res.ok) {
-    throw new Error(`GitHub API ${res.status} on ${url}`)
-  }
-  return res.json()
+  throw new RateLimitError('GitHub token pool exhausted')
 }
 
 function mapRepo(repo: GhSearchRepo): BoardRepoFields {
@@ -539,27 +600,36 @@ export async function ghSearch(
 export interface TrendingQuery {
   since: 'daily' | 'weekly' | 'monthly'
   language?: string
+  /** 抓前 N 页(trending 每页 25 条);仅第 1 页失败则照旧整批抛错。 */
+  pages?: number
 }
 
-/** 抓取 github.com/trending 公开页面并解析。 */
-export async function fetchTrendingPage({ since, language }: TrendingQuery): Promise<string> {
-  await quotaSlot(`trending:${since}:${language ?? 'all'}`)
+/** 抓取 github.com/trending 公开页面并解析(可多页拼接)。 */
+export async function fetchTrendingPage({ since, language, pages = 1 }: TrendingQuery): Promise<string> {
   const path = language ? `/trending/${encodeURIComponent(language.toLowerCase())}` : '/trending'
-  const url = `https://github.com${path}?since=${since}`
-  const res = await fetch(url, {
-    headers: {
-      'User-Agent':
-        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36',
-      'Accept-Language': 'en-US,en;q=0.8',
-    },
-    signal: AbortSignal.timeout(SCRAPE_TIME_BUDGET_MS),
-    next: { revalidate: TRENDING_TTL_SECONDS },
-  })
-  if (res.status === 403 || res.status === 429) {
-    throw new RateLimitError(`trending blocked [${res.status}]`)
+  const chunks: string[] = []
+  for (let page = 1; page <= Math.max(1, pages); page++) {
+    await quotaSlot(`trending:${since}:${language ?? 'all'}`)
+    const url = `https://github.com${path}?since=${since}${page > 1 ? `&page=${page}` : ''}`
+    const res = await fetch(url, {
+      headers: {
+        'User-Agent':
+          'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36',
+        'Accept-Language': 'en-US,en;q=0.8',
+      },
+      signal: AbortSignal.timeout(SCRAPE_TIME_BUDGET_MS),
+      next: { revalidate: TRENDING_TTL_SECONDS },
+    })
+    if (res.status === 403 || res.status === 429) {
+      // 第 1 页被挡是致命的;后续页被挡则用已得页数继续(行数少些,诚实降级)
+      if (page === 1) throw new RateLimitError(`trending blocked [${res.status}]`)
+      break
+    }
+    if (!res.ok) {
+      if (page === 1) throw new Error(`trending page ${res.status}`)
+      break
+    }
+    chunks.push(await res.text())
   }
-  if (!res.ok) {
-    throw new Error(`trending page ${res.status}`)
-  }
-  return res.text()
+  return chunks.join('\n<!--page-->\n')
 }

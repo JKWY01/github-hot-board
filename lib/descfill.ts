@@ -108,6 +108,9 @@ export async function prefillRepoDescs(opts: {
   const deadline = Date.now() + (opts.budgetMs ?? 180_000)
   const queue = await readAllHeadRepos(opts.boardOrder)
   if (queue.length === 0) return stat
+  console.error(
+    `[prefill] queue=${queue.length} budget=${Math.round((opts.budgetMs ?? 180_000) / 1000)}s`,
+  )
   const siteLocales = LOCALES.filter((l) => l !== 'en')
   const resolved = await readProbes(
     queue,

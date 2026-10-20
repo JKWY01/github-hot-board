@@ -68,6 +68,7 @@ export function parseTrendingHtml(
 ): ParsedTrendingRepo[] {
   const results: ParsedTrendingRepo[] = []
   if (!html || html.length < 500) return results
+  const seen = new Set<string>()
 
   const chunks = html.split('<article').slice(1)
   for (const chunk of chunks) {
@@ -79,6 +80,9 @@ export function parseTrendingHtml(
     )
     const fullName = nameMatch?.[1] ?? ''
     if (!slugIsRepo(fullName)) continue
+    // 多页拼接下同一仓库可能两次上榜,留首个
+    if (seen.has(fullName)) continue
+    seen.add(fullName)
 
     const descMatch = block.match(/<p class="col-9[^"]*"[^>]*>([\s\S]*?)<\/p>/)
     const desc = descMatch ? cleanDesc(decodeEntities(descMatch[1].replace(/<[^>]*>/g, ''))) : null

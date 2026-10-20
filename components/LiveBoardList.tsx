@@ -348,7 +348,17 @@ export default function LiveBoardList({
 
       <ol className={`card list-none overflow-hidden ${compact ? '' : 'rounded-[22px]'}`}>
         {items.map((item, index) => {
-          const flag = flags[item.fullName]
+          const live = flags[item.fullName]
+          const prev = item.prevRank
+          // 排序变化徽章:本地实时(换拍一刻 FLIP 同款)优先;否则回落到载荷里持久化的上一拍名次
+          // —— 任何人任何时候打开页面都能直接看到上一轮同步的爬/掉,不必恰好守在换拍一刻。
+          const flag =
+            live ??
+            (prev === undefined
+              ? undefined
+              : prev > index
+                ? { kind: 'up' as const, delta: prev - index }
+                : { kind: 'down' as const, delta: index - prev })
           const crossed =
             variant === 'milestone' && item.milestoneTarget ? item.stars >= item.milestoneTarget : false
           // 行描述按站点语言挑:载荷里备好的对应语言描述(descLng),没有就回仓库原文

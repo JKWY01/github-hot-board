@@ -31,6 +31,8 @@ export interface BoardItem extends RepoLite {
   score?: number
   /** 距离该星数阈值（里程碑榜） */
   milestoneTarget?: number
+  /** 上一拍(上一次同步)的名次(0 基；本拍新入榜则缺省)——落库持久化,任何访客打开都能看到爬/掉徽章 */
+  prevRank?: number
 }
 
 export type BoardSource =
