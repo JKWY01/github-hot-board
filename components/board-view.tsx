@@ -1,5 +1,4 @@
 import Link from 'next/link'
-import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 
@@ -52,11 +51,12 @@ export default async function BoardPageView({
         )}
       </section>
 
+      {/* 不包 Suspense:流式洞在"切 tab 隐藏→切回"时会走 React 恢复回放,
+          上游 #97337 让连接提前判死,直接炸成 #412 灰页(反复复现实锤)。
+          数据走 'use cache'(编译期烘焙 + stale 300),整页阻塞渲染,安全且差不多快。 */}
       <section className="bg-surface py-10">
         <div className="mx-auto max-w-6xl px-5 sm:px-6">
-          <Suspense fallback={<BoardSkeleton compact={false} />}>
-            <BoardStream slug={slug} locale={lang} language={language} />
-          </Suspense>
+          <BoardStream slug={slug} locale={lang} language={language} />
         </div>
       </section>
 

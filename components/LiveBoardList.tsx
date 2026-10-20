@@ -68,6 +68,9 @@ export default function LiveBoardList({
   const [toasts, setToasts] = useState<Array<{ id: number; title: string; sub: string }>>([])
 
   const rowElsRef = useRef(new Map<string, HTMLLIElement>())
+  // "x 天前"要拿墙钟当前时刻,预渲染期读 Date.now() 会让构建直接 fail——
+  // 挂水合后自填一次锚点(poll 到新数据时也刷新),首帧先画 '--'
+  const [nowAnchor, setNowAnchor] = useState(0)
   const itemsRef = useRef(items)
   itemsRef.current = items
 
@@ -81,6 +84,9 @@ export default function LiveBoardList({
     }
   }, [])
   useEffect(() => {
+    setNowAnchor(Date.now())
+  }, [items])
+  useEffect(() => {
     const target = locateRef.current
     if (!target || items.length === 0) return
     const el = rowElsRef.current.get(target)
@@ -92,10 +98,15 @@ export default function LiveBoardList({
     const scrollTimer = window.setTimeout(() => {
       el.scrollIntoView({ block: 'center', behavior: reduced ? 'auto' : 'smooth' })
     }, 180)
+    // 1s 后再校准一次:轮询换拍会改行高,首跳可能停在偏差位置
+    const reassertTimer = window.setTimeout(() => {
+      el.scrollIntoView({ block: 'center', behavior: reduced ? 'auto' : 'smooth' })
+    }, 1000)
     el.classList.add('row-locate')
     const flashTimer = window.setTimeout(() => el.classList.remove('row-locate'), 2800)
     return () => {
       window.clearTimeout(scrollTimer)
+      window.clearTimeout(reassertTimer)
       window.clearTimeout(flashTimer)
       el.classList.remove('row-locate')
     }
@@ -482,7 +493,7 @@ export default function LiveBoardList({
                     {showPushed && item.pushedAt && (
                       <span className="inline-flex items-center gap-1">
                         <ClockIcon size={11} />
-                        {fmtAgo(item.pushedAt, locale)}
+                        {fmtAgo(item.pushedAt, locale, nowAnchor)}
                       </span>
                     )}
                     {secondary === 'stars' && metric !== 'stars' && (

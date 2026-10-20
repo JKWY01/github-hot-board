@@ -1,5 +1,4 @@
 import Link from 'next/link'
-import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 
@@ -8,12 +7,11 @@ import { getDict, isLocale } from './dictionaries'
 import { LOCALES, altLangs } from '@/lib/locales'
 import type { Locale } from '@/lib/types'
 import BoardStream from '@/components/BoardStream'
+import Reveal from '@/components/Reveal'
+import { fmtNum } from '@/lib/format'
 
 /** 页内 BoardStream 用 after() 挂描述补齐,给它留出执行时间(Vercel 按平台上限取小)。 */
 export const maxDuration = 60
-import { BoardSkeleton } from '@/components/board-view'
-import Reveal from '@/components/Reveal'
-import { fmtNum } from '@/lib/format'
 
 export async function generateStaticParams() {
   return LOCALES.map((lang) => ({ lang }))
@@ -93,11 +91,9 @@ export default async function HomePage({
           </div>
         </div>
 
-        {/* 实时统计 */}
+        {/* 实时统计 —— 不包 Suspense(流式洞在 tab 隐藏/可见切换后回放会炸 #412,见 board-view 同注) */}
         <div className="rise mt-14" style={{ '--rise-delay': '380ms' } as React.CSSProperties}>
-          <Suspense fallback={<HeroSkeleton />}>
-            <HeroStats locale={locale} />
-          </Suspense>
+          <HeroStats locale={locale} />
         </div>
       </section>
 
@@ -118,9 +114,8 @@ export default async function HomePage({
                 {dict.ui.viewAll} &rarr;
               </Link>
             </div>
-            <Suspense fallback={<BoardSkeleton compact />}>
-              <BoardStream slug="weekly" locale={locale} compact limit={6} />
-            </Suspense>
+            {/* 不包 Suspense:阻塞渲染,避免流式洞的 tab 恢复回放炸 #412 */}
+            <BoardStream slug="weekly" locale={locale} compact limit={6} />
           </div>
         </section>
       </Reveal>
@@ -141,9 +136,7 @@ export default async function HomePage({
               {dict.ui.viewAll} &rarr;
             </Link>
           </div>
-          <Suspense fallback={<BoardSkeleton compact />}>
-            <BoardStream slug="overall" locale={locale} compact limit={6} />
-          </Suspense>
+          <BoardStream slug="overall" locale={locale} compact limit={6} />
         </section>
       </Reveal>
 
@@ -167,9 +160,7 @@ export default async function HomePage({
                 {dict.ui.viewAll} &rarr;
               </Link>
             </div>
-            <Suspense fallback={<BoardSkeleton compact />}>
-              <BoardStream slug="milestone" locale={locale} compact limit={6} />
-            </Suspense>
+            <BoardStream slug="milestone" locale={locale} compact limit={6} />
           </div>
         </section>
       </Reveal>
@@ -285,19 +276,6 @@ async function HeroStats({ locale }: { locale: Locale }) {
           <dd className="text-[26px] font-semibold tracking-tight tabular-nums text-ink">
             {stat.value}
           </dd>
-        </div>
-      ))}
-    </dl>
-  )
-}
-
-function HeroSkeleton() {
-  return (
-    <dl className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-      {[0, 1, 2].map((i) => (
-        <div key={i} className="rounded-[22px] border-[0.5px] border-black/10 bg-white px-6 py-6">
-          <div className="h-7 w-20 animate-pulse rounded bg-black/8" />
-          <div className="mt-2 h-3 w-24 animate-pulse rounded bg-black/5" />
         </div>
       ))}
     </dl>

@@ -67,11 +67,13 @@ export function fmtScore(n: number): string {
   return Number.isFinite(n) ? n.toFixed(2) : '0.00'
 }
 
-export function fmtAgo(iso: string | undefined, locale: Locale): string {
+export function fmtAgo(iso: string | undefined, locale: Locale, now = Date.now()): string {
   if (!iso) return '--'
+  // 服务端预渲染期拿不到"现在"(current-time 会 fail build),调用方在挂水合后传入 now
+  if (!now) return '--'
   const t = Date.parse(iso)
   if (Number.isNaN(t)) return '--'
-  const days = Math.floor((Date.now() - t) / 86_400_000)
+  const days = Math.floor((now - t) / 86_400_000)
   if (days <= 0) return locale === 'zh' ? '24 小时内' : '<24h'
   return locale === 'zh' ? `${days} 天前` : `${days}d ago`
 }
