@@ -444,31 +444,7 @@ export default function LiveBoardList({
                     <span className={`truncate font-semibold tracking-tight text-ink ${compact ? 'text-[13.5px]' : 'text-[15px]'}`}>
                       {item.fullName}
                     </span>
-                    {/* 站内档案:SEO 可爬内链,也是读者进档案页的主入口;拦在 a 里不与行点击冲突 */}
-                    <Link
-                      href={`/${locale}/repo/${item.fullName}`}
-                      prefetch={false}
-                      aria-label={`${item.fullName} · ${strings.drawer.archive}`}
-                      className="inline-flex h-7 shrink-0 items-center rounded-full bg-[#f5f5f7] px-2.5 text-ink/65 transition-colors hover:bg-black/8 hover:text-ink"
-                      // 悬停预热:普通 GET 会在服务端把 'use cache' 档案缓存烧热,
-                      // 真正点击时大概率是热渲染(只省时,不碰 RSC 路由,与 #412 无关)
-                      onMouseEnter={() => {
-                        fetch(`/${locale}/repo/${item.fullName}`).catch(() => {})
-                      }}
-                    >
-                      <ArchiveIcon size={14} />
-                    </Link>
-                    {/* GitHub 门:黑底胶囊 + 字标,一眼可点(出站查看仓库详情) */}
-                    <a
-                      href={item.htmlUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label={`GitHub · ${item.fullName}`}
-                      className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full bg-ink px-3 text-[12px] font-semibold tracking-tight text-white transition-opacity hover:opacity-80"
-                    >
-                      <GithubIcon size={14} />
-                      GitHub
-                    </a>
+                    {/* 站内档案/出站 GitHub 的门都收进行右缘(见行尾动作组);名字行保持干净 */}
                     {flag && flagBadge(flag.kind, flag.delta, strings)}
                   </div>
 
@@ -518,15 +494,41 @@ export default function LiveBoardList({
                   </div>
                 </div>
 
-                <div className="shrink-0 text-right">
+                {/* 行尾:主数值 + 动作组(经典列表"value + accessory"形制)。
+                    档案 = 站内详情(悬停时顺带预热档案缓存);GitHub = 描边圆钮,hover 反色点亮。 */}
+                <div className="flex shrink-0 items-center gap-2.5">
                   <div
-                    className={`${compact ? 'text-[15px]' : 'text-[16.5px]'} font-semibold tracking-tight tabular-nums ${metric === 'gained' ? 'text-good' : 'text-ink'}`}
+                    className={`${compact ? 'text-[15px]' : 'text-[16.5px]'} text-right font-semibold tracking-tight tabular-nums ${metric === 'gained' ? 'text-good' : 'text-ink'}`}
                   >
                     {primaryUsesCountUp ? (
                       <CountUp value={primaryOf(item)} format={formatPrimary} />
                     ) : (
                       formatPrimary(primaryOf(item))
                     )}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Link
+                      href={`/${locale}/repo/${item.fullName}`}
+                      prefetch={false}
+                      aria-label={`${item.fullName} · ${strings.drawer.archive}`}
+                      className="flex h-8 w-8 items-center justify-center rounded-full text-ink/35 transition-colors hover:bg-black/6 hover:text-accent"
+                      // 悬停预热:普通 GET 在服务端把 'use cache' 档案缓存烧热,
+                      // 真正点击大概率是热渲染(只省时,不碰 RSC 路由,与 #412 无关)
+                      onMouseEnter={() => {
+                        fetch(`/${locale}/repo/${item.fullName}`).catch(() => {})
+                      }}
+                    >
+                      <ArchiveIcon size={15} />
+                    </Link>
+                    <a
+                      href={item.htmlUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={`GitHub · ${item.fullName}`}
+                      className="flex h-8 w-8 items-center justify-center rounded-full border-[0.5px] border-black/15 text-ink/65 transition-colors hover:border-ink hover:bg-ink hover:text-white"
+                    >
+                      <GithubIcon size={16} />
+                    </a>
                   </div>
                 </div>
               </div>
