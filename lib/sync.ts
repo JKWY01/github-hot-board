@@ -50,10 +50,12 @@ async function storeOne(target: SyncTarget, data: BoardData): Promise<void> {
 }
 
 export async function syncAllBoards(
-  opts?: { boardsOnly?: boolean },
+  opts?: { boardsOnly?: boolean; onlyBoard?: BoardSlug },
 ): Promise<SyncSummary> {
   const started = Date.now()
-  const targets = allSyncTargets()
+  const targets = opts?.onlyBoard
+    ? allSyncTargets().filter((t) => t.slug === opts.onlyBoard)
+    : allSyncTargets()
   const failed: string[] = []
   let ok = 0
 
@@ -97,18 +99,21 @@ export async function syncAllBoards(
 
   // 同步尾部:主动收割仓库描述(库里缺、上游有的语种收进 repo_desc)。
   // Vercel 需给 route 的 300s 预算留余量;本地无单请求上限,放宽到 20 分钟收更多仓库。
+  // 单榜运修(?only=)不走收割 —— 运修要的是立刻拿到对的数据,不是漫长尾巴。
   let descPrefill: SyncSummary['descPrefill']
-  try {
-    const tailCeiling = process.env.VERCEL ? 240_000 : 1_200_000
-    descPrefill = await prefillRepoDescs({
-      boardOrder: BOARD_ORDER,
-      budgetMs: Math.max(20_000, tailCeiling - (Date.now() - started)),
-    })
-    console.error(
-      `[sync] desc-prefill repos=${descPrefill.repos} descs=${descPrefill.descs}`,
-    )
-  } catch (error) {
-    console.error('[sync] desc-prefill FAILED', error instanceof Error ? error.message : error)
+  if (!opts?.onlyBoard) {
+    try {
+      const tailCeiling = process.env.VERCEL ? 240_000 : 1_200_000
+      descPrefill = await prefillRepoDescs({
+        boardOrder: BOARD_ORDER,
+        budgetMs: Math.max(20_000, tailCeiling - (Date.now() - started)),
+      })
+      console.error(
+        `[sync] desc-prefill repos=${descPrefill.repos} descs=${descPrefill.descs}`,
+      )
+    } catch (error) {
+      console.error('[sync] desc-prefill FAILED', error instanceof Error ? error.message : error)
+    }
   }
 
   return { total: targets.length, ok, failed, itemsWritten: ok, pruned, durationMs: Date.now() - started, descPrefill }

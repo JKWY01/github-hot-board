@@ -1,4 +1,5 @@
 import { dbUrlConfigured } from '@/lib/snapshot'
+import { isBoardSlug, type BoardSlug } from '@/lib/boards'
 import { syncAllBoards } from '@/lib/sync'
 
 export const maxDuration = 300
@@ -19,8 +20,11 @@ async function handle(request: Request): Promise<Response> {
     }
   }
   // ?boards=0(或环境 GHB_SYNC_BOARDS=0):跳过榜单本体、只跑描述收割
+  // ?only=milestone:只同步单榜(运修/即时修数据用)
   const boardsOnly = url.searchParams.get('boards') === '0' || process.env.GHB_SYNC_BOARDS === '0'
-  const summary = await syncAllBoards({ boardsOnly })
+  const onlyParam = url.searchParams.get('only')
+  const onlyBoard = onlyParam && isBoardSlug(onlyParam) ? (onlyParam as BoardSlug) : undefined
+  const summary = await syncAllBoards({ boardsOnly, onlyBoard })
   return Response.json({
     net: dbUrlConfigured() ? 'database' : 'no-database-url (disk-only)',
     ok: summary.failed.length === 0,

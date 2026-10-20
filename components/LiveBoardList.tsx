@@ -76,6 +76,8 @@ export default function LiveBoardList({
   } | null>(null)
   const lastPollRef = useRef(0)
   const toastSeq = useRef(0)
+  /** 当前展示中的生成批 id:它决定 60s 轮询是否重算 FLIP/爬降标志。 */
+  const genRef = useRef(initialGeneratedAt)
 
   /* ------------------------------- 轮询 ------------------------------- */
 
@@ -105,7 +107,19 @@ export default function LiveBoardList({
         return
       }
 
-      // 先拍快照（位置 + 星数），再提交新数据，触发 useLayoutEffect 做 FLIP
+      // 同一生成批(数据自上次同步未变):只刷新描述等字段;不重算 FLIP/标志,
+      // 上一批的爬/降标志保持原样 —— 用户在每个周期内都能看到上一轮同步的搬运。
+      if (patch.generatedAt === genRef.current) {
+        const next = limit ? patch.items.slice(0, limit) : patch.items
+        pendingRef.current = null
+        setItems(next)
+        setDegraded(Boolean(patch.degraded))
+        setStale(false)
+        return
+      }
+
+      // 新生成批(= 同步改写过榜单):拍快照做 FLIP;
+      // 排序基准 = 上一生成批的定妆序,所以标志描述的是这轮同步带来的爬/掉榜。
       const rects = new Map<string, number>()
       const order = new Map<string, number>()
       const prevStars = new Map<string, number>()
@@ -116,6 +130,7 @@ export default function LiveBoardList({
         prevStars.set(item.fullName, item.stars)
       })
       pendingRef.current = { order, rects, stars: prevStars }
+      genRef.current = patch.generatedAt
 
       const next = limit ? patch.items.slice(0, limit) : patch.items
       setItems(next)

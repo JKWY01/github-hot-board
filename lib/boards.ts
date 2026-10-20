@@ -294,7 +294,8 @@ export async function getMilestoneData(): Promise<BoardData> {
   const tenDaysAgo = isoDaysAgo(30)
   const settled = await Promise.allSettled(
     MILESTONE_THRESHOLDS.map((threshold) =>
-      ghSearch(`stars:${threshold - 80}..${threshold + 80} pushed:>${tenDaysAgo} fork:false`, {
+      // 只搜未过线区间 [t-80, t-1]:窗口顶那种已跨线的仓库不占"差 0"位置
+      ghSearch(`stars:${threshold - 80}..${threshold - 1} pushed:>${tenDaysAgo} fork:false`, {
         perPage: 30,
         pages: 1,
       }),
@@ -309,7 +310,8 @@ export async function getMilestoneData(): Promise<BoardData> {
         const existing = byFull.get(repo.fullName)
         if (existing) continue
         const item: BoardItem = { ...repo, slope: slopeStarsPerDay(repo) as number | undefined }
-        const target = nearestThreshold(repo)
+        const target = nextThreshold(repo.stars)
+        if (!target) continue // 已越过全部档位(≥100k):无线可冲,不占位
         item.milestoneTarget = target
         byFull.set(repo.fullName, item)
       }
@@ -333,18 +335,10 @@ export async function getMilestoneData(): Promise<BoardData> {
   }
 }
 
-function nearestThreshold(repo: PoolRepo): number {
-  const stars = repo.stars
-  let best: number = MILESTONE_THRESHOLDS[0]
-  let bestDist = Number.MAX_SAFE_INTEGER
-  for (const t of MILESTONE_THRESHOLDS) {
-    const dist = Math.abs(t - stars)
-    if (dist < bestDist) {
-      best = t
-      bestDist = dist
-    }
-  }
-  return best
+/** 冲线语义:目标档 = 还没跨过的下一档(旧逻辑取"最近档"会把已跨线仓库判回原线,差值钳 0 冒充冠军)。 */
+function nextThreshold(stars: number): number | null {
+  for (const t of MILESTONE_THRESHOLDS) if (stars < t) return t
+  return null
 }
 
 function remainingToTarget(item: BoardItem): number {
