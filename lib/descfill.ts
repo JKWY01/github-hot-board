@@ -42,28 +42,44 @@ export async function hydrateBoardDescs(base: BoardData, viewer: Locale): Promis
   return { ...base, items }
 }
 
-/** 顺序补齐(单链,配额节流友好):先去重/退避,再逐仓库拉对应语言 README 首句入库。 */
+/** 顺序富化改小并发(3 路):配额节流仍是全局串行,多路只是把网络等待重叠起来,
+ * 首次覆盖一批仓库的墙钟时间约缩到 1/3;去重与退避保持原样。 */
+const FILL_CONCURRENCY = 3
+
 async function fillQueue(fullNames: string[], viewer: Locale): Promise<void> {
-  for (const full of fullNames.slice(0, FILL_BATCH)) {
+  // 先滤掉在途与退避中的,再切批并占位 —— 否则排头的失败仓库会把名额占死,后面的仓库永远轮不上。
+  const pending: string[] = []
+  for (const full of fullNames) {
+    if (pending.length >= FILL_BATCH) break
     const id = `${full}|${viewer}`
     if (inFlight.has(id)) continue
     const failed = failedAt.get(id)
     if (failed && Date.now() - failed < FAIL_BACKOFF_MS) continue
     inFlight.add(id)
-    try {
-      const desc = await fetchDescLng(full, viewer)
-      if (desc) {
-        await upsertRepoDesc(full, viewer, desc)
-        failedAt.delete(id)
-      } else {
+    pending.push(full)
+  }
+  let next = 0
+  const worker = async () => {
+    for (;;) {
+      const full = pending[next++]
+      if (!full) return
+      const id = `${full}|${viewer}`
+      try {
+        const desc = await fetchDescLng(full, viewer)
+        if (desc) {
+          await upsertRepoDesc(full, viewer, desc)
+          failedAt.delete(id)
+        } else {
+          failedAt.set(id, Date.now())
+        }
+      } catch {
         failedAt.set(id, Date.now())
+      } finally {
+        inFlight.delete(id)
       }
-    } catch {
-      failedAt.set(id, Date.now())
-    } finally {
-      inFlight.delete(id)
     }
   }
+  await Promise.all(Array.from({ length: FILL_CONCURRENCY }, worker))
 }
 
 /** lang 参数是否为可用的站点语言(不含 en——en 无需描述富化)。 */
