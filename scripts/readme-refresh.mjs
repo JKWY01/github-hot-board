@@ -1,13 +1,29 @@
 /**
- * README 榜单快照刷新(搜索引擎载体):从站点公开 /api/head 拉三大榜,
- * 把 MARKER 区间的 Markdown 表格重写;内容无变化时退出但不提交。
- * 用法:node scripts/readme-refresh.mjs(在 Actions 于每轮同步后执行)
+ * 榜单快照刷新(搜索引擎载体):从站点公开 /api/head 拉三大榜,
+ * 1) 重写 README 的 MARKER 区间(Top 10 表);
+ * 2) 在 rank/ 目录维护每周/每月独立快照页(Top 25 + 简介)——
+ *    每页都是 github.com 域名下的新索引入口,周榜按 ISO 周滚动建档。
+ * 内容无变化时不产生 diff(工作流按 git status 判断是否提交)。
+ * 用法:node scripts/readme-refresh.mjs(Actions 于每轮同步后执行)
  */
-import { readFileSync, writeFileSync } from 'node:fs'
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 
 const MARK_START = '<!-- GHB:AUTO:START -->'
 const MARK_END = '<!-- GHB:AUTO:END -->'
 const base = (process.env.GHB_PUBLIC_BASE ?? 'https://git.vaiox.xyz').replace(/\/+$/, '')
+
+const fmt = (n) => (n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n))
+const cut = (s, n) => (s ? (s.length > n ? `${s.slice(0, n)}…` : s) : '')
+
+/** ISO 周号(周一为一周之始,含 1 月 4 日的那周为第 1 周) */
+function isoWeek(d = new Date()) {
+  const date = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()))
+  const dayNum = date.getUTCDay() || 7
+  date.setUTCDate(date.getUTCDate() + 4 - dayNum)
+  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1))
+  const week = Math.ceil(((date - yearStart) / 86400000 + 1) / 7)
+  return { year: date.getUTCFullYear(), week }
+}
 
 const BOARDS = [
   {
@@ -15,28 +31,26 @@ const BOARDS = [
     title: '本周飙升 Top 10',
     link: `${base}/zh/boards/weekly`,
     note: '官方 Trending 周口径 · 每个名字都能点进档案页看 30 天名次曲线',
-    cols: (it) => fmt(it.gained ?? 0),
     colLabel: '本周新增 Star',
+    col: (it) => fmt(it.gained ?? 0),
   },
   {
     slug: 'monthly',
     title: '本月飙升 Top 10',
     link: `${base}/zh/boards/monthly`,
     note: '官方 Trending 月口径 · 长趋势看这里',
-    cols: (it) => fmt(it.gained ?? 0),
     colLabel: '本月新增 Star',
+    col: (it) => fmt(it.gained ?? 0),
   },
   {
     slug: 'overall',
     title: '累计 Star Top 10',
     link: `${base}/zh/boards/overall`,
     note: '史上最强口径 · 累计 Star 降序(排除 fork)',
-    cols: () => '—',
     colLabel: '新增',
+    col: () => '—',
   },
 ]
-
-const fmt = (n) => (n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n))
 
 async function head(slug) {
   const res = await fetch(`${base}/api/head/${slug}`, {
@@ -46,7 +60,7 @@ async function head(slug) {
   return res.json()
 }
 
-function table(board, data) {
+function readmeTable(board, data) {
   const items = (data.items ?? []).slice(0, 10)
   if (items.length === 0) return `*暂无数据(同步进行中)*`
   const lines = []
@@ -55,43 +69,118 @@ function table(board, data) {
   lines.push(`| # | 项目 | 累计 Star | ${board.colLabel} |`)
   lines.push(`|---|---|---|---|`)
   for (const [i, it] of items.entries()) {
-    const link = `${base}/zh/repo/${it.fullName}`
-    lines.push(`| ${i + 1} | [${it.fullName}](${link}) | ${fmt(it.stars ?? 0)} | ${board.cols(it)} |`)
+    lines.push(`| ${i + 1} | [${it.fullName}](${base}/zh/repo/${it.fullName}) | ${fmt(it.stars ?? 0)} | ${board.col(it)} |`)
   }
-  lines.push('')
-  lines.push(`*${board.note}。数据抓取自公开 GitHub 口径,完整 ${items.length === 10 ? '25' : ''} 名与语言分榜见站点。*`)
   lines.push('')
   return lines.join('\n')
 }
 
-const sections = []
+/** rank/ 快照页用:Top 25 + 简介列,内容更厚,喂长尾检索 */
+function rankTable(slug, data) {
+  const items = (data.items ?? []).slice(0, 25)
+  if (items.length === 0) return null
+  const label = slug === 'weekly' ? '本周新增 Star' : slug === 'monthly' ? '本月新增 Star' : 'Fork 数'
+  const col = (it) => (slug === 'overall' ? fmt(it.forks ?? 0) : fmt(it.gained ?? 0))
+  const lines = []
+  lines.push(`| # | 项目 | 累计 Star | ${label} | 简介 |`)
+  lines.push(`|---|---|---|---|---|`)
+  for (const [i, it] of items.entries()) {
+    lines.push(`| ${i + 1} | [${it.fullName}](${base}/zh/repo/${it.fullName}) | ${fmt(it.stars ?? 0)} | ${col(it)} | ${cut(it.desc, 60)} |`)
+  }
+  return lines.join('\n')
+}
+
+const RANK_META = {
+  weekly: {
+    file: (t) => `rank/weekly-${t.year}-W${String(t.week).padStart(2, '0')}.md`,
+    h1: (t) => `GitHub 周榜快照 · ${t.year} 年第 ${t.week} 周`,
+    blurb: '口径:官方 Trending 周页顺序 + 官方标注的本周新增星数。',
+    board: '/zh/boards/weekly',
+  },
+  monthly: {
+    file: (t) => `rank/monthly-${t.ym}.md`,
+    h1: (t) => `GitHub 月榜快照 · ${t.ym}`,
+    blurb: '口径:官方 Trending 月页,看长趋势。',
+    board: '/zh/boards/monthly',
+  },
+  overall: {
+    file: () => 'rank/overall.md',
+    h1: () => 'GitHub 总榜快照 · 累计 Star 史上最强 Top 25',
+    blurb: '口径:累计 Star 降序(排除 fork),开源世界的常青树。',
+    board: '/zh/boards/overall',
+  },
+}
+
+function writeIfChanged(path, content) {
+  try {
+    if (readFileSync(path, 'utf8') === content) return false
+  } catch {
+    /* 新文件 */
+  }
+  writeFileSync(path, content)
+  return true
+}
+
+const now = new Date()
+const { year, week } = isoWeek(now)
+const t = {
+  year,
+  week,
+  ym: `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`,
+  today: now.toISOString().slice(0, 10),
+}
+
+const data = {}
 for (const b of BOARDS) {
   try {
-    const data = await head(b.slug)
-    sections.push(table(b, data))
+    data[b.slug] = await head(b.slug)
   } catch (err) {
-    console.error(`[readme] ${b.slug} FAILED ${err.message} — 保留现状跳过`)
+    console.error(`[snapshot] ${b.slug} FAILED ${err.message} — 保留现状跳过`)
   }
 }
-if (sections.length === 0) {
-  console.error('[readme] 三榜全失败,README 不动')
+if (!data.weekly && !data.monthly && !data.overall) {
+  console.error('[snapshot] 三榜全失败,不动任何文件')
   process.exit(0)
 }
 
-const block = [MARK_START, ...sections, MARK_END].join('\n')
-const path = 'README.md'
-const src = readFileSync(path, 'utf8')
-const re = new RegExp(`${MARK_START}[\\s\\S]*?${MARK_END}`)
-let out
-if (re.test(src)) out = src.replace(re, block)
-else {
-  // 没有标记位时追加到文首介绍后(标题段之后)。
-  const anchor = /^# .*\n/m
-  out = src.replace(anchor, (m) => `${m}\n${block}\n`)
+// 1) README 区块(Top 10)
+const sections = BOARDS.filter((b) => data[b.slug]).map((b) => readmeTable(b, data[b.slug]))
+if (sections.length > 0) {
+  const block = [MARK_START, ...sections, MARK_END].join('\n')
+  const src = readFileSync('README.md', 'utf8')
+  const re = new RegExp(`${MARK_START}[\\s\\S]*?${MARK_END}`)
+  const out = re.test(src)
+    ? src.replace(re, block)
+    : src.replace(/^# .*\n/m, (m) => `${m}\n${block}\n`)
+  if (out !== src) {
+    writeFileSync('README.md', out)
+    console.log('[snapshot] README 区块已刷新')
+  } else {
+    console.log('[snapshot] README 无变化')
+  }
 }
-if (out === src) {
-  console.log('[readme] 内容无变化,不提交')
-  process.exit(0)
+
+// 2) rank/ 每周/每月独立快照页(Top 25 + 简介)
+mkdirSync('rank', { recursive: true })
+for (const [slug, m] of Object.entries(RANK_META)) {
+  const d = data[slug]
+  if (!d) continue
+  const tbl = rankTable(slug, d)
+  if (!tbl) continue
+  const doc = [
+    `# ${m.h1(t)}`,
+    '',
+    `> 由 [GitHub 火线榜](${base}/zh) 于 ${t.today} 自动刻录。${m.blurb}`,
+    `> 完整榜单、语言分榜与每个项目的 30 天名次曲线:[${base}${m.board}](${base}${m.board})`,
+    '',
+    tbl,
+    '',
+    '---',
+    '',
+    `GitHub 火线榜:十个视角的开源热榜(总榜 / 周榜 / 月榜 / 年度新星 / 90 天斜率 / 黑马 / 被忽视 / 黑红 / Fork 之王 / 里程碑直播),中文界面,每小时自动更新。往期快照见本目录其他文件。`,
+    '',
+  ].join('\n')
+  const file = m.file(t)
+  if (writeIfChanged(file, doc)) console.log(`[snapshot] ${file} 已刷新`)
+  else console.log(`[snapshot] ${file} 无变化`)
 }
-writeFileSync(path, out)
-console.log('[readme] README 区块已刷新')

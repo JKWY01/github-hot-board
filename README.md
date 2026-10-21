@@ -22,8 +22,6 @@
 | 9 | [ruvnet/ruflo](https://git.vaiox.xyz/zh/repo/ruvnet/ruflo) | 78.0k | 3.1k |
 | 10 | [android/skills](https://git.vaiox.xyz/zh/repo/android/skills) | 9.1k | 1.3k |
 
-*官方 Trending 周口径 · 每个名字都能点进档案页看 30 天名次曲线。数据抓取自公开 GitHub 口径,完整 25 名与语言分榜见站点。*
-
 **本月飙升 Top 10** · [打开完整榜单 →](https://git.vaiox.xyz/zh/boards/monthly)
 
 | # | 项目 | 累计 Star | 本月新增 Star |
@@ -39,8 +37,6 @@
 | 9 | [anthropics/knowledge-work-plugins](https://git.vaiox.xyz/zh/repo/anthropics/knowledge-work-plugins) | 30.9k | 5.5k |
 | 10 | [NationalSecurityAgency/ghidra](https://git.vaiox.xyz/zh/repo/NationalSecurityAgency/ghidra) | 92.3k | 13.0k |
 
-*官方 Trending 月口径 · 长趋势看这里。数据抓取自公开 GitHub 口径,完整 25 名与语言分榜见站点。*
-
 **累计 Star Top 10** · [打开完整榜单 →](https://git.vaiox.xyz/zh/boards/overall)
 
 | # | 项目 | 累计 Star | 新增 |
@@ -55,8 +51,6 @@
 | 8 | [nilbuild/developer-roadmap](https://git.vaiox.xyz/zh/repo/nilbuild/developer-roadmap) | 370.0k | — |
 | 9 | [jwasham/coding-interview-university](https://git.vaiox.xyz/zh/repo/jwasham/coding-interview-university) | 363.2k | — |
 | 10 | [morluto/rea](https://git.vaiox.xyz/zh/repo/morluto/rea) | 351.3k | — |
-
-*史上最强口径 · 累计 Star 降序(排除 fork)。数据抓取自公开 GitHub 口径,完整 25 名与语言分榜见站点。*
 
 <!-- GHB:AUTO:END -->
 
