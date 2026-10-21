@@ -139,6 +139,14 @@ export async function syncAllBoards(
     /* 催收失败不影响同步结果 */
   }
 
+  // 百度普通收录 API 实时推送:配额极小(新站约 10 条/日,日清日结),
+  // 只推 zh 口径 + 进程内去重;失败/配额枯竭同样静默。
+  try {
+    await pingBaidu()
+  } catch {
+    /* 同上 */
+  }
+
   return { total: targets.length, ok, failed, itemsWritten: ok, pruned, durationMs: Date.now() - started, descPrefill }
 }
 
@@ -164,4 +172,41 @@ async function pingIndexNow(): Promise<void> {
 
 function isRepoNameShape(s: string): boolean {
   return /^[A-Za-z0-9_.-]{1,64}\/[A-Za-z0-9_.-]{1,64}$/.test(s)
+}
+
+/** 百度推送去重:进程内 25h TTL(Vercel 实例的内存态,尽力而为;重复推送顶多浪费小配额)。 */
+const baiduPushed = new Map<string, number>()
+const BAIDU_DEDUP_TTL = 25 * 60 * 60_000
+
+/** 百度普通收录 API 推送:data.zz.baidu.com,正文为换行分隔 URL。
+ * 配额日清且新站仅 ~10 条/日 → 每轮最多 3 条、只推 zh 口径(百度只伺候中文),
+ * 首页 zh 每天一次;配额枯竭/网络失败一律静默,绝不拖累同步。 */
+async function pingBaidu(): Promise<void> {
+  const endpoint = (process.env.BAIDU_PUSH_URL ?? '').trim()
+  const base = (process.env.NEXT_PUBLIC_SITE_URL ?? '').replace(/\/+$/, '')
+  if (!endpoint || !base) return
+  const { readRecentRepos } = await import('./snapshot')
+  const repos = (await readRecentRepos(35, 90)).filter(isRepoNameShape)
+  const now = Date.now()
+  for (const [url, at] of baiduPushed) {
+    if (now - at > BAIDU_DEDUP_TTL) baiduPushed.delete(url)
+  }
+  const candidates = [`${base}/zh`, ...repos.map((r) => `${base}/zh/repo/${r}`)]
+  const fresh = candidates.filter((u) => !baiduPushed.has(u)).slice(0, 3)
+  if (fresh.length === 0) return
+  for (const url of fresh) baiduPushed.set(url, now) // 乐观标记:并发轮次不再重复烧配额
+  try {
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'content-type': 'text/plain' },
+      body: fresh.join('\n'),
+      signal: AbortSignal.timeout(10_000),
+    })
+    const text = await res.text()
+    console.error(`[baidu-push] ${fresh.length} 条 http=${res.status} ${text.slice(0, 80)}`)
+    if (!res.ok) for (const url of fresh) baiduPushed.delete(url)
+  } catch (error) {
+    for (const url of fresh) baiduPushed.delete(url)
+    console.error('[baidu-push] FAILED', error instanceof Error ? error.message : error)
+  }
 }
