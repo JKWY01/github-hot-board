@@ -117,9 +117,9 @@ export const koDict: Dict = {
   locale: 'ko',
   meta: {
     siteName: 'GitHub Hot Board',
-    homeTitle: 'GitHub Hot Board · 실시간 오픈소스 프로젝트 랭킹(종합/주간/월간/성장세/논쟁)',
-    homeDescription: '실시간 GitHub 프로젝트 랭킹: 역대 누적 스타 총합, 공식 트렌딩 주간·월간, 올해의 신예, 90일 성장세, 다크호스, 무명의 보석, 논쟁 지수, 포크의 왕, 라이브 마일스톤 추적. 산식과 데이터 출처를 모두 공개하며, 분 단위로 자동 갱신합니다.',
-    homeKeywords: 'GitHub 랭킹, GitHub 트렌딩, 오픈소스 랭킹, 주간 인기 저장소, 스타 랭킹, 성장세 프로젝트, 다크호스, 논쟁 지수',
+    homeTitle: 'GitHub Hot Board · 프로젝트 찾기와 트렌드 선점 (종합/주간/월간/다크호스)',
+    homeDescription: '오픈소스 정보 격차를 그대로 보여드립니다. 종합, 주간, 월간, 90일 상승, 다크호스, 실시간 마일스톤까지 GitHub 뜨거움을 3분에 파악. 부업 아이템 탐색과 제품 아이디어 소스로 딱. 산식은 모두 공개, 자동 갱신.',
+    homeKeywords: 'GitHub 랭킹, GitHub 트렌딩, 프로젝트 찾기, 부업 아이디어, 오픈소스 랭킹, 정보 격차, 급상승 저장소, 다크호스, 인기 저장소',
   },
   nav: {
     home: '홈',
@@ -127,6 +127,14 @@ export const koDict: Dict = {
     srcNote: '데이터 출처는 GitHub 공식',
   },
   home: {
+    valueTitle: '정보 격차는 곧 눈앞의 기회',
+    valueSub: '같은 GitHub, 한 겹 더 깊게. 프로젝트를 찾고, 먼저 움직이고, 실제 흐름을 따르세요. 보드는 별 곡선을 세 가지 읽기로 쪼갭니다.',
+    brickOneTitle: '프로젝트 탐색, 헤엄 대신 필터',
+    brickOneDesc: '종합은 규모, 주간과 월간은 기세, 다크호스는 아직 소문나지 않은 싹. 열 개의 보드로 층층이 좁힙니다.',
+    brickTwoTitle: '정보 격차를 선수로',
+    brickTwoDesc: '30분마다 기록: 터지기 전 다크호스, 회복 중인 명작. 먼저 본 사람이 먼저 움직입니다.',
+    brickThreeTitle: '소문보다 곡선',
+    brickThreeDesc: '부업이든 방향 설정이든, 실제 스타 곡선을 따르는 편이 오늘 가장 시끄러운 것을 쫓는 것보다 낫습니다.',
     heroKicker: 'GITHUB OPEN SOURCE PULSE',
     heroTitleTop: '오픈소스는 ',
     heroTitleGradient: '불타고 있다.',

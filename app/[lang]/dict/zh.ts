@@ -118,9 +118,9 @@ export const zhDict: Dict = {
   locale: 'zh',
   meta: {
     siteName: 'GitHub 火线榜',
-    homeTitle: 'GitHub 火线榜 · 实时开源项目热榜（总榜/周榜/月榜/潜力/黑红）',
-    homeDescription: '实时追踪 GitHub 项目热度：史上最强总榜、官方 Trending 周月榜、年度新星、90 天潜力、黑马、被忽视的宝藏、黑红争议榜、Fork 之王与实时里程碑直播。全部口径公开，每分钟自动刷新。',
-    homeKeywords: 'GitHub 排行榜, GitHub 热榜, GitHub Trending, 开源项目排行, 每周热榜, 明星项目, 黑马项目, HN, 开源风向',
+    homeTitle: 'GitHub 火线榜 · 找项目看趋势，赚出信息差（总榜/周榜/月榜/黑马/里程碑）',
+    homeDescription: '把开源世界的信息差摊开给你看：每天多轮更新的 GitHub 总榜、周榜、月榜、90 天潜力、黑马与里程碑直播。找项目、做副业、抓风口，想盯的那条热度曲线 3 分钟锁定。口径全部公开，实时自动刷新。',
+    homeKeywords: 'GitHub 排行榜, GitHub 热榜, GitHub Trending, 找项目, 赚钱项目, 副业项目, 信息差, 风口, 变现机会, 开源项目排行, 黑马项目, 每周热榜, 创业灵感, 发财项目',
   },
   nav: {
     home: '首页',
@@ -128,6 +128,14 @@ export const zhDict: Dict = {
     srcNote: '数据来自 GitHub 官方',
   },
   home: {
+    valueTitle: '信息差，就是明面上的机会',
+    valueSub: '同一个 GitHub，多看一层就是多一条路。榜单把「谁的星在涨」拆成三件小事——找项目、抢先手、跟钱走。',
+    brickOneTitle: '找项目，不再大海捞针',
+    brickOneDesc: '十张榜单各管一层：总榜看格局，周月榜看势能，黑马看你还没听说过的苗头，3 分钟锁到值得下钻的那个。',
+    brickTwoTitle: '把信息差变成先手',
+    brickTwoDesc: '30 分钟一拍，每个项目的热度曲线都被记下：出圈前的黑马、回暖中的宝藏——先看到的人先用。',
+    brickThreeTitle: '顺着趋势找赚钱抓手',
+    brickThreeDesc: '做副业、选方向、找灵感，跟着真实星标曲线走，比追着喊单的风口靠谱。',
     heroKicker: 'GITHUB OPEN SOURCE PULSE',
     heroTitleTop: '今天，',
     heroTitleGradient: '谁在燃烧。',

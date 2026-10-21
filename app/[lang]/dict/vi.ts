@@ -117,9 +117,9 @@ export const viDict: Dict = {
   locale: 'vi',
   meta: {
     siteName: 'GitHub Hot Board',
-    homeTitle: 'GitHub Hot Board · Bảng xếp hạng nguồn mở trực tiếp (mọi thời đại / tuần / tăng trưởng / bị lãng quên)',
-    homeDescription: 'Bảng xếp hạng dự án GitHub trực tiếp: nhà vô địch mọi thời đại, Trending tuần & tháng chính thức, gương mặt mới của năm, độ dốc tăng 90 ngày, ngựa ô, kho báu bị lãng quên, chỉ số gây tranh cãi, vua Fork và theo dõi cột mốc trực tiếp. Phương pháp minh bạch, làm mới tới từng phút.',
-    homeKeywords: 'GitHub bảng xếp hạng, GitHub Trending, dự án mã nguồn mở, repo nổi bật, dự án tăng trưởng nhanh, bảng xếp hạng hàng tuần',
+    homeTitle: 'GitHub Hot Board · Tìm dự án sớm, đón làn sóng (Toàn thời gian / Tuần / Tháng / Ngựa ô)',
+    homeDescription: 'Chênh lệch thông tin, bày ra trước mắt. Bảng xếp hạng GitHub trực tiếp: nhà vô địch toàn thời gian, sóng tuần tháng, đà tăng 90 ngày, ngựa ô và cột mốc trực tiếp. Tìm dự án tiếp theo, thu nhập thêm hay ý tưởng sản phẩm trong ba phút. Phương pháp minh bạch, tự động cập nhật.',
+    homeKeywords: 'GitHub bảng xếp hạng, GitHub Trending, tìm dự án sớm, ý tưởng thu nhập thêm, kiếm tiền với mã nguồn mở, chênh lệch thông tin, dự án tăng trưởng',
   },
   nav: {
     home: 'Trang chủ',
@@ -127,6 +127,14 @@ export const viDict: Dict = {
     srcNote: 'Dữ liệu từ GitHub chính thức',
   },
   home: {
+    valueTitle: 'Chênh lệch thông tin nằm ngay đó',
+    valueSub: 'Cùng một GitHub, một tầng sâu hơn. Tìm dự án, đi trước, đi theo sức bật thật — bảng xếp hạng biến đường cong vì sao thành ba lượt đọc nhanh.',
+    brickOneTitle: 'Tìm dự án không bị loãng',
+    brickOneDesc: 'Mười bảng, mười lớp lọc: bảng toàn thời gian kê khung cảnh trường, tuần và tháng đặt nhịp, ngựa ô cảnh báo điều chưa nghe.',
+    brickTwoTitle: 'Từ chênh lệch thành lợi thế',
+    brickTwoDesc: 'Một khung cảnh 30 phút một lần: ngựa ô trước khi bùng nổ, sự trở lại trong lúc hồi phục. Ai thấy trước, người đó đi trước.',
+    brickThreeTitle: 'Đường cong thật, không phải ồn ào',
+    brickThreeDesc: 'Thu nhập thêm, cược sản phẩm hay đơn thuần cảm hứng — xu hướng từ lịch sử ngôi sao thật vượt mọi kẻ gào to hôm nay.',
     heroKicker: 'GITHUB OPEN SOURCE PULSE',
     heroTitleTop: 'Mã nguồn mở ',
     heroTitleGradient: 'đang cháy.',

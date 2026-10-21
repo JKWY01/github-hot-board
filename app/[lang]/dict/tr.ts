@@ -117,9 +117,9 @@ export const trDict: Dict = {
   locale: 'tr',
   meta: {
     siteName: 'GitHub Hot Board',
-    homeTitle: 'GitHub Hot Board · Canlı açık kaynak sıralamaları (tüm zamanlar / haftalık / yükselen / ihmal edilen)',
-    homeDescription: 'Canlı GitHub proje sıralamaları: tüm zamanların şampiyonları, resmi Trending haftalık ve aylık listeleri, yılın yeni projeleri, 90 günlük yükseliş eğrisi, kara atlar, ihmal edilmiş hazineler, tartışma endeksi, Fork kralları ve canlı kilometre taşı takibi. Yöntem şeffaf, yenileme dakikalarla ölçülür.',
-    homeKeywords: 'GitHub sıralaması, GitHub Trending, açık kaynak projeler, popüler repolar, yükselen projeler, haftalık GitHub listesi',
+    homeTitle: 'GitHub Hot Board · Projeleri erken bul, dalgayı yakala (Tüm zamanlar / Haftalık / Aylık / Kara atlar)',
+    homeDescription: 'Bilgi farkı açıkça masada. Canlı GitHub sıralamaları: tüm zamanların şampiyonları, haftalık ve aylık sıçramalar, 90 günlük yükselişler, kara atlar ve canlı kilometre taşları. Üç dakikada bir sonraki projeni, yan gelir fikrini veya ürün fikrini bul. Şeffaf yöntem, otomatik yenileme.',
+    homeKeywords: 'GitHub sıralaması, GitHub Trending, proje bulma, yan gelir fikirleri, açık kaynak ile para kazanma, bilgi farkı, yükselen projeler',
   },
   nav: {
     home: 'Ana sayfa',
@@ -127,6 +127,14 @@ export const trDict: Dict = {
     srcNote: 'Veriler resmi GitHub’dan',
   },
   home: {
+    valueTitle: 'Bilgi farkı tam ortada',
+    valueSub: 'Aynı GitHub, bir katman derin. Proje bul, önce hamle yap, gerçek ivmeyi izle — panolar yıldız eğrilerini üç hızlı okumaya çevirir.',
+    brickOneTitle: 'Boğulmadan proje bulmak',
+    brickOneDesc: 'On pano, on filtre: tüm zamanlar alanı çerçeveler, haftalık ve aylık temposu koyar, kara atlar henüz duyulmamışı işaretler.',
+    brickTwoTitle: 'Bilgi farkından hamleye',
+    brickTwoDesc: 'Her 30 dakikada bir kare: patlamadan önce kara at, toparlanırken geri dönüş. Önce gören, önce oynar.',
+    brickThreeTitle: 'Gerçek eğriler, gerçek ivme',
+    brickThreeDesc: 'Yan gelir, ürün bahisleri ya da sadece ilham — gerçek yıldız geçmişinden kurulan akıntılar, gürültücü günün sesinden daha sağlamdır.',
     heroKicker: 'GITHUB OPEN SOURCE PULSE',
     heroTitleTop: 'Açık kaynak ',
     heroTitleGradient: 'yanıyor.',

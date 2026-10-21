@@ -117,9 +117,9 @@ export const deDict: Dict = {
   locale: 'de',
   meta: {
     siteName: 'GitHub Hot Board',
-    homeTitle: 'GitHub Hot Board · Live-Rankings für Open Source (Allzeit / Woche / Steigung / Unterschätzt)',
-    homeDescription: 'Live-Rankings für GitHub-Projekte: Allzeit-Champions, offizielles Trending (Woche & Monat), Rookies des Jahres, 90-Tage-Steigung, Geheimtipps, unterschätzte Perlen, Kontroversindex, Fork-Könige und Live-Meilensteine. Transparente Methodik, minutenweise Aktualisierung.',
-    homeKeywords: 'GitHub Rangliste, GitHub Trending, Open Source Ranking, wöchentliche Stars, aufsteigende Projekte, unterschätzte Repos',
+    homeTitle: 'GitHub Hot Board · Projekte früh finden, den Schub nutzen (Allzeit / Wöchentlich / Monatlich / Dark Horses)',
+    homeDescription: 'Die Informationslücke, offen auf dem Tisch: Live-GitHub-Rankings für Allzeit-Sieger, wöchentliche und monatliche Schübe, 90-Tage-Aufsteiger, Dark Horses und live Meilensteine. Finde dein nächstes Projekt, deinen Nebenverdienst oder deine Produktidee in drei Minuten. Transparente Methodik, automatisch aktualisiert.',
+    homeKeywords: 'GitHub Rangliste, GitHub Trending, Projekte früh finden, Nebeneinkommen Ideen, mit Open Source Geld verdienen, Informationslücke, aufsteigende Projekte, Open Source Ranking',
   },
   nav: {
     home: 'Start',
@@ -127,6 +127,14 @@ export const deDict: Dict = {
     srcNote: 'Daten direkt von GitHub',
   },
   home: {
+    valueTitle: 'Die Informationslücke liegt offen vor dir',
+    valueSub: 'Dasselbe GitHub, eine Ebene tiefer. Projekte finden, zuerst reagieren, dem echten Momentum folgen — die Boards brechen Sternkurven in drei griffige Lesezeichen.',
+    brickOneTitle: 'Projekte finden, ohne unterzugehen',
+    brickOneDesc: 'Zehn Boards, zehn Filter: die Allzeit-Liste zeigt das Feld, Woche und Monat das Tempo, Dark Horses zeigen, was noch unsichtbar ist.',
+    brickTwoTitle: 'Aus der Lücke wird ein Vorsprung',
+    brickTwoDesc: 'Alle 30 Minuten ein Schnappschuss: Dark Horses vor dem Durchbruch, Comebacks während der Erholung. Wer zuerst sieht, bewegt zuerst.',
+    brickThreeTitle: 'Echten Kurven folgen statt Schlagworten',
+    brickThreeDesc: 'Nebenprojekt, Produktwette oder Inspiration — Trends aus echter Sternhistorie schlagen das laute Getöse des Tages.',
     heroKicker: 'GITHUB OPEN SOURCE PULSE',
     heroTitleTop: 'Open Source ',
     heroTitleGradient: 'brennt.',

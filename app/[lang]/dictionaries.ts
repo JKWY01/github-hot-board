@@ -48,6 +48,15 @@ export interface Dict {
     srcNote: string
   }
   home: {
+    // SEO 价值块(信息差/找项目/赚钱关键词的可见落点)
+    valueTitle: string
+    valueSub: string
+    brickOneTitle: string
+    brickOneDesc: string
+    brickTwoTitle: string
+    brickTwoDesc: string
+    brickThreeTitle: string
+    brickThreeDesc: string
     heroKicker: string
     heroTitleTop: string
     heroTitleGradient: string

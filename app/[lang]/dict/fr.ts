@@ -117,9 +117,9 @@ export const frDict: Dict = {
   locale: 'fr',
   meta: {
     siteName: 'GitHub Hot Board',
-    homeTitle: 'GitHub Hot Board · Classements open source en direct (Tous temps / Hebdo / Montée / Méconnus)',
-    homeDescription: 'Classements GitHub en temps réel : champions de tous les temps, Trending hebdo et mensuel officiel, révélations de l’année, pente d’ascension sur 90 jours, outsiders, pépites sous-estimées, indice de controverse, rois du fork et jalons suivis en direct. Méthodologie transparente, rafraîchissement à la minute.',
-    homeKeywords: 'classement GitHub, dépôts tendance, classement open source, stars hebdo, projets émergents, dépôts méconnus',
+    homeTitle: 'GitHub Hot Board · Trouver les projets tôt, surfer sur la vague (Tous temps / Hebdo / Mensuel / Outsiders)',
+    homeDescription: 'Le fossé d’information, posé en clair. Classements GitHub en direct : champions de tous les temps, vagues hebdo et mensuelles, ascensions sur 90 jours, outsiders et jalons en direct. Trouvez votre prochain projet, revenu complémentaire ou idée de produit en trois minutes. Méthodologie transparente, rafraîchissement automatique.',
+    homeKeywords: 'classement GitHub, dépôts tendance, trouver des projets tôt, idées de revenu complémentaire, gagner de l’argent avec l’open source, fossé d’information, projets émergents',
   },
   nav: {
     home: 'Accueil',
@@ -127,6 +127,14 @@ export const frDict: Dict = {
     srcNote: 'Données issues de GitHub officiel',
   },
   home: {
+    valueTitle: 'Le fossé d’information est là, à découvert',
+    valueSub: 'Le même GitHub, une couche plus loin. Trouver des projets, frapper en premier, suivre l’argent réel — les classements transforment les courbes d’étoiles en trois lectures rapides.',
+    brickOneTitle: 'Trouver des projets sans se noyer',
+    brickOneDesc: 'Dix listes, dix filtres : le palmarès historique cadre le champ, l’hebdo et le mensuel donnent le tempo, les outsiders signalent l’inconnu.',
+    brickTwoTitle: 'Le fossé devient l’avance',
+    brickTwoDesc: 'Un photo toutes les 30 minutes : l’outsider avant l’explosion, le retour pendant qu’il remonte. Celui qui voit d’abord bouge d’abord.',
+    brickThreeTitle: 'Suivre de vraies courbes, pas le vacarme',
+    brickThreeDesc: 'Revenu complémentaire, pari produit ou simple inspiration — les vraies courbes d’étoiles battent le bruit du jour.',
     heroKicker: 'GITHUB OPEN SOURCE PULSE',
     heroTitleTop: 'L’open source ',
     heroTitleGradient: 's’embrase.',

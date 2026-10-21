@@ -117,9 +117,9 @@ export const esDict: Dict = {
   locale: 'es',
   meta: {
     siteName: 'GitHub Hot Board',
-    homeTitle: 'GitHub Hot Board · Rankings en vivo de open source (Histórico / Semanal / Emergentes / Ignorados)',
-    homeDescription: 'Rankings en vivo de proyectos de GitHub: campeones históricos, Trending oficial semanal y mensual, los nuevos del año, pendiente de 90 días, caballos oscuros, gemas ignoradas, índice de polémica, rey del Fork y hitos en directo. Metodología transparente, refresco por minutos.',
-    homeKeywords: 'ranking GitHub, trending GitHub, rankings open source, repos con más estrellas, proyectos emergentes, repos infravalorados',
+    homeTitle: 'GitHub Hot Board · Encuentra proyectos pronto y sube en la ola (Histórico / Semanal / Mensual / Sorpresas)',
+    homeDescription: 'La brecha de información, a la vista de todos. Rankings de GitHub en vivo: campeones históricos, subidas semanales y mensuales, ascensos de 90 días, caballos oscuros e hitos en directo. Encuentra tu próximo proyecto, ingreso extra o idea de producto en tres minutos. Metodología transparente, actualización automática.',
+    homeKeywords: 'ranking GitHub, trending GitHub, encontrar proyectos pronto, ideas de ingreso extra, ganar dinero con open source, brecha de información, proyectos emergentes, rankings open source',
   },
   nav: {
     home: 'Inicio',
@@ -127,6 +127,14 @@ export const esDict: Dict = {
     srcNote: 'Datos del GitHub oficial',
   },
   home: {
+    valueTitle: 'La brecha de información está a simple vista',
+    valueSub: 'El mismo GitHub, una capa más profundo. Encuentra proyectos, actúa primero, sigue el dinero real — los rankings convierten las curvas de estrellas en tres lecturas rápidas.',
+    brickOneTitle: 'Encontrar proyectos sin ahogarse',
+    brickOneDesc: 'Diez listas, diez filtros: el histórico encuadra el campo, semanal y mensual marcan el ritmo, las sorpresas avisan lo que aún no has oído.',
+    brickTwoTitle: 'Convierte la brecha en ventaja',
+    brickTwoDesc: 'Un radar cada 30 minutos: caballos oscuros antes de explotar, regresos mientras se recuperan. Quien ve primero, se mueve primero.',
+    brickThreeTitle: 'Sigue curvas reales, no ruido',
+    brickThreeDesc: 'Ingresos extra, apuestas de producto o solo inspiración — las tendencias de estrellas reales pesan más que cualquier gritón del día.',
     heroKicker: 'GITHUB OPEN SOURCE PULSE',
     heroTitleTop: 'El open source está ',
     heroTitleGradient: 'en llamas.',

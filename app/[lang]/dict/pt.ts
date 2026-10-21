@@ -117,9 +117,9 @@ export const ptDict: Dict = {
   locale: 'pt',
   meta: {
     siteName: 'GitHub Hot Board',
-    homeTitle: 'GitHub Hot Board · Rankings ao vivo de open source (Histórico / Semanal / Emergentes / Ignorados)',
-    homeDescription: 'Rankings ao vivo de projetos do GitHub: campeões de todos os tempos, Trending oficial semanal e mensal, estreantes do ano, curva de 90 dias, dark horses, gemas ignoradas, índice de polêmica, rei do Fork e acompanhamento de milestones em tempo real. Metodologia transparente, atualização por minuto.',
-    homeKeywords: 'ranking GitHub, trending GitHub, projetos open source, repos mais estrelados, stars da semana, projetos emergentes, repos infravalorados',
+    homeTitle: 'GitHub Hot Board · Encontre projetos cedo, surfe a onda (Histórico / Semanal / Mensal / Outsiders)',
+    homeDescription: 'A assimetria de informação, à vista. Rankings GitHub ao vivo: campeões históricos, ondas semanais e mensais, ascensões de 90 dias, cavalos escuros e marcos ao vivo. Encontre seu próximo projeto, renda extra ou ideia de produto em três minutos. Metodologia transparente, atualização automática.',
+    homeKeywords: 'ranking GitHub, trending GitHub, encontrar projetos cedo, ideias de renda extra, ganhar dinheiro com open source, assimetria de informação, projetos emergentes',
   },
   nav: {
     home: 'Início',
@@ -127,6 +127,14 @@ export const ptDict: Dict = {
     srcNote: 'Dados do GitHub oficial',
   },
   home: {
+    valueTitle: 'A assimetria de informação está à vista de todos',
+    valueSub: 'O mesmo GitHub, uma camada mais fundo. Encontre projetos, mova-se primeiro, siga o dinheiro real — os rankings transformam curvas de estrelas em três leituras rápidas.',
+    brickOneTitle: 'Encontrar projetos sem se afogar',
+    brickOneDesc: 'Dez listas, dez filtros: o histórico enquadra o campo, semanal e mensal ditam o ritmo, os outsiders avisam o inesperado.',
+    brickTwoTitle: 'Da assimetria à vantagem',
+    brickTwoDesc: 'Um retrato a cada 30 minutos: o cavalo escuro antes de estourar, o retorno enquanto se recupera. Quem vê primeiro, age primeiro.',
+    brickThreeTitle: 'Curvas reais, não ruído',
+    brickThreeDesc: 'Renda extra, aposta de produto ou pura inspiração — tendências com estrelas reais vencem o barulho do dia.',
     heroKicker: 'GITHUB OPEN SOURCE PULSE',
     heroTitleTop: 'O open source está ',
     heroTitleGradient: 'pegando fogo.',

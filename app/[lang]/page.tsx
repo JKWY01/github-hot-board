@@ -165,6 +165,29 @@ export default async function HomePage({
         </section>
       </Reveal>
 
+      {/* SEO 价值块:信息差/找项目/赚钱 的可见正文落点(所有语言都有) */}
+      <Reveal>
+        <section className="mx-auto max-w-6xl px-5 py-14 sm:px-6">
+          <div className="max-w-xl">
+            <p className="kicker">INFORMATION EDGE</p>
+            <h2 className="section-title mt-1.5">{dict.home.valueTitle}</h2>
+            <p className="mt-2 text-[14.5px] leading-relaxed text-sub">{dict.home.valueSub}</p>
+          </div>
+          <ul className="mt-8 grid gap-4 sm:grid-cols-3">
+            {[
+              { t: dict.home.brickOneTitle, d: dict.home.brickOneDesc },
+              { t: dict.home.brickTwoTitle, d: dict.home.brickTwoDesc },
+              { t: dict.home.brickThreeTitle, d: dict.home.brickThreeDesc },
+            ].map((brick, i) => (
+              <li key={i} className="h-full rounded-[22px] border-[0.5px] border-black/10 bg-white p-6">
+                <h3 className="text-[16px] font-semibold tracking-tight text-ink">{brick.t}</h3>
+                <p className="mt-2 text-[13px] leading-relaxed text-sub">{brick.d}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
+      </Reveal>
+
       {/* 榜单总览 */}
       <section className="mx-auto max-w-6xl px-5 py-16 sm:px-6">
         <div className="max-w-xl">

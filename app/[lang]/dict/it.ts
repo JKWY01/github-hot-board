@@ -117,9 +117,9 @@ export const itDict: Dict = {
   locale: 'it',
   meta: {
     siteName: 'GitHub Hot Board',
-    homeTitle: 'GitHub Hot Board · Classifiche live di open source (Storico / Settimanale / Emergenti / Ignorate)',
-    homeDescription: 'Classifiche live dei progetti GitHub: campioni di sempre, Trending ufficiale settimanale e mensile, debuttanti dell’anno, curva a 90 giorni, outsider, gemme ignorate, indice di polemica, re dei fork e milestone dal vivo. Metodologia trasparente, aggiornamento al minuto.',
-    homeKeywords: 'classifica GitHub, trending GitHub, progetti open source, repo più stellati, star della settimana, progetti emergenti, repo sottovalutati',
+    homeTitle: 'GitHub Hot Board · Trova progetti in anticipo, cavalca l’onda (Assoluta / Settimanale / Mensile / Outsider)',
+    homeDescription: 'Il divario di informazioni, in bella vista. Classifiche GitHub live: campioni di sempre, impennate settimanali e mensili, risalite a 90 giorni, outsider e traguardi live. Trova il tuo prossimo progetto, extra-reddito o idea di prodotto in tre minuti. Metodo trasparente, aggiornamento automatico.',
+    homeKeywords: 'classifica GitHub, trending GitHub, trovare progetti in anticipo, idee extra-reddito, guadagnare con l’open source, divario di informazioni, progetti emergenti',
   },
   nav: {
     home: 'Home',
@@ -127,6 +127,14 @@ export const itDict: Dict = {
     srcNote: 'Dati ufficiali di GitHub',
   },
   home: {
+    valueTitle: 'Il divario di informazioni è lì, allo scoperto',
+    valueSub: 'Lo stesso GitHub, un livello sotto. Trova progetti, muoviti per primo, segui il denaro vero — le classifiche compongono le curve di stelle in tre letture rapide.',
+    brickOneTitle: 'Trovare progetti senza affogare',
+    brickOneDesc: 'Dieci liste, dieci filtri: la classifica assoluta inquadra il campo, sette e mese danno il ritmo, gli outsider segnalano l’ignoto.',
+    brickTwoTitle: 'Il divario diventa vantaggio',
+    brickTwoDesc: 'Uno scatto ogni 30 minuti: l’outsider prima dello scoppio, il ritorno mentre riprende. Chi vede prima, muove prima.',
+    brickThreeTitle: 'Curve vere, non rumore',
+    brickThreeDesc: 'Extra-reddito, scommessa di prodotto o pura ispirazione — le curve di stelle vere battono le urla del giorno.',
     heroKicker: 'GITHUB OPEN SOURCE PULSE',
     heroTitleTop: 'L’open source è ',
     heroTitleGradient: 'in fiamme.',

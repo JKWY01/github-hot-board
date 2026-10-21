@@ -117,9 +117,9 @@ export const plDict: Dict = {
   locale: 'pl',
   meta: {
     siteName: 'GitHub Hot Board',
-    homeTitle: 'GitHub Hot Board · Żywe listy open source (wszech czasów / tydzień / wznoszące się / niedoceniane)',
-    homeDescription: 'Żywe zestawienia projektów GitHub: mistrzowie wszech czasów, oficjalny Trending na tydzień i miesiąc, świeżaki roku, 90-dniowy kąt wznoszenia, ciemne konie, niedoceniane perełki, indeks tarcia, król forków i przełomy na żywo. Metodologia otwarta, odświeżanie co minutę.',
-    homeKeywords: 'ranking GitHub, ranking repozytoriów, GitHub Trending, gwiazdki GitHub, top projekty, repozytoria tygodnia, ciemne konie, niedoceniane projekty, open source',
+    homeTitle: 'GitHub Hot Board · Wcześniej znajdować projekty i łapać falę (Overall / Tydzień / Miesiąc / Ciemne konie)',
+    homeDescription: 'Luka informacyjna jawnie na stole. Żywe rankingi GitHub: mistrzowie od zawsze, fale tygodnia i miesiąca, 90-dniowe wzloty, ciemne konie i na żywo kamienie milowe. Znajdź kolejny projekt, dodatkowy zarobek albo pomysł produkt w trzy minuty. Przejrzysta metodologia, automatyczne odświeżanie.',
+    homeKeywords: 'ranking GitHub, GitHub Trending, szukanie projektów wcześniej, pomysły na dodatkowy zarobek, pieniądze z open source, luka informacyjna, rosnące projekty',
   },
   nav: {
     home: 'Główna',
@@ -127,6 +127,14 @@ export const plDict: Dict = {
     srcNote: 'Dane z oficjalnego GitHuba',
   },
   home: {
+    valueTitle: 'Luka informacyjna leży na wierzchu',
+    valueSub: 'Ten sam GitHub, głębiej o warstwę. Znajdź projekt, zagraj pierwszy, idź za prawdziwym rozpędem — rankingi obracają krzywe gwiazd w trzy szybkie lektury.',
+    brickOneTitle: 'Znajdować projekt bez tonięcia',
+    brickOneDesc: 'Dziesięć tablic, dziesięć filtrów: tablica all-time ustawia pole, tydzień i miesiąc nadają tempo, ciemne konie oznaczają to, czego jeszcze nie znasz.',
+    brickTwoTitle: 'Luka staje się przewagą',
+    brickTwoDesc: 'Kadr co 30 minut: ciemny koń przed wybiciem, powrót w trakcie zdrowienia. Kto widzi pierwszy, rusza pierwszy.',
+    brickThreeTitle: 'Prawdziwe krzywe, nie hałas',
+    brickThreeDesc: 'Dodatkowy zarobek, zakład produktowy czy czysta inspiracja — trendy z prawdziwej historii gwiazd biją krzyk dnia.',
     heroKicker: 'GITHUB OPEN SOURCE PULSE',
     heroTitleTop: 'W open source ',
     heroTitleGradient: 'gorąco.',

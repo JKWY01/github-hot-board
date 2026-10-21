@@ -117,9 +117,9 @@ export const idDict: Dict = {
   locale: 'id',
   meta: {
     siteName: 'GitHub Hot Board',
-    homeTitle: 'GitHub Hot Board · Peringkat open source langsung (sepanjang masa / mingguan / menanjak / kurang diapresiasi)',
-    homeDescription: 'Peringkat proyek GitHub langsung: juara sepanjang masa, Trending mingguan & bulanan resmi, proyek baru tahun ini, kemiringan naik 90 hari, kuda hitam, permata yang terlupakan, indeks kontroversial, raja Fork dan pelacakan milestone langsung. Metodologi transparan, pembaruan level menit.',
-    homeKeywords: 'peringkat GitHub, GitHub Trending, proyek open source, repo populer, proyek naik daun, leaderboard GitHub mingguan',
+    homeTitle: 'GitHub Hot Board · Temukan proyek lebih awal, ikuti gelombang (Semua waktu / Mingguan / Bulanan / Kuda hitam)',
+    homeDescription: 'Kesenjangan informasi, terbuka di depan mata. Peringkat GitHub langsung: juara sepanjang masa, lonjakan mingguan dan bulanan, pendaki 90 hari, kuda hitam, dan tonggak langsung. Temukan proyek berikutnya, penghasilan tambahan, atau ide produk dalam tiga menit. Metodologi transparan, pembaruan otomatis.',
+    homeKeywords: 'peringkat GitHub, GitHub Trending, menemukan proyek lebih awal, ide penghasilan tambahan, menghasilkan uang dengan open source, kesenjangan informasi, proyek naik daun',
   },
   nav: {
     home: 'Beranda',
@@ -127,6 +127,14 @@ export const idDict: Dict = {
     srcNote: 'Data dari GitHub resmi',
   },
   home: {
+    valueTitle: 'Kesenjangan informasi terbuka di hadapan Anda',
+    valueSub: 'GitHub yang sama, satu lapisan lebih dalam. Temukan proyek, bergerak lebih dulu, ikuti momentum nyata — papan mengubah kurva bintang menjadi tiga bacaan cepat.',
+    brickOneTitle: 'Menemukan proyek tanpa tenggelam',
+    brickOneDesc: 'Sepuluh papan, sepuluh penyaring: papan sepanjang masa membingkai medan, mingguan dan bulanan menentukan tempo, kuda hitam menandai yang belum terdengar.',
+    brickTwoTitle: 'Dari kesenjangan menjadi keunggulan',
+    brickTwoDesc: 'Potret setiap 30 menit: kuda hitam sebelum meledak, comeback di tengah pemulihan. Yang melihat dulu, bergerak dulu.',
+    brickThreeTitle: 'Kurva nyata, bukan keriuhan',
+    brickThreeDesc: 'Penghasilan tambahan, taruhan produk, atau hanya inspirasi — gelombang dari riwayat bintang nyata lebih kuat daripada gaduh hari itu.',
     heroKicker: 'GITHUB OPEN SOURCE PULSE',
     heroTitleTop: 'Open source ',
     heroTitleGradient: 'membara.',

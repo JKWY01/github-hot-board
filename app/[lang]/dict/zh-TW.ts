@@ -117,9 +117,9 @@ export const zhTWDict: Dict = {
   locale: 'zh-TW',
   meta: {
     siteName: 'GitHub 火線榜',
-    homeTitle: 'GitHub 火線榜 · 即時開源專案熱榜（總榜／週榜／月榜／潛力／黑紅）',
-    homeDescription: '即時追蹤 GitHub 專案熱度：史上最強總榜、官方 Trending 週月榜、年度新星、90 天潛力斜率、黑馬、被埋沒的寶藏、爭議指數、Fork 之王與即時里程碑直播。統計方式全部公開，每分鐘自動刷新。',
-    homeKeywords: 'GitHub 排行榜, GitHub 熱榜, GitHub Trending, 開放原始碼專案, 每週熱門專案, 黑馬專案, 開源風向',
+    homeTitle: 'GitHub 火線榜 · 找專案看趨勢，賺出資訊差（總榜/週榜/月榜/黑馬/里程碑）',
+    homeDescription: '把開源世界的資訊差攤開給你看：每天多輪更新的 GitHub 總榜、週榜、月榜、90 天潛力、黑馬與里程碑直播。找專案、做副業、抓風口，想盯的熱度曲線 3 分鐘鎖定。口徑全部公開，即時自動更新。',
+    homeKeywords: 'GitHub 排行榜, GitHub 熱榜, GitHub Trending, 找專案, 賺錢專案, 副業專案, 資訊差, 風口, 變現機會, 開源專案排行, 黑馬專案, 每週熱門, 創業靈感, 發財專案',
   },
   nav: {
     home: '首頁',
@@ -127,6 +127,14 @@ export const zhTWDict: Dict = {
     srcNote: '資料來自 GitHub 官方',
   },
   home: {
+    valueTitle: '資訊差，就是明面上的機會',
+    valueSub: '同一個 GitHub，多看一層就是多一條路。榜單把「誰的星在漲」拆成三件小事——找專案、搶先手、跟錢走。',
+    brickOneTitle: '找專案，不再大海撈針',
+    brickOneDesc: '十張榜單各管一層：總榜看格局，週月榜看勢能，黑馬看你還沒聽過的苗頭，3 分鐘鎖到值得下鑽的那個。',
+    brickTwoTitle: '把資訊差變成先手',
+    brickTwoDesc: '30 分鐘一拍，每個專案的熱度曲線都被記下：出圈前的黑馬、回暖中的寶藏——先看到的人先用。',
+    brickThreeTitle: '順著趨勢找賺錢抓手',
+    brickThreeDesc: '做副業、選方向、找靈感，跟著真實星標曲線走，比追著喊單的風口靠譜。',
     heroKicker: 'GITHUB OPEN SOURCE PULSE',
     heroTitleTop: '今天，',
     heroTitleGradient: '誰在燃燒。',

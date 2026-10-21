@@ -117,9 +117,9 @@ export const jaDict: Dict = {
   locale: 'ja',
   meta: {
     siteName: 'GitHub Hot Board',
-    homeTitle: 'GitHub Hot Board · オープンソース プロジェクトのリアルタイム ランキング（総合/週間/月間/急上昇/論争）',
-    homeDescription: 'GitHub プロジェクトのリアルタイム ランキング：歴代累計の総合、公式 Trending の週間・月間、年間新星、90 日スロープ、ダークホース、見過ごされた宝石、論争指数、フォークの王、ライブマイルストーン追跡。算出方法をすべて公開し、分単位で自動更新します。',
-    homeKeywords: 'GitHub ランキング, GitHub Trending, オープンソース ランキング, 人気 リポジトリ, 急上昇 リポジトリ, スター数 ランキング, ダークホース プロジェクト',
+    homeTitle: 'GitHub Hot Board · プロジェクト探しとトレンド先取り（総合/週間/月間/ダークホース）',
+    homeDescription: 'オープンソースの情報格差を、ありのままに並べる。総合・週間・月間・90日の上昇・ダークホース・ライブマイルストーンまで、GitHub の熱を 3 分で把握。副業のネタ探しや製品アイデアの源に。コンセプトと算出方法はすべて公開、自動更新。',
+    homeKeywords: 'GitHub ランキング, GitHub Trending, プロジェクト探し, 副業アイデア, オープンソース ランキング, 情報格差, 急上昇 リポジトリ, ダークホース プロジェクト, 人気 リポジトリ',
   },
   nav: {
     home: 'ホーム',
@@ -127,6 +127,14 @@ export const jaDict: Dict = {
     srcNote: 'データは GitHub 公式より',
   },
   home: {
+    valueTitle: '情報格差は、目の前のチャンス',
+    valueSub: '同じ GitHub でも、もう一段掘ると道が増える。ボードは「星が伸びているのは誰か」を三つの読み物として見せる。',
+    brickOneTitle: '目的のプロジェクトに 3 分で到達',
+    brickOneDesc: '総合は規模、週間・月間は勢い、ダークホースはこれからの芽。十枚のボードで階層を絞り込みます。',
+    brickTwoTitle: '情報格差を一手前に',
+    brickTwoDesc: '30 分間隔の記録。バズる前のダークホース、回復途中の名作を先に見た人が先に動ける。',
+    brickThreeTitle: '流行に乗るより、曲線に乗る',
+    brickThreeDesc: '副業・方向性・着想のどれでも、実際のスター曲線に沿うのが一番失敗しにくい。',
     heroKicker: 'GITHUB OPEN SOURCE PULSE',
     heroTitleTop: 'オープンソースは',
     heroTitleGradient: '燃えている。',

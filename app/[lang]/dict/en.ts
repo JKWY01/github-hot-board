@@ -117,9 +117,9 @@ export const enDict: Dict = {
   locale: 'en',
   meta: {
     siteName: 'GitHub Hot Board',
-    homeTitle: 'GitHub Hot Board · Live open-source leaderboards (All-time / Weekly / Rising / Underrated)',
-    homeDescription: 'Live GitHub project leaderboards: all-time champions, official Trending weekly & monthly, fresh-of-the-year, 90-day rising slope, dark horses, underappreciated gems, the controversy index, fork kings and live milestone tracking. Transparent methodology, minute-level refresh.',
-    homeKeywords: 'GitHub leaderboard, trending repos, open source rankings, weekly stars, rising projects, underrated repos',
+    homeTitle: 'GitHub Hot Board · Find projects early, ride the surge, act on the information gap (All-time / Weekly / Monthly / Dark horses)',
+    homeDescription: 'The information gap, laid out in plain sight. Live GitHub leaderboards for all-time champions, weekly and monthly surges, 90-day risers, dark horses and live milestone tracking. Find your next project, side hustle or product idea in three minutes. Transparent methodology, auto-refreshed.',
+    homeKeywords: 'GitHub leaderboard, trending repos, find projects early, side hustle ideas, make money with open source, information gap, rising projects, open source rankings, weekly stars, underrated repos',
   },
   nav: {
     home: 'Home',
@@ -127,6 +127,14 @@ export const enDict: Dict = {
     srcNote: 'Data from official GitHub',
   },
   home: {
+    valueTitle: 'The information gap is hiding in plain sight',
+    valueSub: 'Same GitHub, one layer deeper. Find projects, move first, follow the real momentum — the boards turn star curves into three quick reads.',
+    brickOneTitle: 'Find projects without drowning',
+    brickOneDesc: 'Ten boards, ten filters: the all-time chart frames the field, weekly and monthly set the pace, dark horses flag what you have not heard of yet.',
+    brickTwoTitle: 'Turn the information gap into the first move',
+    brickTwoDesc: 'Snapshots every 30 minutes: dark horses before they break out, comebacks while they heal. Whoever sees first, moves first.',
+    brickThreeTitle: 'Follow real star curves, follow real momentum',
+    brickThreeDesc: 'Side hustles, product bets or plain inspiration — trends built from real star history beat whatever shouts loudest today.',
     heroKicker: 'GITHUB OPEN SOURCE PULSE',
     heroTitleTop: 'Open source is ',
     heroTitleGradient: 'burning.',
