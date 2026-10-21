@@ -16,6 +16,9 @@ concurrency:
   group: sync
   cancel-in-progress: false
 
+permissions:
+  contents: write
+
 env:
   BOARD_SLUGS: >-
     overall weekly monthly annual rising dark overlooked controversial forks milestone
