@@ -130,5 +130,38 @@ export async function syncAllBoards(
     }
   }
 
+  // IndexNow 催收:(Bing/Yandex/Seznam 等即时索引联盟)把"近 35 分钟在榜过的仓库"
+  // 以 /repo/ 档案页形式直接递给索引引擎,收录从"等爬虫月巡"变"分钟级入口"。
+  // 失败静默(催收是馈赠,不是依赖);未配 INDEXNOW_KEY 的环境直接跳过。
+  try {
+    await pingIndexNow()
+  } catch {
+    /* 催收失败不影响同步结果 */
+  }
+
   return { total: targets.length, ok, failed, itemsWritten: ok, pruned, durationMs: Date.now() - started, descPrefill }
+}
+
+/** IndexNow 提交:host/key/keyLocation + urlList(≤100)。 */
+async function pingIndexNow(): Promise<void> {
+  const key = (process.env.INDEXNOW_KEY ?? '').trim()
+  const base = (process.env.NEXT_PUBLIC_SITE_URL ?? '').replace(/\/+$/, '')
+  if (!key || !base) return
+  const { readRecentRepos } = await import('./snapshot')
+  const repos = (await readRecentRepos(35, 90)).filter(isRepoNameShape)
+  const urlList: string[] = []
+  urlList.push(`${base}/en`, `${base}/zh`)
+  for (const r of repos) urlList.push(`${base}/en/repo/${r}`)
+  if (urlList.length < 3) return
+  const res = await fetch('https://api.indexnow.org/indexnow', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json; charset=utf-8' },
+    body: JSON.stringify({ host: base.replace(/^https?:\/\//, ''), key, keyLocation: `${base}/indexnow-key.txt`, urlList }),
+    signal: AbortSignal.timeout(12_000),
+  })
+  console.error(`[indexnow] submitted=${urlList.length} http=${res.status}`)
+}
+
+function isRepoNameShape(s: string): boolean {
+  return /^[A-Za-z0-9_.-]{1,64}\/[A-Za-z0-9_.-]{1,64}$/.test(s)
 }

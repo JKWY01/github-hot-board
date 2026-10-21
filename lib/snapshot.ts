@@ -217,6 +217,32 @@ export async function pruneOld(): Promise<number> {
   })) ?? 0
 }
 
+/** 同榜邻居(档案页内链网):拿该榜基准口径(head 表最新 payload),以本仓库当前
+ * 名次为中心取前后各 3 名,排除自己。读的是现成 board_head,零新查询成本。 */
+export async function readBoardNeighbors(board: string, fullName: string) {
+  const head = await readBoardHead(dbKey(board))
+  const items = head?.data.items ?? []
+  if (items.length === 0) return []
+  const me = items.findIndex((it) => it.fullName === fullName)
+  if (me < 0) return []
+  const slice = items.slice(Math.max(0, me - 3), me + 4)
+  return slice
+    .filter((it) => it.fullName !== fullName)
+    .map((it) => ({ fullName: it.fullName, rank: items.indexOf(it) + 1, stars: Number(it.stars) || 0 }))
+}
+
+/** 近 N 分钟在榜过的仓库(去重,上限 cap):IndexNow 催收清单的种子。 */
+export async function readRecentRepos(mins = 35, cap = 100): Promise<string[]> {
+  if (!DATABASE_URL) return []
+  return (await withDb(async (sql) => {
+    const rows = await sql`
+      SELECT DISTINCT repo FROM board_snapshots
+      WHERE taken_at > now() - (${mins} || ' minutes')::interval
+      LIMIT ${cap}`
+    return rows.map((r) => String(r.repo))
+  })) ?? []
+}
+
 /** 概览(诊断用)。 */
 export async function dbStats(): Promise<{ headKeys: number; rows: number } | null> {
   return (await withDb(async (sql) => {

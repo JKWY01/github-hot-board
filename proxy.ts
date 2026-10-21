@@ -196,9 +196,9 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   // 语言段开放给全部注册语种,枚举交给 proxy 内部判定;
-  // 排除 api/_next/静态资产,避免无谓地跑进 matcher。
+  // 排除 api/_next/静态资产/feed/indexnow 密钥,避免无谓地跑进 matcher。
   matcher: [
     '/',
-    '/((?!api|_next|favicon.ico|icon.svg|robots.txt|sitemap|manifest.webmanifest).*)',
+    '/((?!api|_next|favicon.ico|icon.svg|robots.txt|sitemap|manifest.webmanifest|feed.xml|indexnow-key.txt).*)',
   ],
 }

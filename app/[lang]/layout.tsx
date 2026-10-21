@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 
+const BASE = (process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000').replace(/\/+$/, '')
+
 import '../globals.css'
 import Nav from '@/components/Nav'
 import Footer from '@/components/Footer'
@@ -21,6 +23,9 @@ export async function generateMetadata({ params }: LayoutProps<'/[lang]'>): Prom
     description: dict.meta.homeDescription,
     applicationName: dict.meta.siteName,
     robots: { index: true, follow: true },
+    alternates: {
+      types: { 'application/rss+xml': `${BASE}/feed.xml` },
+    },
   }
 }
 

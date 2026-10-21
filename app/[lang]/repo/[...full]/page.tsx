@@ -4,7 +4,7 @@ import type { Metadata } from 'next'
 import { isLocale } from '@/app/[lang]/dictionaries'
 import { LOCALES } from '@/lib/locales'
 import { getRepoArchiveCached, isRepoFullName } from '@/lib/repoarchive'
-import { readRepoDescs } from '@/lib/snapshot'
+import { readBoardNeighbors, readRepoDescs } from '@/lib/snapshot'
 import RepoArchiveView, { repoArchiveMetadata } from '@/components/repo-archive'
 
 /** 仓库档案页:/{lang}/repo/{owner}/{repo}
@@ -66,5 +66,11 @@ export default async function RepoPage({
   const descs = descsMap.get(fullName)
   const descText = descs?.[lang] ?? descs?.en ?? null
 
-  return <RepoArchiveView archive={archive} locale={lang} descText={descText} />
+  // 同榜近邻(内链网):读现成 board_head payload,零新查询;失败静默,别拖档案页。
+  const primary = archive.appearances[0]
+  const related = primary
+    ? await readBoardNeighbors(primary.board, fullName).catch(() => [])
+    : []
+
+  return <RepoArchiveView archive={archive} locale={lang} descText={descText} related={related} />
 }
