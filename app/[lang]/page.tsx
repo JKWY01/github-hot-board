@@ -9,6 +9,7 @@ import type { Locale } from '@/lib/types'
 import BoardStream from '@/components/BoardStream'
 import Reveal from '@/components/Reveal'
 import { fmtNum } from '@/lib/format'
+import { guideFor } from '@/lib/guide'
 
 /** 页内 BoardStream 用 after() 挂描述补齐,给它留出执行时间(Vercel 按平台上限取小)。 */
 export const maxDuration = 60
@@ -194,6 +195,15 @@ export default async function HomePage({
           <p className="kicker">{dict.home.boardsKicker}</p>
           <h2 className="section-title mt-1.5">{dict.home.boardsTitle}</h2>
           <p className="mt-2 text-[14.5px] leading-relaxed text-sub">{dict.home.boardsSub}</p>
+          <p className="mt-3">
+            <Link
+              href={`/${locale}/guide`}
+              prefetch={false}
+              className="text-[13.5px] font-medium text-accent-strong transition-opacity hover:opacity-75"
+            >
+              {guideFor(lang).homeCta} &rarr;
+            </Link>
+          </p>
         </div>
 
         <ul className="mt-9 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

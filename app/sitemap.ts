@@ -53,6 +53,13 @@ export default async function sitemap(props: { id: Promise<string> }): Promise<M
       priority: 1,
       alternates: alternates(''),
     })
+    entries.push({
+      url: `${BASE}/${lang}/guide`,
+      lastModified: now,
+      changeFrequency: 'weekly',
+      priority: 0.6,
+      alternates: alternates('/guide'),
+    })
     for (const [slug, meta] of Object.entries(BOARD_META)) {
       const boardPath = `/boards/${slug}`
       entries.push({
