@@ -1,4 +1,7 @@
-# 数据同步(唯一的进货通道):每 30 分钟敲一次线上 /api/sync 端点。
+# 数据同步(唯一的进货通道):每 30 分钟一轮。
+# 策略:逐榜单发(?only=<board>),每发都远小于函数 300s 上限——首建/冷库的全量
+# 一发曾超时被平台 504 掐断(函数整发跑不完,workflow 红叉)。改成单榜接力后,
+# 中断则下一个 30 分钟轮各自续跑,504 只会影响个别榜、不再判死整轮。
 # 配置(仓库 Settings → Secrets and variables → Actions):
 #   SYNC_URL    形如 https://你的域名/api/sync
 #   CRON_SECRET 与 Vercel 环境变量 CRON_SECRET 相同
@@ -13,18 +16,30 @@ concurrency:
   group: sync
   cancel-in-progress: false
 
+env:
+  BOARD_SLUGS: >-
+    overall weekly monthly annual rising dark overlooked controversial forks milestone
+
 jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-      - name: Ping /api/sync
+      - name: Ping board by board
         env:
           SYNC_URL: ${{ secrets.SYNC_URL }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
           set -euo pipefail
-          code=$(curl -s -m 420 -o /tmp/sync.json -w '%{http_code}' -X POST \
-            -H "authorization: Bearer ${CRON_SECRET}" "${SYNC_URL}")
-          echo "http ${code}"
-          head -c 400 /tmp/sync.json; echo
-          test "${code}" = "200"
+          base="${SYNC_URL%/}"
+          for b in ${BOARD_SLUGS}; do
+            code=$(curl -s -m 330 -o /tmp/sync.json -w '%{http_code}' -X POST \
+              -H "authorization: Bearer ${CRON_SECRET}" "${base}?only=${b}")
+            echo "board ${b} -> http ${code}"
+            head -c 240 /tmp/sync.json; echo
+            case "${code}" in
+              200) : ;;
+              504) echo "(504:本榜本轮超时,数据已部分入库;下轮续跑)" ;;
+              *) echo "unexpected ${code}; 继续其余榜,最后统一判失败"; FAILED=1 ;;
+            esac
+          done
+          if [ "${FAILED:-0}" = "1" ]; then exit 1; fi
