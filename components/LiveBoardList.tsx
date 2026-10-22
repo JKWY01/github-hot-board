@@ -93,6 +93,12 @@ export default function LiveBoardList({
 }: LiveBoardListProps) {
   const [items, setItems] = useState<BoardItem[]>(limit ? initialItems.slice(0, limit) : initialItems)
   const [generatedAt, setGeneratedAt] = useState(initialGeneratedAt)
+  // SSR 期的"当前时刻"锚:用快照时刻(稳定合法值),避免 unstable Date.now() 中毒构建;
+  // 真实钟由挂水合后的 nowAnchor 接管,首帧差值已 suppressHydrationWarning 压制。
+  const dataNowMs = useMemo(() => {
+    const t = Date.parse(initialGeneratedAt)
+    return Number.isFinite(t) ? t : 0
+  }, [initialGeneratedAt])
   const [degraded, setDegraded] = useState(Boolean(initialDegraded))
   const [stale, setStale] = useState(false)
   const [flags, setFlags] = useState<Record<string, RowFlag>>({})
@@ -600,10 +606,10 @@ export default function LiveBoardList({
                       </span>
                     )}
                     {showPushed && item.pushedAt && (
+                      // SSR/爬虫锚 = 快照时刻(合法稳定值);水合后由真实钟接管,期间差值抑制警告
                       <span className="inline-flex items-center gap-1" suppressHydrationWarning>
                         <ClockIcon size={11} />
-                        {/* SSR/首帧直接用墙钟(见 lib/format.fmtAgo 注释):爬虫见到真实时间而非 '--' */}
-                        {fmtAgo(item.pushedAt, locale, nowAnchor || Date.now())}
+                        {fmtAgo(item.pushedAt, locale, nowAnchor || dataNowMs)}
                       </span>
                     )}
                     {secondary === 'stars' && metric !== 'stars' && (
