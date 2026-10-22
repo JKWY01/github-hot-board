@@ -5,20 +5,20 @@
 
 | # | 项目 | 累计 Star | 本周新增 Star | 简介 |
 |---|---|---|---|---|
-| 1 | [morluto/rea](https://git.vaiox.xyz/zh/repo/morluto/rea) | 363.1k | 129.4k | Reverse engineer anything with agents, from app behavior dow… |
+| 1 | [morluto/rea](https://git.vaiox.xyz/zh/repo/morluto/rea) | 364.8k | 129.4k | Reverse engineer anything with agents, from app behavior dow… |
 | 2 | [anthropics/claude-plugins-official](https://git.vaiox.xyz/zh/repo/anthropics/claude-plugins-official) | 43.8k | 5.7k | Official, Anthropic-managed directory of high quality Claude… |
 | 3 | [ruvnet/ruflo](https://git.vaiox.xyz/zh/repo/ruvnet/ruflo) | 78.4k | 3.6k | The original agent harness. Deploy intelligent multi-player … |
 | 4 | [android/skills](https://git.vaiox.xyz/zh/repo/android/skills) | 9.2k | 1.3k |  |
-| 5 | [K-Dense-AI/scientific-agent-skills](https://git.vaiox.xyz/zh/repo/K-Dense-AI/scientific-agent-skills) | 53.8k | 4.7k | Turn any AI agent into an AI Scientist. The #1 Agent Skills … |
-| 6 | [anomalyco/opencode](https://git.vaiox.xyz/zh/repo/anomalyco/opencode) | 220.0k | 6.5k | The open source coding agent. |
-| 7 | [HKUDS/CLI-Anything](https://git.vaiox.xyz/zh/repo/HKUDS/CLI-Anything) | 56.1k | 3.7k | "CLI-Anything: Making ALL Software Agent-Native" -- CLI-Hub:… |
-| 8 | [cursor/plugins](https://git.vaiox.xyz/zh/repo/cursor/plugins) | 13.5k | 2.0k | Cursor plugin specification and official plugins |
+| 5 | [K-Dense-AI/scientific-agent-skills](https://git.vaiox.xyz/zh/repo/K-Dense-AI/scientific-agent-skills) | 53.9k | 4.7k | Turn any AI agent into an AI Scientist. The #1 Agent Skills … |
+| 6 | [anomalyco/opencode](https://git.vaiox.xyz/zh/repo/anomalyco/opencode) | 220.1k | 6.5k | The open source coding agent. |
+| 7 | [HKUDS/CLI-Anything](https://git.vaiox.xyz/zh/repo/HKUDS/CLI-Anything) | 56.2k | 3.7k | "CLI-Anything: Making ALL Software Agent-Native" -- CLI-Hub:… |
+| 8 | [cursor/plugins](https://git.vaiox.xyz/zh/repo/cursor/plugins) | 13.6k | 2.0k | Cursor plugin specification and official plugins |
 | 9 | [akitaonrails/ai-memory](https://git.vaiox.xyz/zh/repo/akitaonrails/ai-memory) | 12.7k | 2.8k | Solution for long term memory for agent coding CLIs and to f… |
-| 10 | [debpalash/VoiceStudio](https://git.vaiox.xyz/zh/repo/debpalash/VoiceStudio) | 81.2k | 15.1k | VoiceStudio is the open-source, fully-local ElevenLabs alter… |
-| 11 | [heygen-com/hyperframes](https://git.vaiox.xyz/zh/repo/heygen-com/hyperframes) | 69.7k | 5.7k | Write HTML. Render video. Built for agents. |
-| 12 | [NationalSecurityAgency/ghidra](https://git.vaiox.xyz/zh/repo/NationalSecurityAgency/ghidra) | 92.9k | 5.8k | Ghidra is a software reverse engineering (SRE) framework |
-| 13 | [stablyai/orca](https://git.vaiox.xyz/zh/repo/stablyai/orca) | 102.3k | 8.7k | Orca is the place for working with a fleet of agents (e.g. G… |
-| 14 | [Comfy-Org/ComfyUI](https://git.vaiox.xyz/zh/repo/Comfy-Org/ComfyUI) | 141.9k | 3.9k | The most powerful and modular diffusion model GUI, api and b… |
+| 10 | [debpalash/VoiceStudio](https://git.vaiox.xyz/zh/repo/debpalash/VoiceStudio) | 81.5k | 15.1k | VoiceStudio is the open-source, fully-local ElevenLabs alter… |
+| 11 | [heygen-com/hyperframes](https://git.vaiox.xyz/zh/repo/heygen-com/hyperframes) | 69.9k | 5.7k | Write HTML. Render video. Built for agents. |
+| 12 | [NationalSecurityAgency/ghidra](https://git.vaiox.xyz/zh/repo/NationalSecurityAgency/ghidra) | 93.0k | 5.8k | Ghidra is a software reverse engineering (SRE) framework |
+| 13 | [stablyai/orca](https://git.vaiox.xyz/zh/repo/stablyai/orca) | 102.6k | 8.7k | Orca is the place for working with a fleet of agents (e.g. G… |
+| 14 | [Comfy-Org/ComfyUI](https://git.vaiox.xyz/zh/repo/Comfy-Org/ComfyUI) | 142.0k | 3.9k | The most powerful and modular diffusion model GUI, api and b… |
 | 15 | [mksglu/context-mode](https://git.vaiox.xyz/zh/repo/mksglu/context-mode) | 31.8k | 3.0k | Context window optimization for AI coding agents. Sandboxes … |
 
 ---
