@@ -2,7 +2,7 @@ import type { MetadataRoute } from 'next'
 
 import { BOARD_META, FACET_LANGUAGES, facetLangSlug } from '@/lib/boards'
 import { LOCALES } from '@/lib/locales'
-import { readDistinctRepos } from '@/lib/snapshot'
+import { readDistinctRepos, readHistoryDays } from '@/lib/snapshot'
 
 const BASE = (process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000').replace(/\/+$/, '')
 const REPO_CHUNK = 4000
@@ -20,9 +20,9 @@ function alternates(pathNoLang: string): MetadataRoute.Sitemap[number]['alternat
 /** 分片 sitemap:'boards' 片(榜面)+ 按 4000 仓库一片的档案页片。
  * 范围 = 所有曾经上榜过的仓库(历史窗口不限),退榜老兵也有 URL。 */
 export async function generateSitemaps(): Promise<Array<{ id: string | number }>> {
-  if (!process.env.DATABASE_URL) return [{ id: 'boards' }]
+  if (!process.env.DATABASE_URL) return [{ id: 'boards' }, { id: 'history' }]
   const repos = await readDistinctRepos()
-  const ids: Array<{ id: string | number }> = [{ id: 'boards' }]
+  const ids: Array<{ id: string | number }> = [{ id: 'boards' }, { id: 'history' }]
   for (let i = 0; i < Math.ceil(repos.length / REPO_CHUNK); i += 1) ids.push({ id: i })
   return ids
 }
@@ -30,6 +30,33 @@ export async function generateSitemaps(): Promise<Array<{ id: string | number }>
 export default async function sitemap(props: { id: Promise<string> }): Promise<MetadataRoute.Sitemap> {
   const now = new Date()
   const id = await props.id
+
+  if (id === 'history') {
+    // 往日榜存档片:每榜一张日期索引 + 每个已拍日期一页(56 分钟拍一整张,按日打包成可收录的"当日完整榜")。
+    const entries: MetadataRoute.Sitemap = []
+    for (const slug of Object.keys(BOARD_META)) {
+      const idxPath = `/history/${slug}`
+      entries.push({
+        url: `${BASE}/en${idxPath}`,
+        lastModified: now,
+        changeFrequency: 'daily',
+        priority: 0.55,
+        alternates: alternates(idxPath),
+      })
+      const days = await readHistoryDays(slug, 60)
+      for (const day of days) {
+        const path = `${idxPath}/${day.day}`
+        entries.push({
+          url: `${BASE}/en${path}`,
+          lastModified: new Date(`${day.day}T00:00:00Z`),
+          changeFrequency: 'weekly',
+          priority: 0.5,
+          alternates: alternates(path),
+        })
+      }
+    }
+    return entries
+  }
 
   if (id !== 'boards') {
     const repos = await readDistinctRepos()

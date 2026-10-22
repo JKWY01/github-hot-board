@@ -26,7 +26,8 @@ export async function generateMetadata({
   const dict = getDict(lang)
   return {
     title: `${dict.history.title} · ${dict.boards[slug].name}`,
-    robots: { index: false, follow: true },
+    description: dict.history.subtitle,
+    alternates: { canonical: `/${lang}/history/${slug}` },
   }
 }
 

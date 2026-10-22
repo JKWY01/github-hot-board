@@ -31,8 +31,9 @@ export async function generateMetadata({
   if (!days.some((d) => d.day === date)) notFound()
   const dict = getDict(lang)
   return {
-    title: `${dict.history.title} · ${dict.boards[slug].name}`,
-    robots: { index: false, follow: true },
+    title: `${date} · ${dict.history.title} · ${dict.boards[slug].name}`,
+    description: `${date} — ${dict.history.subtitle}`,
+    alternates: { canonical: `/${lang}/history/${slug}/${date}` },
   }
 }
 

@@ -87,6 +87,15 @@ export default async function BoardPageView({
       <section className="mx-auto max-w-6xl px-5 pb-20 sm:px-6">
         <h2 className="text-[13px] font-semibold uppercase tracking-[0.16em] text-sub">{dict.ui.inlinks}</h2>
         <ul className="mt-4 flex flex-wrap gap-2">
+          <li key="history">
+            <Link
+              href={`/${lang}/history/${slug}`}
+              prefetch={false}
+              className="inline-flex items-center gap-2 rounded-full border-[0.5px] border-black/10 bg-white px-3.5 py-2 text-[13px] font-medium text-ink/80 transition-colors hover:border-accent/40 hover:text-accent"
+            >
+              {dict.history.title} · {dict.shortBoards[slug]}
+            </Link>
+          </li>
           {BOARD_ORDER.filter((next) => next !== slug).map((next) => (
             <li key={next}>
               <Link

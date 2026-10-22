@@ -40,6 +40,37 @@ interface RowFlag {
 
 const FLIP_EASING = 'cubic-bezier(0.22, 1, 0.36, 1)'
 
+/* 梯队筛选对齐 16 语;数值档位本身语言中立,只翻四个动作词。 */
+const CTRL: Record<Locale, { all: string; board: string; net: string; rate: string }> = {
+  en: { all: 'All', board: 'Order', net: 'Net gain', rate: 'Growth' },
+  zh: { all: '全部', board: '榜序', net: '净增', rate: '增速' },
+  'zh-TW': { all: '全部', board: '榜序', net: '淨增', rate: '增速' },
+  ja: { all: '全て', board: '順位', net: '増加', rate: '増加率' },
+  ko: { all: '전체', board: '순위', net: '증가', rate: '증가율' },
+  de: { all: 'Alle', board: 'Rang', net: 'Zuwachs', rate: 'Rate' },
+  fr: { all: 'Tout', board: 'Classement', net: 'Gains', rate: 'Taux' },
+  es: { all: 'Todos', board: 'Tabla', net: 'Ganancia', rate: 'Crecim.' },
+  pt: { all: 'Todos', board: 'Ordem', net: 'Ganhos', rate: 'Taxa' },
+  it: { all: 'Tutti', board: 'Classifica', net: 'Guadagni', rate: 'Tasso' },
+  ru: { all: 'Все', board: 'Рейтинг', net: 'Прирост', rate: 'Темп' },
+  uk: { all: 'Усі', board: 'Рейтинг', net: 'Приріст', rate: 'Темп' },
+  pl: { all: 'Wszystkie', board: 'Pozycje', net: 'Przyrost', rate: 'Tempo' },
+  tr: { all: 'Tümü', board: 'Sıra', net: 'Kazanç', rate: 'Oran' },
+  vi: { all: 'Tất cả', board: 'Thứ hạng', net: 'Tăng', rate: 'Tốc độ' },
+  id: { all: 'Semua', board: 'Peringkat', net: 'Tambahan', rate: 'Laju' },
+}
+
+type BucketId = 'all' | '50k' | '20k' | '10k' | '1k' | 'sub1k'
+type SortId = 'board' | 'gained' | 'rate'
+
+const BUCKETS: Array<{ id: Exclude<BucketId, 'all'>; label: string; min: number; max: number }> = [
+  { id: '50k', label: '50k+', min: 50_000, max: Number.POSITIVE_INFINITY },
+  { id: '20k', label: '20k–50k', min: 20_000, max: 50_000 },
+  { id: '10k', label: '10k–20k', min: 10_000, max: 20_000 },
+  { id: '1k', label: '1k–10k', min: 1_000, max: 10_000 },
+  { id: 'sub1k', label: '<1k', min: 0, max: 1_000 },
+]
+
 export default function LiveBoardList({
   slug,
   locale,
@@ -73,6 +104,45 @@ export default function LiveBoardList({
   const [nowAnchor, setNowAnchor] = useState(0)
   const itemsRef = useRef(items)
   itemsRef.current = items
+
+  /* ----------------- 梯队筛选 + 增量/增速切换(纯客户端视图层) -----------------
+   * 默认态恒等于原榜:bucket=all & sort=board 时视图逐行原样,SSR 标记不变 ——
+   * 筛选/改序只是"人看的透镜",不带 URL 参数,爬虫看到的永远是榜单默认序。 */
+  const [tier, setTier] = useState<BucketId>('all')
+  const [sortId, setSortId] = useState<SortId>('board')
+  const custom = tier !== 'all' || sortId !== 'board'
+  const customRef = useRef(custom)
+  // 自定义态不摸渲染期 ref(react-hooks/refs):落账放进 useLayoutEffect,
+  // 且声明序在 FLIP 效果之前 —— 同一次 commit 里 FLIP 读到的必是本拍状态。
+  useLayoutEffect(() => {
+    customRef.current = custom
+  }, [custom])
+
+  // 原榜名次表:筛选态下仍按"真实榜单名次"亮前三、显示名次,不因视图重排撒谎
+  const rankOf = useMemo(() => {
+    const m = new Map<string, number>()
+    items.forEach((it, i) => m.set(it.fullName, i + 1))
+    return m
+  }, [items])
+
+  const view = useMemo(() => {
+    if (!custom) return items
+    let list = items
+    if (tier !== 'all') {
+      const range = BUCKETS.find((b) => b.id === tier)
+      if (range) list = list.filter((it) => it.stars >= range.min && it.stars < range.max)
+    }
+    if (sortId !== 'board') {
+      list = [...list].sort((a, b) => {
+        if (sortId === 'gained') return (b.gained ?? 0) - (a.gained ?? 0)
+        // 增速 = 本期净增 / 期初基数(期初 0 的新仓按 1 兜底,天然冲第一,诚实)
+        const ra = (a.gained ?? 0) / Math.max(1, a.stars - (a.gained ?? 0))
+        const rb = (b.gained ?? 0) / Math.max(1, b.stars - (b.gained ?? 0))
+        return rb - ra
+      })
+    }
+    return list
+  }, [items, tier, sortId, custom])
 
   // #r=owner/name:仓库档案页"跳转到榜"的锚。数据在客户端撑出来(轮询流),
   // 浏览器原生 hash 跳转对不上动态行 —— 数据到货后自己滚动到目标行并划光一次。
@@ -216,6 +286,12 @@ export default function LiveBoardList({
   }, [])
 
   useLayoutEffect(() => {
+    // 自定义视图(筛选/改序)期间丢弃播报账本:FLIP 位移与爬降徽章都描述"原榜",
+    // 混在重排视图里只会表演错误坐标 —— 宁可安静,不可撒谎。
+    if (customRef.current) {
+      pendingRef.current = null
+      return
+    }
     const pending = pendingRef.current
     pendingRef.current = null
     if (!pending) return
@@ -328,6 +404,7 @@ export default function LiveBoardList({
   )
 
   const primaryUsesCountUp = metric === 'stars' || metric === 'forks' || metric === 'gap'
+  const ctrl = CTRL[locale]
 
   /* 点行抽屉:开着的抽屉不挡 60 秒轮询;切仓不重挂(内容原位切换)。 */
   const [drawerFull, setDrawerFull] = useState<string | null>(null)
@@ -382,6 +459,50 @@ export default function LiveBoardList({
         </div>
       </div>
 
+      {/* 梯队筛选 + 增量/增速切换:纯视图层。默认"全部 + 榜序" = 原榜,
+          SSR/爬虫所见的行序与历史发布完全一致;无 URL 参数,不产生可收录的重复视图。 */}
+      {!compact && items.length > 0 && (
+        <div className="mb-3 flex flex-wrap items-center gap-x-1 gap-y-1 px-1">
+          {(['all', '50k', '20k', '10k', '1k', 'sub1k'] as BucketId[]).map((id) => {
+            const on = tier === id
+            const label = id === 'all' ? ctrl.all : BUCKETS.find((b) => b.id === id)?.label ?? id
+            return (
+              <button
+                key={`t-${id}`}
+                type="button"
+                aria-pressed={on}
+                onClick={() => setTier(id)}
+                className={`rounded-full px-2.5 py-1 text-[11.5px] font-medium tabular-nums transition-colors ${
+                  on ? 'bg-ink text-white' : 'text-ink/55 hover:bg-black/8 hover:text-ink'
+                }`}
+              >
+                {label}
+              </button>
+            )
+          })}
+          <span className="mx-1.5 h-3.5 w-px bg-black/10" aria-hidden="true" />
+          {(['board', 'gained', 'rate'] as SortId[]).map((id) => {
+            const on = sortId === id
+            return (
+              <button
+                key={`s-${id}`}
+                type="button"
+                aria-pressed={on}
+                onClick={() => setSortId(id)}
+                className={`rounded-full px-2.5 py-1 text-[11.5px] font-medium transition-colors ${
+                  on ? 'bg-ink text-white' : 'text-ink/55 hover:bg-black/8 hover:text-ink'
+                }`}
+              >
+                {id === 'board' ? ctrl.board : id === 'gained' ? ctrl.net : ctrl.rate}
+              </button>
+            )
+          })}
+          <span className="ml-auto pl-2 text-right text-[11px] tabular-nums text-sub">
+            {custom ? `${view.length} / ${items.length}` : ''}
+          </span>
+        </div>
+      )}
+
       {(degraded || stale) && (
         <div className="mb-3 rounded-2xl border-[0.5px] border-black/10 bg-[#fff8e6] px-3.5 py-2 text-[12px] text-bad">
           {stale ? strings.rateLimited : strings.degraded}
@@ -389,18 +510,23 @@ export default function LiveBoardList({
       )}
 
       <ol className={`card list-none overflow-hidden ${compact ? '' : 'rounded-[22px]'}`}>
-        {items.map((item, index) => {
-          const live = flags[item.fullName]
+        {view.map((item, index) => {
+          // 名次语义:默认视图 = 视图序(≡原榜);筛选态保留原榜名次;改序态按视图序重编号,
+          // 且爬/降徽章在自定义视图一律休眠 —— 它们描述的是原榜坐标,重排后不算数。
+          const rankShown = !custom || sortId === 'board' ? (rankOf.get(item.fullName) ?? index + 1) : index + 1
+          const live = custom ? undefined : flags[item.fullName]
           const prev = item.prevRank
           // 排序变化徽章:本地实时(换拍一刻 FLIP 同款)优先;否则回落到载荷里持久化的上一拍名次
           // —— 任何人任何时候打开页面都能直接看到上一轮同步的爬/掉,不必恰好守在换拍一刻。
           const flag =
-            live ??
-            (prev === undefined
+            custom
               ? undefined
-              : prev > index
-                ? { kind: 'up' as const, delta: prev - index }
-                : { kind: 'down' as const, delta: index - prev })
+              : live ??
+                (prev === undefined
+                  ? undefined
+                  : prev > rankShown
+                    ? { kind: 'up' as const, delta: prev - rankShown }
+                    : { kind: 'down' as const, delta: rankShown - prev })
           const crossed =
             variant === 'milestone' && item.milestoneTarget ? item.stars >= item.milestoneTarget : false
           // 行描述按站点语言挑:载荷里备好的对应语言描述(descLng),没有就回仓库原文
@@ -416,17 +542,17 @@ export default function LiveBoardList({
                 if ((e.target as HTMLElement).closest('a,button')) return
                 openDrawer(item.fullName, item)
               }}
-              className={`will-change-transform cursor-pointer ${crossed ? 'bg-good/6' : index < 3 ? 'bg-surface/70' : ''} ${
+              className={`will-change-transform cursor-pointer ${crossed ? 'bg-good/6' : rankShown <= 3 ? 'bg-surface/70' : ''} ${
                 drawerFull === item.fullName && drawerOpen ? 'ring-1 ring-inset ring-accent/40' : ''
               } border-b-[0.5px] border-black/6 last:border-b-0`}
             >
               <div className={`flex items-center gap-3 px-4 sm:gap-4 sm:px-5 ${compact ? 'py-3' : 'py-4'}`}>
                 <div
                   className={`w-8 shrink-0 text-right font-semibold tabular-nums ${compact ? 'text-[14px]' : 'text-[17px]'} ${
-                    index < 3 ? 'text-accent' : 'text-sub'
-                  } ${flag?.kind === 'up' && index <= 2 ? 'podium-flash' : ''}`}
+                    rankShown <= 3 ? 'text-accent' : 'text-sub'
+                  } ${flag?.kind === 'up' && rankShown <= 3 ? 'podium-flash' : ''}`}
                 >
-                  {index + 1}
+                  {rankShown}
                 </div>
 
                 <img
