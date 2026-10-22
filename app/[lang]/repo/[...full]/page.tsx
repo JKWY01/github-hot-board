@@ -3,9 +3,26 @@ import type { Metadata } from 'next'
 
 import { isLocale } from '@/app/[lang]/dictionaries'
 import { LOCALES } from '@/lib/locales'
+import { fetchRepoReadme } from '@/lib/github'
 import { getRepoArchiveCached, isRepoFullName } from '@/lib/repoarchive'
 import { readBoardNeighbors, readRepoDescs } from '@/lib/snapshot'
+import { borrowRepoDocFetch, readRepoDoc } from '@/lib/repodocs'
 import RepoArchiveView, { repoArchiveMetadata } from '@/components/repo-archive'
+
+/** 首屏限时借取:文档落库前别把页面吊死在 GitHub 上 —— 赶不上就先出页,落库后下访自然出现。 */
+function withTimeout<T>(p: Promise<T>, ms: number): Promise<T | null> {
+  return new Promise((resolve) => {
+    let done = false
+    const timer = setTimeout(() => {
+      if (!done) { done = true; resolve(null) }
+    }, ms)
+    p.then((v) => {
+      if (!done) { done = true; clearTimeout(timer); resolve(v) }
+    }).catch(() => {
+      if (!done) { done = true; clearTimeout(timer); resolve(null) }
+    })
+  })
+}
 
 /** 仓库档案页:/{lang}/repo/{owner}/{repo}
  * 变态式 SEO 主战场 —— "owner/repo" 是天然唯一、零竞争的精确匹配关键词;
@@ -72,5 +89,21 @@ export default async function RepoPage({
     ? await readBoardNeighbors(primary.board, fullName).catch(() => [])
     : []
 
-  return <RepoArchiveView archive={archive} locale={lang} descText={descText} related={related} />
+  // README 正文(repo_docs 快照,抽屉与档案页共用一份):命中零上游;
+  // 未命中单飞实弹取一次(≤4s),入库后爬虫与访客下访直接吃到正文。服务端夜批还会预填。
+  const cachedDoc = await readRepoDoc(fullName, lang)
+  const readmeHtml = cachedDoc ?? (await withTimeout(
+    borrowRepoDocFetch(fullName, lang, () => fetchRepoReadme(fullName, lang)),
+    4000,
+  ))
+
+  return (
+    <RepoArchiveView
+      archive={archive}
+      locale={lang}
+      descText={descText}
+      related={related}
+      readmeHtml={readmeHtml}
+    />
+  )
 }

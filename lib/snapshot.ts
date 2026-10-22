@@ -87,7 +87,7 @@ async function migrate(sql: Sql): Promise<void> {
   tableReady = true
 }
 
-async function withDb<T>(fn: (sql: Sql) => Promise<T>): Promise<T | undefined> {
+export async function withDb<T>(fn: (sql: Sql) => Promise<T>): Promise<T | undefined> {
   if (!DATABASE_URL) return undefined
   try {
     if (!sqlSingleton) {
