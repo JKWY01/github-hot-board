@@ -600,9 +600,10 @@ export default function LiveBoardList({
                       </span>
                     )}
                     {showPushed && item.pushedAt && (
-                      <span className="inline-flex items-center gap-1">
+                      <span className="inline-flex items-center gap-1" suppressHydrationWarning>
                         <ClockIcon size={11} />
-                        {fmtAgo(item.pushedAt, locale, nowAnchor)}
+                        {/* SSR/首帧直接用墙钟(见 lib/format.fmtAgo 注释):爬虫见到真实时间而非 '--' */}
+                        {fmtAgo(item.pushedAt, locale, nowAnchor || Date.now())}
                       </span>
                     )}
                     {secondary === 'stars' && metric !== 'stars' && (

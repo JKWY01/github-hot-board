@@ -72,7 +72,7 @@ const en: GuideCopy = {
     },
     {
       q: "How often does it update?",
-      a: "The pipeline ingests every 30 minutes, the site polls every 60 seconds, and the live milestone board reacts the moment a repo crosses a threshold.",
+      a: "The pipeline ingests every ~30 minutes, the page re-reads the list every minute, and the milestone board flags whatever crossed its line in the latest snapshot. If a snapshot runs late, the updated chip turns red.",
     },
   ],
   boardsKicker: "TEN BOARDS",

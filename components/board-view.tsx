@@ -164,11 +164,29 @@ export function BoardSkeleton({ compact = false }: { compact?: boolean }) {
   )
 }
 
+/** 英文元标题的搜索意图增援(仅 metadata,UI/H1 一字不动):
+ * "Weekly Surge" 对进站者够用,对搜索者是黑话——补上 GitHub Trending 本尊词。 */
+const EN_TITLE_BOOST: Partial<Record<BoardSlug, string>> = {
+  overall: 'GitHub Trending Overall',
+  weekly: 'GitHub Trending This Week',
+  monthly: 'GitHub Trending This Month',
+  annual: 'GitHub New Stars This Year',
+  rising: 'Fastest-Growing GitHub Repos',
+  dark: 'Dark-Horse GitHub Projects',
+  overlooked: 'Underrated GitHub Repos',
+  controversial: 'GitHub Forks & Issues Index',
+  forks: 'Most-Forked GitHub Repos',
+  milestone: 'GitHub Star Milestones',
+}
+
 export function boardTitle(lang: string, slug: BoardSlug, language?: string): string {
   if (!isLocale(lang)) return ''
   const dict = getDict(lang)
   const copy = dict.boards[slug]
-  return language ? `${copy.name} · ${facetDisplay(language)}` : copy.name
+  const boost = lang === 'en' ? EN_TITLE_BOOST[slug] : undefined
+  return language
+    ? `${copy.name} · ${facetDisplay(language)}${boost ? ` · ${boost}` : ''}`
+    : `${copy.name}${boost ? ` · ${boost}` : ''}`
 }
 
 export function boardMetadata(
@@ -180,7 +198,7 @@ export function boardMetadata(
   const copy = dict.boards[slug]
   const localePath = (locale: string) =>
     `/${locale}/boards/${slug}${language ? `/${facetLangSlug(language)}` : ''}`
-  const title = language ? `${copy.name} · ${facetDisplay(language)}` : copy.name
+  const title = boardTitle(lang, slug, language)
   return {
     title,
     description: copy.desc,
