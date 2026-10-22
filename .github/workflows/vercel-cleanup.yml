@@ -1,0 +1,45 @@
+# 部署完即清扫:生产部署一落地,立刻滚掉历史部署的构建产物占用。
+# 背景:Vercel 部署是"不可变整套构建快照"(源码副本 + .next 产物 + 静态资源),
+# 平台为支持回滚默认永久保留;免费层 10GB 计量会被历史部署一路吃满。
+# 触发两层:
+#   1) deployment_status=success(Vercel GitHub App 回报生产部署完成)→ 即时清;
+#   2) 每日一次兜底调度(防事件丢发)。
+# 保险丝:只删"非最新"的 READY 生产部署;当前(带别名)必是最新,永远不会自删。
+name: vercel-cleanup
+
+on:
+  deployment_status:
+    types: [success]
+  schedule:
+    - cron: '19 3 * * *'
+  workflow_dispatch: {}
+
+concurrency:
+  group: vercel-cleanup
+  cancel-in-progress: false
+
+jobs:
+  clean:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || (github.event.deployment_status.environment == 'production' && github.event.deployment_status.state == 'success')
+    runs-on: ubuntu-latest
+    steps:
+      - name: 清扫旧生产部署(只留最新一发)
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          npm i -g vercel@latest >/dev/null 2>&1 || true
+          vercel ls github-hot-board --json --token "$VERCEL_TOKEN" --scope jkwy01s-projects > /tmp/deps.json || exit 1
+          python3 - <<'PY'
+          import json, subprocess, os
+          info = json.load(open('/tmp/deps.json'))
+          ds = [d for d in info['deployments']
+                if d.get('target') == 'production' and d.get('state') == 'READY']
+          ds.sort(key=lambda d: d['createdAt'], reverse=True)
+          keep = ds[0] if ds else None
+          go = ['--token', os.environ['VERCEL_TOKEN'], '--scope', 'jkwy01s-projects']
+          for d in ds[1:]:
+              url = d['url']
+              r = subprocess.run(['vercel', 'rm', url, '--yes', *go], capture_output=True, text=True)
+              print('rm', url, '->', 'ok' if r.returncode == 0 else r.stderr.strip()[:120])
+          print('kept:', keep['url'] if keep else '(none)')
+          PY
