@@ -17,7 +17,7 @@ export async function GET(): Promise<Response> {
     shards = 0
   }
   const now = new Date().toISOString()
-  const urls = [`${BASE}/sitemap/boards.xml`]
+  const urls = [`${BASE}/sitemap/boards.xml`, `${BASE}/sitemap/history.xml`]
   for (let i = 0; i < shards; i += 1) urls.push(`${BASE}/sitemap/${i}.xml`)
   const xml = [
     '<?xml version="1.0" encoding="UTF-8"?>',
