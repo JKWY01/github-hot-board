@@ -1,26 +1,27 @@
 # GitHub 周榜快照 · 2026 年第 43 周
 
-> 由 [GitHub 火线榜](https://git.vaiox.xyz/zh) 于 2026-10-21 自动刻录。口径:官方 Trending 周页顺序 + 官方标注的本周新增星数。
+> 由 [GitHub 火线榜](https://git.vaiox.xyz/zh) 于 2026-10-22 自动刻录。口径:官方 Trending 周页顺序 + 官方标注的本周新增星数。
 > 完整榜单、语言分榜与每个项目的 30 天名次曲线:[https://git.vaiox.xyz/zh/boards/weekly](https://git.vaiox.xyz/zh/boards/weekly)
 
 | # | 项目 | 累计 Star | 本周新增 Star | 简介 |
 |---|---|---|---|---|
-| 1 | [morluto/rea](https://git.vaiox.xyz/zh/repo/morluto/rea) | 352.6k | 157.6k | Reverse engineer anything with agents, from app behavior dow… |
-| 2 | [MadsLorentzen/ai-job-search](https://git.vaiox.xyz/zh/repo/MadsLorentzen/ai-job-search) | 61.9k | 12.8k | The job search that runs on your machine. AI job application… |
-| 3 | [anthropics/claude-plugins-official](https://git.vaiox.xyz/zh/repo/anthropics/claude-plugins-official) | 43.5k | 5.7k | Official, Anthropic-managed directory of high quality Claude… |
-| 4 | [mksglu/context-mode](https://git.vaiox.xyz/zh/repo/mksglu/context-mode) | 31.5k | 3.6k | Context window optimization for AI coding agents. Sandboxes … |
-| 5 | [NationalSecurityAgency/ghidra](https://git.vaiox.xyz/zh/repo/NationalSecurityAgency/ghidra) | 92.4k | 6.2k | Ghidra is a software reverse engineering (SRE) framework |
-| 6 | [K-Dense-AI/scientific-agent-skills](https://git.vaiox.xyz/zh/repo/K-Dense-AI/scientific-agent-skills) | 53.4k | 4.5k | Turn any AI agent into an AI Scientist. The #1 Agent Skills … |
-| 7 | [heygen-com/hyperframes](https://git.vaiox.xyz/zh/repo/heygen-com/hyperframes) | 68.8k | 6.0k | Write HTML. Render video. Built for agents. |
-| 8 | [debpalash/VoiceStudio](https://git.vaiox.xyz/zh/repo/debpalash/VoiceStudio) | 79.6k | 17.1k | VoiceStudio is the open-source, fully-local ElevenLabs alter… |
-| 9 | [ruvnet/ruflo](https://git.vaiox.xyz/zh/repo/ruvnet/ruflo) | 78.1k | 3.1k | The original agent harness. Deploy intelligent multi-player … |
-| 10 | [android/skills](https://git.vaiox.xyz/zh/repo/android/skills) | 9.1k | 1.3k |  |
-| 11 | [boykopovar/AnyPS5](https://git.vaiox.xyz/zh/repo/boykopovar/AnyPS5) | 45.9k | 11.2k | Tool for automatic PS5 executables porting to Linux and Wind… |
-| 12 | [cursor/plugins](https://git.vaiox.xyz/zh/repo/cursor/plugins) | 13.3k | 2.0k | Cursor plugin specification and official plugins |
-| 13 | [cathrynlavery/diagram-design](https://git.vaiox.xyz/zh/repo/cathrynlavery/diagram-design) | 59.2k | 5.5k | Editorial diagram design for Claude Code, Codex, GitHub Copi… |
-| 14 | [storytold/artcraft](https://git.vaiox.xyz/zh/repo/storytold/artcraft) | 34.9k | 10.3k | ArtCraft is an intentional crafting engine for artists, desi… |
-| 15 | [wshobson/agents](https://git.vaiox.xyz/zh/repo/wshobson/agents) | 41.4k | 665 | Multi-harness agentic plugin marketplace for Claude Code, Co… |
+| 1 | [morluto/rea](https://git.vaiox.xyz/zh/repo/morluto/rea) | 358.6k | 129.4k | Reverse engineer anything with agents, from app behavior dow… |
+| 2 | [anthropics/claude-plugins-official](https://git.vaiox.xyz/zh/repo/anthropics/claude-plugins-official) | 43.7k | 5.7k | Official, Anthropic-managed directory of high quality Claude… |
+| 3 | [K-Dense-AI/scientific-agent-skills](https://git.vaiox.xyz/zh/repo/K-Dense-AI/scientific-agent-skills) | 53.6k | 4.7k | Turn any AI agent into an AI Scientist. The #1 Agent Skills … |
+| 4 | [ruvnet/ruflo](https://git.vaiox.xyz/zh/repo/ruvnet/ruflo) | 78.2k | 3.6k | The original agent harness. Deploy intelligent multi-player … |
+| 5 | [android/skills](https://git.vaiox.xyz/zh/repo/android/skills) | 9.2k | 1.3k |  |
+| 6 | [NationalSecurityAgency/ghidra](https://git.vaiox.xyz/zh/repo/NationalSecurityAgency/ghidra) | 92.7k | 5.8k | Ghidra is a software reverse engineering (SRE) framework |
+| 7 | [debpalash/VoiceStudio](https://git.vaiox.xyz/zh/repo/debpalash/VoiceStudio) | 80.6k | 15.1k | VoiceStudio is the open-source, fully-local ElevenLabs alter… |
+| 8 | [mksglu/context-mode](https://git.vaiox.xyz/zh/repo/mksglu/context-mode) | 31.7k | 3.0k | Context window optimization for AI coding agents. Sandboxes … |
+| 9 | [heygen-com/hyperframes](https://git.vaiox.xyz/zh/repo/heygen-com/hyperframes) | 69.3k | 5.7k | Write HTML. Render video. Built for agents. |
+| 10 | [cursor/plugins](https://git.vaiox.xyz/zh/repo/cursor/plugins) | 13.4k | 2.0k | Cursor plugin specification and official plugins |
+| 11 | [HKUDS/CLI-Anything](https://git.vaiox.xyz/zh/repo/HKUDS/CLI-Anything) | 56.0k | 3.7k | "CLI-Anything: Making ALL Software Agent-Native" -- CLI-Hub:… |
+| 12 | [akitaonrails/ai-memory](https://git.vaiox.xyz/zh/repo/akitaonrails/ai-memory) | 12.4k | 2.8k | Solution for long term memory for agent coding CLIs and to f… |
+| 13 | [anomalyco/opencode](https://git.vaiox.xyz/zh/repo/anomalyco/opencode) | 219.7k | 6.5k | The open source coding agent. |
+| 14 | [wshobson/agents](https://git.vaiox.xyz/zh/repo/wshobson/agents) | 41.5k | 785 | Multi-harness agentic plugin marketplace for Claude Code, Co… |
+| 15 | [earthtojake/text-to-cad](https://git.vaiox.xyz/zh/repo/earthtojake/text-to-cad) | 22.3k | 2.0k | Give your agent CAD superpowers. |
+| 16 | [stablyai/orca](https://git.vaiox.xyz/zh/repo/stablyai/orca) | 101.5k | 8.7k | Orca is the place for working with a fleet of agents (e.g. G… |
 
 ---
 
-GitHub 火线榜:十个视角的开源热榜(总榜 / 周榜 / 月榜 / 年度新星 / 90 天斜率 / 黑马 / 被忽视 / 黑红 / Fork 之王 / 里程碑直播),中文界面,每小时自动更新。往期快照见本目录其他文件。
+GitHub 火线榜:十个视角的开源热榜,中文界面,每小时自动更新 —— [总榜](https://git.vaiox.xyz/zh/boards/overall) · [周榜](https://git.vaiox.xyz/zh/boards/weekly) · [月榜](https://git.vaiox.xyz/zh/boards/monthly) · [年度新星](https://git.vaiox.xyz/zh/boards/annual) · [90 天斜率](https://git.vaiox.xyz/zh/boards/rising) · [黑马](https://git.vaiox.xyz/zh/boards/dark) · [被忽视](https://git.vaiox.xyz/zh/boards/overlooked) · [黑红](https://git.vaiox.xyz/zh/boards/controversial) · [Fork 之王](https://git.vaiox.xyz/zh/boards/forks) · [里程碑直播](https://git.vaiox.xyz/zh/boards/milestone)
