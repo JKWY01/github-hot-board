@@ -181,6 +181,9 @@ export async function getTrendingBoardData({ period, language }: TrendingParams)
       { pages: 1 },
     )
     repos.sort((a, b) => b.stars - a.stars)
+    // 备用口径一响就要有人听见:Actions/Vercel 运行日志里一条警告,库里的 degraded 列照旧落痕,
+    // 前端横幅(dict.degradedFallback)照旧提示用户 —— 审读建议的"内部先留痕,不急加前端交互"。
+    console.error('[boards] TRENDING FALLBACK: official scrape failed, serving search-based list', period, language ?? '')
     return {
       slug: period,
       language,

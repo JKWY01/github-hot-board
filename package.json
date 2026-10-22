@@ -10,6 +10,7 @@
     "sync": "node scripts/sync-fetch.mjs"
   },
   "dependencies": {
+    "@vercel/analytics": "^2.0.1",
     "echarts": "^6.1.0",
     "next": "16.4.2",
     "postgres": "^3.4.9",

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
+import { Analytics } from '@vercel/analytics/react'
 
 const BASE = (process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000').replace(/\/+$/, '')
 
@@ -47,6 +48,8 @@ export default async function RootLayout({
         <Nav locale={dict.locale} />
         <main className="min-h-[70vh]">{children}</main>
         <Footer dict={dict} />
+        {/* 匿名页面访问统计(Vercel 托管、免 Cookie、不收个人信息)—— 验证周期的眼睛 */}
+        <Analytics />
       </body>
     </html>
   )
