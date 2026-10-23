@@ -194,57 +194,73 @@ export async function GET(req: NextRequest) {
       const rows = await sql<{ payload: Record<string, unknown> }[]>`
         SELECT payload FROM repo_desc WHERE full_name = ${q}`
       const descPayload = (rows[0]?.payload ?? {}) as Record<string, unknown>
-      let hit: Hit = { fullName: q, ...derive(q), desc: descPayload as Record<string, string> }
+      const hit: Hit = { fullName: q, ...derive(q), desc: descPayload as Record<string, string> }
 
-      if (typeof descPayload.stars !== 'number') {
-        const gh = await ghRepo(q)
-        if (gh) {
-          const patch: Record<string, unknown> = {
-            stars: gh.stars,
-            forks: gh.forks,
-            ...(gh.pushedAt ? { pushed_at: gh.pushedAt } : {}),
-            ...(gh.desc ? { __gh: gh.desc } : {}),
-          }
-          await sql`
-            INSERT INTO repo_desc (full_name, payload) VALUES (${q}, ${sql.json(patch as unknown as Parameters<typeof sql.json>[0])})
-            ON CONFLICT (full_name) DO UPDATE SET
-              payload = repo_desc.payload || ${sql.json(patch as unknown as Parameters<typeof sql.json>[0])}, updated_at = now()`
-          hit = { ...hit, stars: gh.stars, forks: gh.forks, pushedAt: gh.pushedAt, desc: { ...descPayload, ...(gh.desc ? { __gh: gh.desc } : {}) } as Record<string, string> }
-        } else if (!rows.length) {
-          // 库外且 GitHub /repos 也 404(多半 owner 拼错):默认停在本站态,
-          // 用户确认后(deep=1)按 repo 名在全站兜底一手,结果入库
-          if (!deep) return { ok: true, kind: 'empty', results: [] as Hit[] }
-          const results = await fallbackByName(q.split('/')[1].slice(0, 60))
-          return { ok: true, kind: 'web', results }
+      // owner/repo 精确:永远现打 /repos(core API 便宜,5000/h 池)保数据新鲜;
+      // 库行只当"描述底料 + keyword 命中入口",stars 一律以这次现打为准,不用陈旧缓存误导人
+      const gh = await ghRepo(q)
+      if (gh) {
+        const patch: Record<string, unknown> = {
+          stars: gh.stars,
+          forks: gh.forks,
+          ...(gh.pushedAt ? { pushed_at: gh.pushedAt } : {}),
+          ...(gh.desc ? { __gh: gh.desc } : {}),
         }
-      } else {
-        hit.stars = descPayload.stars as number
-        hit.forks = typeof descPayload.forks === 'number' ? (descPayload.forks as number) : undefined
-        hit.pushedAt = typeof descPayload.pushed_at === 'string' ? (descPayload.pushed_at as string) : undefined
+        await sql`
+          INSERT INTO repo_desc (full_name, payload) VALUES (${q}, ${sql.json(patch as unknown as Parameters<typeof sql.json>[0])})
+          ON CONFLICT (full_name) DO UPDATE SET
+            payload = repo_desc.payload || ${sql.json(patch as unknown as Parameters<typeof sql.json>[0])}, updated_at = now()`
+        const fresh: Hit = {
+          ...hit,
+          stars: gh.stars,
+          forks: gh.forks,
+          pushedAt: gh.pushedAt,
+          desc: { ...descPayload, ...(gh.desc ? { __gh: gh.desc } : {}) } as Record<string, string>,
+        }
+
+        // 顺手给 4 条库内相关(按 repo 段/描述的模糊亲缘)
+        const related = await sql<{ full_name: string; payload: Record<string, unknown> }[]>`
+          SELECT full_name, payload FROM repo_desc
+          WHERE full_name <> ${q}
+            AND (
+              full_name ILIKE ${like}
+              OR ${LIKE_ALL}
+            )
+          ORDER BY COALESCE((payload->>'stars')::numeric, -1) DESC
+          LIMIT 4`
+        const results: Hit[] = [fresh, ...related.map((r) => {
+          const p = r.payload as Record<string, unknown>
+          return {
+            fullName: r.full_name,
+            stars: typeof p.stars === 'number' ? (p.stars as number) : undefined,
+            forks: typeof p.forks === 'number' ? (p.forks as number) : undefined,
+            pushedAt: typeof p.pushed_at === 'string' ? (p.pushed_at as string) : undefined,
+            desc: p as Record<string, string>,
+            ...derive(r.full_name),
+          } satisfies Hit
+        })]
+        return { ok: true, kind: 'exact', results }
       }
 
-      // 顺手给 4 条库内相关(按 repo 段/描述的模糊亲缘)
-      const related = await sql<{ full_name: string; payload: Record<string, unknown> }[]>`
-        SELECT full_name, payload FROM repo_desc
-        WHERE full_name <> ${q}
-          AND (
-            full_name ILIKE ${like}
-            OR ${LIKE_ALL}
-          )
-        ORDER BY COALESCE((payload->>'stars')::numeric, -1) DESC
-        LIMIT 4`
-      const results: Hit[] = [hit, ...related.map((r) => {
-        const p = r.payload as Record<string, unknown>
-        return {
-          fullName: r.full_name,
-          stars: typeof p.stars === 'number' ? (p.stars as number) : undefined,
-          forks: typeof p.forks === 'number' ? (p.forks as number) : undefined,
-          pushedAt: typeof p.pushed_at === 'string' ? (p.pushed_at as string) : undefined,
-          desc: p as Record<string, string>,
-          ...derive(r.full_name),
-        } satisfies Hit
-      })]
-      return { ok: true, kind: 'exact', results }
+      if (!rows.length) {
+        // 库外且 GitHub /repos 也 404(多半 owner 拼错):默认停在本站态,
+        // 用户确认后(deep=1)按 repo 名在全站兜底一手,结果入库
+        if (!deep) return { ok: true, kind: 'empty', results: [] as Hit[] }
+        const results = await fallbackByName(q.split('/')[1].slice(0, 60))
+        return { ok: true, kind: 'web', results }
+      }
+
+      // /repos 没通但库里有旧行(限流/网络抖动):拿库缓存顶上,聊胜于无
+      return {
+        ok: true,
+        kind: 'exact',
+        results: [{
+          ...hit,
+          stars: typeof descPayload.stars === 'number' ? (descPayload.stars as number) : undefined,
+          forks: typeof descPayload.forks === 'number' ? (descPayload.forks as number) : undefined,
+          pushedAt: typeof descPayload.pushed_at === 'string' ? (descPayload.pushed_at as string) : undefined,
+        }],
+      }
     }
 
     // 关键词:自家库的描述/仓全名里捞(like 已是全串)
