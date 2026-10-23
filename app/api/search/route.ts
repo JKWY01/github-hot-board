@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { withDb } from '@/lib/snapshot'
 import { MILESTONE_THRESHOLDS } from '@/lib/boards'
-import { ghSearch } from '@/lib/github'
 import type { BoardItem } from '@/lib/types'
 
 /** 站内搜索(方案 A+B+C):
@@ -46,6 +45,44 @@ function throttled(ip: string): boolean {
 
 const escLike = (s: string) => s.replace(/[\\%_]/g, (m) => `\\${m}`)
 
+/** deep 兜底专用:不走 quotaSlot(那是同步主路的全局节流档,排队能把请求拖到 40s),
+ *  自带 6s 预算直打 Search API;被限流/超时就回空,前端给"没搜到"。
+ *  频率护栏已在上游:每 IP 滑窗 15/min。 */
+const DEEP_TIMEOUT_MS = 6_000
+type DeepRepo = { fullName: string; stars: number; forks: number; desc: string | null; pushedAt: string }
+async function searchAllGitHub(term: string): Promise<DeepRepo[]> {
+  if (!TOKENS.length) return []
+  const url = `https://api.github.com/search/repositories?q=${encodeURIComponent(`${term} in:name`)}&sort=stars&order=desc&per_page=6`
+  for (let i = 0; i < Math.min(3, TOKENS.length); i++) {
+    const token = TOKENS[tokenAt++ % TOKENS.length]
+    try {
+      const res = await fetch(url, {
+        headers: {
+          authorization: `Bearer ${token}`,
+          accept: 'application/vnd.github+json',
+          'user-agent': 'ghb-hot-board',
+        },
+        signal: AbortSignal.timeout(DEEP_TIMEOUT_MS),
+        cache: 'no-store',
+      })
+      if (!res.ok) continue // 403/429 换池里下一枚
+      const j = (await res.json()) as {
+        items?: Array<{ full_name: string; stargazers_count?: number; forks_count?: number; description?: string | null; pushed_at?: string }>
+      }
+      return (j.items ?? []).slice(0, 6).map((it) => ({
+        fullName: it.full_name,
+        stars: it.stargazers_count ?? 0,
+        forks: it.forks_count ?? 0,
+        desc: typeof it.description === 'string' && it.description ? it.description : null,
+        pushedAt: it.pushed_at ?? '',
+      }))
+    } catch {
+      // 超时/网络:下一枚
+    }
+  }
+  return []
+}
+
 async function ghRepo(full: string): Promise<{ stars: number; forks: number; desc?: string; pushedAt?: string } | null> {
   if (!TOKENS.length) return null
   for (let attempt = 0; attempt < Math.min(3, TOKENS.length); attempt++) {
@@ -87,6 +124,8 @@ export async function GET(req: NextRequest) {
   const q = (url.searchParams.get('q') ?? '').slice(0, 200).trim()
   const board = (url.searchParams.get('board') ?? '').slice(0, 32)
   const language = (url.searchParams.get('language') ?? '').slice(0, 48)
+  // deep=1 仅在用户确认"搜全站"后由前端带上;默认只查自家库
+  const deep = url.searchParams.get('deep') === '1'
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'local'
 
   if (!q) return NextResponse.json({ ok: false, reason: 'empty' }, { status: 400 })
@@ -111,17 +150,12 @@ export async function GET(req: NextRequest) {
       return { ...(rank !== undefined ? { rank } : {}), ...(cutoff !== undefined ? { cutoff } : {}) }
     }
 
-    /** 库内无果时:GitHub 全站按名字搜一手(仅名字匹配,克制用量),结果写回 repo_desc
+    /** 库内无果并获用户确认:全站按名字搜一手(仅名字匹配),结果写回 repo_desc
      *  —— 搜索流量持续把库喂肥,这是和 README/描述收割同一个哲学。 */
     const fallbackByName = async (term: string): Promise<Hit[]> => {
-      let found: Awaited<ReturnType<typeof ghSearch>> = []
-      try {
-        found = await ghSearch(`${term} in:name`, { perPage: 6, pages: 1 })
-      } catch {
-        return [] // 限额/网络抖动:兜底失败不阻塞,回空让前端说"没搜到"
-      }
+      const found = await searchAllGitHub(term)
       const hits: Hit[] = []
-      for (const it of found.slice(0, 6)) {
+      for (const it of found) {
         const patch: Record<string, unknown> = {
           stars: it.stars,
           forks: it.forks,
@@ -177,7 +211,9 @@ export async function GET(req: NextRequest) {
               payload = repo_desc.payload || ${sql.json(patch as unknown as Parameters<typeof sql.json>[0])}, updated_at = now()`
           hit = { ...hit, stars: gh.stars, forks: gh.forks, pushedAt: gh.pushedAt, desc: { ...descPayload, ...(gh.desc ? { __gh: gh.desc } : {}) } as Record<string, string> }
         } else if (!rows.length) {
-          // 库外且 GitHub /repos 也 404(多半是 owner 拼错):按 repo 名在全站兜底一手,结果入库
+          // 库外且 GitHub /repos 也 404(多半 owner 拼错):默认停在本站态,
+          // 用户确认后(deep=1)按 repo 名在全站兜底一手,结果入库
+          if (!deep) return { ok: true, kind: 'empty', results: [] as Hit[] }
           const results = await fallbackByName(q.split('/')[1].slice(0, 60))
           return { ok: true, kind: 'web', results }
         }
@@ -230,7 +266,8 @@ export async function GET(req: NextRequest) {
       } satisfies Hit
     })
     if (!rows.length) {
-      // 自家库没命中:GitHub 全站按名字兜底,顺手把结果喂进库(下次就是库内查)
+      // 自家库没命中:默认停在本站态,等用户确认再搜全站(顺手把结果喂进库)
+      if (!deep) return { ok: true, kind: 'empty', results: [] as Hit[] }
       const results = await fallbackByName(q.slice(0, 60))
       return { ok: true, kind: 'web', results }
     }

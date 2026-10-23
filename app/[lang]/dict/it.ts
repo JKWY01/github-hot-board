@@ -171,6 +171,8 @@ export const itDict: Dict = {
     searchOutside: 'Fuori da questa lista',
     searchEmpty: 'Nessun risultato',
     searchAll: 'Da tutto GitHub',
+    searchMissing: 'Non è nella nostra libreria',
+    searchAllBtn: 'Cerca in tutto GitHub',
     allLanguages: 'Tutti i linguaggi',
     totalLabel: 'totale',
     updated: 'Aggiornato',

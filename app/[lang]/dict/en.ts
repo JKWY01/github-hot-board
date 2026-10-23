@@ -171,6 +171,8 @@ export const enDict: Dict = {
     searchOutside: 'Not on this board',
     searchEmpty: 'No results',
     searchAll: 'From all of GitHub',
+    searchMissing: 'Not in our library',
+    searchAllBtn: 'Search all of GitHub',
     allLanguages: 'All languages',
     totalLabel: 'total',
     updated: 'Updated',

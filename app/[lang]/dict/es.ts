@@ -171,6 +171,8 @@ export const esDict: Dict = {
     searchOutside: 'Fuera de esta lista',
     searchEmpty: 'Sin resultados',
     searchAll: 'De todo GitHub',
+    searchMissing: 'No está en nuestra biblioteca',
+    searchAllBtn: 'Buscar en todo GitHub',
     allLanguages: 'Todos los lenguajes',
     totalLabel: 'total',
     updated: 'Actualizado',

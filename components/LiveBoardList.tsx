@@ -176,7 +176,8 @@ export default function LiveBoardList({
   const [searchDeb, setSearchDeb] = useState('')
   const [searching, setSearching] = useState(false)
   const [searchHits, setSearchHits] = useState<SearchHit[]>([])
-  const [searchKind, setSearchKind] = useState<'exact' | 'keyword' | 'web'>('exact')
+  const [searchKind, setSearchKind] = useState<'exact' | 'keyword' | 'web' | 'empty'>('exact')
+  const [webConfirmed, setWebConfirmed] = useState('')
   const searchLocal = () => {
     const q = searchDeb.trim().toLowerCase()
     return q.length > 0 && items.some((it) => it.fullName.toLowerCase().includes(q))
@@ -190,7 +191,9 @@ export default function LiveBoardList({
     customRef.current = custom
   }, [custom])
 
-  // 搜索防抖 + 服务端(A+B):400ms 静默后发起;榜内已命中则不打扰
+  // 搜索防抖 + 服务端(A+B):400ms 静默后发起;榜内已命中则不打扰。
+  // 两段式:第一发只查自家库(deep=0),库空回"本站没有"等确认;
+  // 用户点"搜全站"后记下确认词(refetch 带 deep=1 才打全站,改了词就要重新确认)。
   useEffect(() => {
     const t = setTimeout(() => setSearchDeb(search.trim()), 400)
     return () => clearTimeout(t)
@@ -204,9 +207,9 @@ export default function LiveBoardList({
     if (items.some((it) => it.fullName.toLowerCase().includes(q.toLowerCase()))) return
     let stale = false
     setSearching(true)
-    fetch(`/api/search?q=${encodeURIComponent(q)}&board=${encodeURIComponent(slug)}&language=${encodeURIComponent(currentLanguage ?? '')}`)
+    fetch(`/api/search?q=${encodeURIComponent(q)}&board=${encodeURIComponent(slug)}&language=${encodeURIComponent(currentLanguage ?? '')}&deep=${webConfirmed === q ? 1 : 0}`)
       .then((r) => (r.ok ? r.json() : { ok: false }))
-      .then((j: { ok: boolean; results?: SearchHit[]; kind?: 'exact' | 'keyword' | 'web' }) => {
+      .then((j: { ok: boolean; results?: SearchHit[]; kind?: 'exact' | 'keyword' | 'web' | 'empty' }) => {
         if (stale) return
         setSearching(false)
         setSearchHits(j.ok ? (j.results ?? []) : [])
@@ -218,7 +221,7 @@ export default function LiveBoardList({
     return () => {
       stale = true
     }
-  }, [searchDeb, items, slug, currentLanguage])
+  }, [searchDeb, items, slug, currentLanguage, webConfirmed])
 
   // 原榜名次表:筛选态下仍按"真实榜单名次"亮前三、显示名次,不因视图重排撒谎
   const rankOf = useMemo(() => {
@@ -684,7 +687,9 @@ export default function LiveBoardList({
             {searching
               ? `${strings.searchPlaceholder}…`
               : searchHits.length === 0
-                ? strings.searchEmpty
+                ? searchKind === 'empty'
+                  ? strings.searchMissing
+                  : strings.searchEmpty
                 : searchKind === 'web'
                   ? strings.searchAll
                   : searchKind === 'keyword'
@@ -693,7 +698,17 @@ export default function LiveBoardList({
           </div>
           {!searching &&
             (searchHits.length === 0 ? (
-              <div className="py-1 text-[12.5px] text-sub">{strings.searchEmpty}</div>
+              searchKind === 'empty' ? (
+                <button
+                  type="button"
+                  onClick={() => setWebConfirmed(searchDeb.trim())}
+                  className="rounded-full bg-black/8 px-3 py-1.5 text-[12px] text-ink transition-colors hover:bg-black/12"
+                >
+                  {strings.searchAllBtn}
+                </button>
+              ) : (
+                <div className="py-1 text-[12.5px] text-sub">{strings.searchEmpty}</div>
+              )
             ) : (
               searchHits.slice(0, 6).map((hit, i) => (
                 <SearchResultRow key={hit.fullName + i} hit={hit} locale={locale} slug={slug} first={searchKind === 'exact' && i === 0} />

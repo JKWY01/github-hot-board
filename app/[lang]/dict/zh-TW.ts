@@ -171,6 +171,8 @@ export const zhTWDict: Dict = {
     searchOutside: '不在本榜',
     searchEmpty: '沒搜到',
     searchAll: '來自全 GitHub',
+    searchMissing: '本站沒有',
+    searchAllBtn: '搜 GitHub 全站',
     allLanguages: '全部語言',
     totalLabel: '總數',
     updated: '更新於',

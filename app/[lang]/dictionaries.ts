@@ -127,6 +127,8 @@ export interface Dict {
     searchOutside: string
     searchEmpty: string
     searchAll: string
+    searchMissing: string
+    searchAllBtn: string
   }
   footer: {
     about: string
@@ -199,6 +201,8 @@ export function liveStrings(locale: Locale) {
     searchOutside: d.ui.searchOutside,
     searchEmpty: d.ui.searchEmpty,
     searchAll: d.ui.searchAll,
+    searchMissing: d.ui.searchMissing,
+    searchAllBtn: d.ui.searchAllBtn,
     toLineLabel: d.ui.milestoneGap,
     crossedLabel: d.ui.milestoneGraduated,
     toastPrefix: d.ui.milestoneToast,

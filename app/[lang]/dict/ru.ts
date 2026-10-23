@@ -171,6 +171,8 @@ export const ruDict: Dict = {
     searchOutside: 'Не в этом списке',
     searchEmpty: 'Ничего не найдено',
     searchAll: 'Из всего GitHub',
+    searchMissing: 'Нет в нашей базе',
+    searchAllBtn: 'Искать во всём GitHub',
     allLanguages: 'Все языки',
     totalLabel: 'всего',
     updated: 'Обновлено',

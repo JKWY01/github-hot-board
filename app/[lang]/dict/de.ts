@@ -171,6 +171,8 @@ export const deDict: Dict = {
     searchOutside: 'Nicht auf dieser Liste',
     searchEmpty: 'Keine Treffer',
     searchAll: 'Aus ganz GitHub',
+    searchMissing: 'Nicht in unserer Bibliothek',
+    searchAllBtn: 'Ganz GitHub durchsuchen',
     allLanguages: 'Alle Sprachen',
     totalLabel: 'gesamt',
     updated: 'Aktualisiert',

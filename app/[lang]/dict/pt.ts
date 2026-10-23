@@ -171,6 +171,8 @@ export const ptDict: Dict = {
     searchOutside: 'Fora desta lista',
     searchEmpty: 'Sem resultados',
     searchAll: 'De todo o GitHub',
+    searchMissing: 'Não está na nossa biblioteca',
+    searchAllBtn: 'Pesquisar em todo o GitHub',
     allLanguages: 'Todas as linguagens',
     totalLabel: 'total',
     updated: 'Atualizado',

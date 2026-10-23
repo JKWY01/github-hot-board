@@ -171,6 +171,8 @@ export const viDict: Dict = {
     searchOutside: 'Không có trong bảng này',
     searchEmpty: 'Không có kết quả',
     searchAll: 'Từ toàn GitHub',
+    searchMissing: 'Không có trong thư viện',
+    searchAllBtn: 'Tìm trên toàn GitHub',
     allLanguages: 'Tất cả ngôn ngữ',
     totalLabel: 'tổng',
     updated: 'Cập nhật',
