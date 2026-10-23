@@ -60,16 +60,63 @@ const CTRL: Record<Locale, { all: string; board: string; net: string; rate: stri
   id: { all: 'Semua', board: 'Peringkat', net: 'Tambahan', rate: 'Laju' },
 }
 
-type BucketId = 'all' | '50k' | '20k' | '10k' | '1k' | 'sub1k'
+type BucketId = string
 type SortId = 'board' | 'gained' | 'rate'
 
-const BUCKETS: Array<{ id: Exclude<BucketId, 'all'>; label: string; min: number; max: number }> = [
-  { id: '50k', label: '50k+', min: 50_000, max: Number.POSITIVE_INFINITY },
-  { id: '20k', label: '20k–50k', min: 20_000, max: 50_000 },
-  { id: '10k', label: '10k–20k', min: 10_000, max: 20_000 },
-  { id: '1k', label: '1k–10k', min: 1_000, max: 10_000 },
-  { id: 'sub1k', label: '<1k', min: 0, max: 1_000 },
+/** 每榜分档:排序用什么量,就按什么量切档 —— 控件跟着榜走,不再全站一刀切。
+ *  overall 是全局量级榜(第 300 名门槛约 8.4 万星),细档毫无意义,用大档;
+ *  rising/dark/overlooked 的收录带在几十到千级,用细档,forks 按 fork 数,
+ *  milestone 天生按"冲刺目标"分(行里自带 milestoneTarget);
+ *  controversial 的矛盾分没有自然档位,只留全量。 */
+type Plan = { id: string; label: string; min: number; max: number; by: 'stars' | 'forks' | 'target'; target?: number }
+const WIDE: Plan[] = [
+  { id: '50k', label: '50k+', min: 50_000, max: Number.POSITIVE_INFINITY, by: 'stars' },
+  { id: '20k', label: '20k–50k', min: 20_000, max: 50_000, by: 'stars' },
+  { id: '10k', label: '10k–20k', min: 10_000, max: 20_000, by: 'stars' },
+  { id: '1k', label: '1k–10k', min: 1_000, max: 10_000, by: 'stars' },
+  { id: 'sub1k', label: '<1k', min: 0, max: 1_000, by: 'stars' },
 ]
+const SMALL: Plan[] = [
+  { id: '1k', label: '1k+', min: 1_000, max: Number.POSITIVE_INFINITY, by: 'stars' },
+  { id: '300', label: '300–1k', min: 300, max: 1_000, by: 'stars' },
+  { id: '100', label: '100–300', min: 100, max: 300, by: 'stars' },
+  { id: 'sub100', label: '<100', min: 0, max: 100, by: 'stars' },
+]
+const TIERS_BY_SLUG: Record<string, Plan[]> = {
+  overall: [
+    { id: '1m', label: '1M+', min: 1_000_000, max: Number.POSITIVE_INFINITY, by: 'stars' },
+    { id: '300k', label: '300k–1M', min: 300_000, max: 1_000_000, by: 'stars' },
+    { id: '100k', label: '100k–300k', min: 100_000, max: 300_000, by: 'stars' },
+    { id: 'sub100k', label: '<100k', min: 0, max: 100_000, by: 'stars' },
+  ],
+  weekly: WIDE,
+  monthly: WIDE,
+  annual: [
+    { id: '100k', label: '100k+', min: 100_000, max: Number.POSITIVE_INFINITY, by: 'stars' },
+    { id: '20k', label: '20k–100k', min: 20_000, max: 100_000, by: 'stars' },
+    { id: '1k', label: '1k–20k', min: 1_000, max: 20_000, by: 'stars' },
+    { id: 'sub1k', label: '<1k', min: 0, max: 1_000, by: 'stars' },
+  ],
+  rising: SMALL,
+  dark: SMALL,
+  overlooked: SMALL,
+  forks: [
+    { id: 'f10k', label: '10k+', min: 10_000, max: Number.POSITIVE_INFINITY, by: 'forks' },
+    { id: 'f1k', label: '1k–10k', min: 1_000, max: 10_000, by: 'forks' },
+    { id: 'fsub1k', label: '<1k', min: 0, max: 1_000, by: 'forks' },
+  ],
+  milestone: [
+    { id: 't1k', label: '→1k', target: 1_000, min: 0, max: 0, by: 'target' },
+    { id: 't5k', label: '→5k', target: 5_000, min: 0, max: 0, by: 'target' },
+    { id: 't10k', label: '→10k', target: 10_000, min: 0, max: 0, by: 'target' },
+    { id: 't50k', label: '→50k', target: 50_000, min: 0, max: 0, by: 'target' },
+    { id: 't100k', label: '→100k', target: 100_000, min: 0, max: 0, by: 'target' },
+    { id: 't250k', label: '→250k', target: 250_000, min: 0, max: 0, by: 'target' },
+    { id: 't500k', label: '→500k', target: 500_000, min: 0, max: 0, by: 'target' },
+    { id: 't1m', label: '→1M', target: 1_000_000, min: 0, max: 0, by: 'target' },
+  ],
+  controversial: [],
+}
 
 export default function LiveBoardList({
   slug,
@@ -131,12 +178,24 @@ export default function LiveBoardList({
     return m
   }, [items])
 
+  // 本榜的档位方案(未知榜回落宽体量档);排序证据由当拍数据自证
+  const tierPlan = TIERS_BY_SLUG[slug] ?? WIDE
+  const showNet = metric !== 'gained' && items.some((it) => (it.gained ?? 0) > 0)
+  const showRate = metric !== 'slope' && items.some((it) => (it.gained ?? 0) > 0 && it.stars - (it.gained ?? 0) > 0)
+
   const view = useMemo(() => {
     if (!custom) return items
     let list = items
     if (tier !== 'all') {
-      const range = BUCKETS.find((b) => b.id === tier)
-      if (range) list = list.filter((it) => it.stars >= range.min && it.stars < range.max)
+      const hit = tierPlan.find((b) => b.id === tier)
+      if (hit)
+        list = list.filter((it) =>
+          hit.by === 'target'
+            ? it.milestoneTarget === hit.target
+            : hit.by === 'forks'
+              ? (it.forks ?? 0) >= hit.min && (it.forks ?? 0) < hit.max
+              : it.stars >= hit.min && it.stars < hit.max,
+        )
     }
     if (sortId !== 'board') {
       list = [...list].sort((a, b) => {
@@ -148,7 +207,7 @@ export default function LiveBoardList({
       })
     }
     return list
-  }, [items, tier, sortId, custom])
+  }, [items, tier, sortId, custom, tierPlan])
 
   // #r=owner/name:仓库档案页"跳转到榜"的锚。数据在客户端撑出来(轮询流),
   // 浏览器原生 hash 跳转对不上动态行 —— 数据到货后自己滚动到目标行并划光一次。
@@ -469,40 +528,70 @@ export default function LiveBoardList({
           SSR/爬虫所见的行序与历史发布完全一致;无 URL 参数,不产生可收录的重复视图。 */}
       {!compact && items.length > 0 && (
         <div className="mb-3 flex flex-wrap items-center gap-x-1 gap-y-1 px-1">
-          {(['all', '50k', '20k', '10k', '1k', 'sub1k'] as BucketId[]).map((id) => {
-            const on = tier === id
-            const label = id === 'all' ? ctrl.all : BUCKETS.find((b) => b.id === id)?.label ?? id
-            return (
-              <button
-                key={`t-${id}`}
-                type="button"
-                aria-pressed={on}
-                onClick={() => setTier(id)}
-                className={`rounded-full px-2.5 py-1 text-[11.5px] font-medium tabular-nums transition-colors ${
-                  on ? 'bg-ink text-white' : 'text-ink/55 hover:bg-black/8 hover:text-ink'
-                }`}
-              >
-                {label}
-              </button>
-            )
-          })}
-          <span className="mx-1.5 h-3.5 w-px bg-black/10" aria-hidden="true" />
-          {(['board', 'gained', 'rate'] as SortId[]).map((id) => {
-            const on = sortId === id
-            return (
-              <button
-                key={`s-${id}`}
-                type="button"
-                aria-pressed={on}
-                onClick={() => setSortId(id)}
-                className={`rounded-full px-2.5 py-1 text-[11.5px] font-medium transition-colors ${
-                  on ? 'bg-ink text-white' : 'text-ink/55 hover:bg-black/8 hover:text-ink'
-                }`}
-              >
-                {id === 'board' ? ctrl.board : id === 'gained' ? ctrl.net : ctrl.rate}
-              </button>
-            )
-          })}
+          {tierPlan.length > 1 &&
+            (['all', ...tierPlan.map((p) => p.id)] as string[]).map((id) => {
+              const on = tier === id
+              const label = id === 'all' ? ctrl.all : tierPlan.find((b) => b.id === id)?.label ?? id
+              return (
+                <button
+                  key={`t-${id}`}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() => setTier(id)}
+                  className={`rounded-full px-2.5 py-1 text-[11.5px] font-medium tabular-nums transition-colors ${
+                    on ? 'bg-ink text-white' : 'text-ink/55 hover:bg-black/8 hover:text-ink'
+                  }`}
+                >
+                  {label}
+                </button>
+              )
+            })}
+          {(showNet || showRate) && (
+            <>
+              <span className="mx-1.5 h-3.5 w-px bg-black/10" aria-hidden="true" />
+              {(['board'] as SortId[]).map((id) => (
+                <button
+                  key={`s-${id}`}
+                  type="button"
+                  aria-pressed={sortId === id}
+                  onClick={() => setSortId(id)}
+                  className={`rounded-full px-2.5 py-1 text-[11.5px] font-medium transition-colors ${
+                    sortId === id ? 'bg-ink text-white' : 'text-ink/55 hover:bg-black/8 hover:text-ink'
+                  }`}
+                >
+                  {ctrl.board}
+                </button>
+              ))}
+              {showNet &&
+                (['gained'] as SortId[]).map((id) => (
+                  <button
+                    key={`s-${id}`}
+                    type="button"
+                    aria-pressed={sortId === id}
+                    onClick={() => setSortId(id)}
+                    className={`rounded-full px-2.5 py-1 text-[11.5px] font-medium transition-colors ${
+                      sortId === id ? 'bg-ink text-white' : 'text-ink/55 hover:bg-black/8 hover:text-ink'
+                    }`}
+                  >
+                    {ctrl.net}
+                  </button>
+                ))}
+              {showRate &&
+                (['rate'] as SortId[]).map((id) => (
+                  <button
+                    key={`s-${id}`}
+                    type="button"
+                    aria-pressed={sortId === id}
+                    onClick={() => setSortId(id)}
+                    className={`rounded-full px-2.5 py-1 text-[11.5px] font-medium transition-colors ${
+                      sortId === id ? 'bg-ink text-white' : 'text-ink/55 hover:bg-black/8 hover:text-ink'
+                    }`}
+                  >
+                    {ctrl.rate}
+                  </button>
+                ))}
+            </>
+          )}
           <span className="ml-auto pl-2 text-right text-[11px] tabular-nums text-sub">
             {custom ? `${view.length} / ${items.length}` : ''}
           </span>
