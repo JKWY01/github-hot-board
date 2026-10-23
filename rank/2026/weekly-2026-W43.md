@@ -1,25 +1,25 @@
 # GitHub 周榜快照 · 2026 年第 43 周
 
-> 由 [GitHub 火线榜](https://git.vaiox.xyz/zh) 于 2026-10-22 自动刻录。口径:官方 Trending 周页顺序 + 官方标注的本周新增星数。
+> 由 [GitHub 火线榜](https://git.vaiox.xyz/zh) 于 2026-10-23 自动刻录。口径:官方 Trending 周页顺序 + 官方标注的本周新增星数。
 > 完整榜单、语言分榜与每个项目的 30 天名次曲线:[https://git.vaiox.xyz/zh/boards/weekly](https://git.vaiox.xyz/zh/boards/weekly)
 
 | # | 项目 | 累计 Star | 本周新增 Star | 简介 |
 |---|---|---|---|---|
-| 1 | [morluto/rea](https://git.vaiox.xyz/zh/repo/morluto/rea) | 365.8k | 129.4k | Reverse engineer anything with agents, from app behavior dow… |
-| 2 | [anthropics/claude-plugins-official](https://git.vaiox.xyz/zh/repo/anthropics/claude-plugins-official) | 43.9k | 5.7k | Official, Anthropic-managed directory of high quality Claude… |
-| 3 | [ruvnet/ruflo](https://git.vaiox.xyz/zh/repo/ruvnet/ruflo) | 78.5k | 3.6k | The original agent harness. Deploy intelligent multi-player … |
-| 4 | [android/skills](https://git.vaiox.xyz/zh/repo/android/skills) | 9.2k | 1.3k |  |
-| 5 | [K-Dense-AI/scientific-agent-skills](https://git.vaiox.xyz/zh/repo/K-Dense-AI/scientific-agent-skills) | 53.9k | 4.7k | Turn any AI agent into an AI Scientist. The #1 Agent Skills … |
-| 6 | [anomalyco/opencode](https://git.vaiox.xyz/zh/repo/anomalyco/opencode) | 220.2k | 6.5k | The open source coding agent. |
-| 7 | [HKUDS/CLI-Anything](https://git.vaiox.xyz/zh/repo/HKUDS/CLI-Anything) | 56.2k | 3.7k | "CLI-Anything: Making ALL Software Agent-Native" -- CLI-Hub:… |
+| 1 | [morluto/rea](https://git.vaiox.xyz/zh/repo/morluto/rea) | 366.2k | 106.3k | Reverse engineer anything with agents, from app behavior dow… |
+| 2 | [anthropics/claude-plugins-official](https://git.vaiox.xyz/zh/repo/anthropics/claude-plugins-official) | 43.9k | 5.6k | Official, Anthropic-managed directory of high quality Claude… |
+| 3 | [ruvnet/ruflo](https://git.vaiox.xyz/zh/repo/ruvnet/ruflo) | 78.5k | 3.7k | The original agent harness. Deploy intelligent multi-player … |
+| 4 | [android/skills](https://git.vaiox.xyz/zh/repo/android/skills) | 9.2k | 1.4k |  |
+| 5 | [K-Dense-AI/scientific-agent-skills](https://git.vaiox.xyz/zh/repo/K-Dense-AI/scientific-agent-skills) | 53.9k | 4.0k | Turn any AI agent into an AI Scientist. The #1 Agent Skills … |
+| 6 | [anomalyco/opencode](https://git.vaiox.xyz/zh/repo/anomalyco/opencode) | 220.2k | 6.8k | The open source coding agent. |
+| 7 | [HKUDS/CLI-Anything](https://git.vaiox.xyz/zh/repo/HKUDS/CLI-Anything) | 56.2k | 3.3k | "CLI-Anything: Making ALL Software Agent-Native" -- CLI-Hub:… |
 | 8 | [cursor/plugins](https://git.vaiox.xyz/zh/repo/cursor/plugins) | 13.6k | 2.0k | Cursor plugin specification and official plugins |
-| 9 | [akitaonrails/ai-memory](https://git.vaiox.xyz/zh/repo/akitaonrails/ai-memory) | 12.8k | 2.8k | Solution for long term memory for agent coding CLIs and to f… |
-| 10 | [debpalash/VoiceStudio](https://git.vaiox.xyz/zh/repo/debpalash/VoiceStudio) | 81.7k | 15.1k | VoiceStudio is the open-source, fully-local ElevenLabs alter… |
+| 9 | [akitaonrails/ai-memory](https://git.vaiox.xyz/zh/repo/akitaonrails/ai-memory) | 12.8k | 3.3k | Solution for long term memory for agent coding CLIs and to f… |
+| 10 | [debpalash/VoiceStudio](https://git.vaiox.xyz/zh/repo/debpalash/VoiceStudio) | 81.8k | 13.6k | VoiceStudio is the open-source, fully-local ElevenLabs alter… |
 | 11 | [heygen-com/hyperframes](https://git.vaiox.xyz/zh/repo/heygen-com/hyperframes) | 70.0k | 5.7k | Write HTML. Render video. Built for agents. |
-| 12 | [NationalSecurityAgency/ghidra](https://git.vaiox.xyz/zh/repo/NationalSecurityAgency/ghidra) | 93.1k | 5.8k | Ghidra is a software reverse engineering (SRE) framework |
-| 13 | [stablyai/orca](https://git.vaiox.xyz/zh/repo/stablyai/orca) | 102.7k | 8.7k | Orca is the place for working with a fleet of agents (e.g. G… |
-| 14 | [Comfy-Org/ComfyUI](https://git.vaiox.xyz/zh/repo/Comfy-Org/ComfyUI) | 142.0k | 3.9k | The most powerful and modular diffusion model GUI, api and b… |
-| 15 | [mksglu/context-mode](https://git.vaiox.xyz/zh/repo/mksglu/context-mode) | 31.8k | 3.0k | Context window optimization for AI coding agents. Sandboxes … |
+| 12 | [NationalSecurityAgency/ghidra](https://git.vaiox.xyz/zh/repo/NationalSecurityAgency/ghidra) | 93.2k | 4.9k | Ghidra is a software reverse engineering (SRE) framework |
+| 13 | [stablyai/orca](https://git.vaiox.xyz/zh/repo/stablyai/orca) | 102.8k | 9.4k | Orca is the place for working with a fleet of agents (e.g. G… |
+| 14 | [Comfy-Org/ComfyUI](https://git.vaiox.xyz/zh/repo/Comfy-Org/ComfyUI) | 142.0k | 4.4k | The most powerful and modular diffusion model GUI, api and b… |
+| 15 | [mksglu/context-mode](https://git.vaiox.xyz/zh/repo/mksglu/context-mode) | 31.8k | 2.3k | Context window optimization for AI coding agents. Sandboxes … |
 
 ---
 
