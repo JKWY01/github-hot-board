@@ -7,24 +7,24 @@
 |---|---|---|---|---|
 | 1 | [codecrafters-io/build-your-own-x](https://git.vaiox.xyz/zh/repo/codecrafters-io/build-your-own-x) | 555.7k | 52.0k | Master programming by recreating your favorite technologies … |
 | 2 | [sindresorhus/awesome](https://git.vaiox.xyz/zh/repo/sindresorhus/awesome) | 523.6k | 37.7k | Awesome lists about all kinds of interesting topics [NOTE: P… |
-| 3 | [public-apis/public-apis](https://git.vaiox.xyz/zh/repo/public-apis/public-apis) | 491.6k | 54.7k | A collective list of free APIs |
-| 4 | [freeCodeCamp/freeCodeCamp](https://git.vaiox.xyz/zh/repo/freeCodeCamp/freeCodeCamp) | 457.8k | 49.3k | freeCodeCamp.org's open-source codebase and curriculum. Lear… |
+| 3 | [public-apis/public-apis](https://git.vaiox.xyz/zh/repo/public-apis/public-apis) | 491.7k | 54.7k | A collective list of free APIs |
+| 4 | [freeCodeCamp/freeCodeCamp](https://git.vaiox.xyz/zh/repo/freeCodeCamp/freeCodeCamp) | 457.8k | 49.2k | freeCodeCamp.org's open-source codebase and curriculum. Lear… |
 | 5 | [EbookFoundation/free-programming-books](https://git.vaiox.xyz/zh/repo/EbookFoundation/free-programming-books) | 399.9k | 67.0k | :books: Freely available programming books |
 | 6 | [openclaw/openclaw](https://git.vaiox.xyz/zh/repo/openclaw/openclaw) | 392.9k | 82.6k | The AI that really does things. Any OS. Any Platform. The lo… |
 | 7 | [donnemartin/system-design-primer](https://git.vaiox.xyz/zh/repo/donnemartin/system-design-primer) | 375.3k | 59.0k | Learn how to design large-scale systems. Prep for the system… |
-| 8 | [morluto/rea](https://git.vaiox.xyz/zh/repo/morluto/rea) | 372.5k | 93.2k | Reverse engineer anything with agents, from app behavior dow… |
+| 8 | [morluto/rea](https://git.vaiox.xyz/zh/repo/morluto/rea) | 373.0k | 93.3k | Reverse engineer anything with agents, from app behavior dow… |
 | 9 | [nilbuild/developer-roadmap](https://git.vaiox.xyz/zh/repo/nilbuild/developer-roadmap) | 370.2k | 45.1k | Interactive roadmaps, guides and other educational content t… |
 | 10 | [jwasham/coding-interview-university](https://git.vaiox.xyz/zh/repo/jwasham/coding-interview-university) | 363.3k | 85.0k | A complete computer science study plan to become a software … |
 | 11 | [vinta/awesome-python](https://git.vaiox.xyz/zh/repo/vinta/awesome-python) | 329.7k | 29.0k | The definitive list that answers "I want to do X in Python, … |
-| 12 | [awesome-selfhosted/awesome-selfhosted](https://git.vaiox.xyz/zh/repo/awesome-selfhosted/awesome-selfhosted) | 329.6k | 15.5k | A list of Free Software network services and web application… |
+| 12 | [awesome-selfhosted/awesome-selfhosted](https://git.vaiox.xyz/zh/repo/awesome-selfhosted/awesome-selfhosted) | 329.7k | 15.5k | A list of Free Software network services and web application… |
 | 13 | [obra/superpowers](https://git.vaiox.xyz/zh/repo/obra/superpowers) | 304.2k | 27.1k | An agentic skills framework & software development methodolo… |
-| 14 | [mattpocock/skills](https://git.vaiox.xyz/zh/repo/mattpocock/skills) | 301.7k | 25.4k | Skills for Real Engineers. Straight from my .agents director… |
+| 14 | [mattpocock/skills](https://git.vaiox.xyz/zh/repo/mattpocock/skills) | 301.8k | 25.4k | Skills for Real Engineers. Straight from my .agents director… |
 | 15 | [practical-tutorials/project-based-learning](https://git.vaiox.xyz/zh/repo/practical-tutorials/project-based-learning) | 287.7k | 36.7k | Curated list of project-based tutorials |
-| 16 | [affaan-m/ECC](https://git.vaiox.xyz/zh/repo/affaan-m/ECC) | 287.2k | 42.6k | The agent harness performance optimization system. Skills, i… |
+| 16 | [affaan-m/ECC](https://git.vaiox.xyz/zh/repo/affaan-m/ECC) | 287.3k | 42.6k | The agent harness performance optimization system. Skills, i… |
 | 17 | [996icu/996.ICU](https://git.vaiox.xyz/zh/repo/996icu/996.ICU) | 277.2k | 20.7k | Repo for counting stars and contributing. Press F to pay res… |
 | 18 | [deepseek-ai/deepseek-harness](https://git.vaiox.xyz/zh/repo/deepseek-ai/deepseek-harness) | 259.4k | 31.3k | DeepSeek Harness: Everything is a Plugin. |
 | 19 | [NousResearch/hermes-agent](https://git.vaiox.xyz/zh/repo/NousResearch/hermes-agent) | 256.5k | 56.1k | The agent that grows with you |
-| 20 | [torvalds/linux](https://git.vaiox.xyz/zh/repo/torvalds/linux) | 253.3k | 68.1k | Linux kernel source tree |
+| 20 | [torvalds/linux](https://git.vaiox.xyz/zh/repo/torvalds/linux) | 253.3k | 68.0k | Linux kernel source tree |
 | 21 | [trimstray/the-book-of-secret-knowledge](https://git.vaiox.xyz/zh/repo/trimstray/the-book-of-secret-knowledge) | 252.7k | 14.6k | A collection of inspiring lists, manuals, cheatsheets, blogs… |
 | 22 | [react/react](https://git.vaiox.xyz/zh/repo/react/react) | 251.7k | 51.6k | The library for web and native user interfaces. |
 | 23 | [TheAlgorithms/Python](https://git.vaiox.xyz/zh/repo/TheAlgorithms/Python) | 225.5k | 51.2k | All Algorithms implemented in Python |
