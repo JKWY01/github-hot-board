@@ -1,0 +1,53 @@
+name: indexnow
+
+# 给 Bing 的加急件:每日把首页 + 十榜 × 16 语推给 IndexNow(API 由 Bing/微软运营)。
+# bingbot 来得慢,推送让它知道"这些页每天都是新的"。钥匙文件随仓库 public/ 部署,公开即为协议要求。
+
+on:
+  schedule:
+    - cron: "10 5 * * *"
+  workflow_dispatch: {}
+
+permissions: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Push daily URLs to IndexNow
+        run: |
+          python3 - <<'PY'
+          import json, urllib.request
+
+          KEY = "d0dd89aa93e65aebf545a6f6c21c6fbb"
+          BASE = "https://git.vaiox.xyz"
+          langs = "en zh zh-TW ja ko de fr es pt it ru uk pl tr vi id".split()
+          boards = "overall weekly monthly annual rising dark overlooked controversial forks milestone".split()
+
+          urls = []
+          for lang in langs:
+              urls.append(f"{BASE}/{lang}")
+              urls.extend(f"{BASE}/{lang}/boards/{b}" for b in boards)
+
+          body = json.dumps({
+              "host": "git.vaiox.xyz",
+              "key": KEY,
+              "keyLocation": f"{BASE}/{KEY}.txt",
+              "urlList": urls,
+          }).encode()
+
+          for attempt in range(2):
+              try:
+                  req = urllib.request.Request(
+                      "https://api.indexnow.org/indexnow",
+                      data=body,
+                      headers={"Content-Type": "application/json; charset=utf-8"},
+                  )
+                  with urllib.request.urlopen(req, timeout=30) as r:
+                      print("indexnow ok:", r.status, f"{len(urls)} urls")
+                  break
+              except Exception as e:
+                  print("indexnow attempt", attempt, "failed:", e)
+                  if attempt:
+                      raise
+          PY
