@@ -170,6 +170,7 @@ export const ruDict: Dict = {
     searchRelated: 'Похожее в нашей базе',
     searchOutside: 'Не в этом списке',
     searchEmpty: 'Ничего не найдено',
+    searchAll: 'Из всего GitHub',
     allLanguages: 'Все языки',
     totalLabel: 'всего',
     updated: 'Обновлено',

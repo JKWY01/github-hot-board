@@ -170,6 +170,7 @@ export const ukDict: Dict = {
     searchRelated: 'Схожі в нашій базі',
     searchOutside: 'Не в цьому списку',
     searchEmpty: 'Нічого не знайдено',
+    searchAll: 'З усього GitHub',
     allLanguages: 'Усі мови',
     totalLabel: 'разом',
     updated: 'Оновлено',

@@ -170,6 +170,7 @@ export const ptDict: Dict = {
     searchRelated: 'Relacionados na nossa biblioteca',
     searchOutside: 'Fora desta lista',
     searchEmpty: 'Sem resultados',
+    searchAll: 'De todo o GitHub',
     allLanguages: 'Todas as linguagens',
     totalLabel: 'total',
     updated: 'Atualizado',

@@ -176,7 +176,7 @@ export default function LiveBoardList({
   const [searchDeb, setSearchDeb] = useState('')
   const [searching, setSearching] = useState(false)
   const [searchHits, setSearchHits] = useState<SearchHit[]>([])
-  const [searchKind, setSearchKind] = useState<'exact' | 'keyword'>('exact')
+  const [searchKind, setSearchKind] = useState<'exact' | 'keyword' | 'web'>('exact')
   const searchLocal = () => {
     const q = searchDeb.trim().toLowerCase()
     return q.length > 0 && items.some((it) => it.fullName.toLowerCase().includes(q))
@@ -206,7 +206,7 @@ export default function LiveBoardList({
     setSearching(true)
     fetch(`/api/search?q=${encodeURIComponent(q)}&board=${encodeURIComponent(slug)}&language=${encodeURIComponent(currentLanguage ?? '')}`)
       .then((r) => (r.ok ? r.json() : { ok: false }))
-      .then((j: { ok: boolean; results?: SearchHit[]; kind?: 'exact' | 'keyword' }) => {
+      .then((j: { ok: boolean; results?: SearchHit[]; kind?: 'exact' | 'keyword' | 'web' }) => {
         if (stale) return
         setSearching(false)
         setSearchHits(j.ok ? (j.results ?? []) : [])
@@ -685,9 +685,11 @@ export default function LiveBoardList({
               ? `${strings.searchPlaceholder}…`
               : searchHits.length === 0
                 ? strings.searchEmpty
-                : searchKind === 'keyword'
-                  ? strings.searchRelated
-                  : strings.searchOutside}
+                : searchKind === 'web'
+                  ? strings.searchAll
+                  : searchKind === 'keyword'
+                    ? strings.searchRelated
+                    : strings.searchOutside}
           </div>
           {!searching &&
             (searchHits.length === 0 ? (

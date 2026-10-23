@@ -170,6 +170,7 @@ export const itDict: Dict = {
     searchRelated: 'Correlati nella nostra libreria',
     searchOutside: 'Fuori da questa lista',
     searchEmpty: 'Nessun risultato',
+    searchAll: 'Da tutto GitHub',
     allLanguages: 'Tutti i linguaggi',
     totalLabel: 'totale',
     updated: 'Aggiornato',

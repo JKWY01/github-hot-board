@@ -170,6 +170,7 @@ export const trDict: Dict = {
     searchRelated: 'Kütüphanemizde ilgili',
     searchOutside: 'Bu listede yok',
     searchEmpty: 'Sonuç yok',
+    searchAll: 'GitHub genelinde',
     allLanguages: 'Tüm diller',
     totalLabel: 'toplam',
     updated: 'Son güncelleme',

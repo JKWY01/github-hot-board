@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { withDb } from '@/lib/snapshot'
 import { MILESTONE_THRESHOLDS } from '@/lib/boards'
+import { ghSearch } from '@/lib/github'
 import type { BoardItem } from '@/lib/types'
 
 /** 站内搜索(方案 A+B+C):
@@ -110,6 +111,40 @@ export async function GET(req: NextRequest) {
       return { ...(rank !== undefined ? { rank } : {}), ...(cutoff !== undefined ? { cutoff } : {}) }
     }
 
+    /** 库内无果时:GitHub 全站按名字搜一手(仅名字匹配,克制用量),结果写回 repo_desc
+     *  —— 搜索流量持续把库喂肥,这是和 README/描述收割同一个哲学。 */
+    const fallbackByName = async (term: string): Promise<Hit[]> => {
+      let found: Awaited<ReturnType<typeof ghSearch>> = []
+      try {
+        found = await ghSearch(`${term} in:name`, { perPage: 6, pages: 1 })
+      } catch {
+        return [] // 限额/网络抖动:兜底失败不阻塞,回空让前端说"没搜到"
+      }
+      const hits: Hit[] = []
+      for (const it of found.slice(0, 6)) {
+        const patch: Record<string, unknown> = {
+          stars: it.stars,
+          forks: it.forks,
+          pushed_at: it.pushedAt,
+          ...(it.desc ? { __gh: it.desc } : {}),
+        }
+        await sql`
+          INSERT INTO repo_desc (full_name, payload) VALUES (${it.fullName}, ${sql.json(patch as unknown as Parameters<typeof sql.json>[0])})
+          ON CONFLICT (full_name) DO UPDATE SET
+            payload = repo_desc.payload || ${sql.json(patch as unknown as Parameters<typeof sql.json>[0])}, updated_at = now()`
+        hits.push({
+          fullName: it.fullName,
+          stars: it.stars,
+          forks: it.forks,
+          pushedAt: it.pushedAt,
+          desc: it.desc ? { __gh: it.desc } : undefined,
+          ...derive(it.fullName),
+        })
+      }
+      return hits
+    }
+
+
     // 名次语义通用 OR 链(16 语描述一键覆盖;键为静态常量,字面拼接最稳)
     const like = `%${escLike(isExact ? q.split('/')[1].slice(0, 30) : q)}%`
     const LIKE_ALL = sql`(
@@ -142,8 +177,9 @@ export async function GET(req: NextRequest) {
               payload = repo_desc.payload || ${sql.json(patch as unknown as Parameters<typeof sql.json>[0])}, updated_at = now()`
           hit = { ...hit, stars: gh.stars, forks: gh.forks, pushedAt: gh.pushedAt, desc: { ...descPayload, ...(gh.desc ? { __gh: gh.desc } : {}) } as Record<string, string> }
         } else if (!rows.length) {
-          // Neither known in the library nor present on GitHub
-          return { ok: true, kind: 'exact', results: [] as Hit[] }
+          // 库外且 GitHub /repos 也 404(多半是 owner 拼错):按 repo 名在全站兜底一手,结果入库
+          const results = await fallbackByName(q.split('/')[1].slice(0, 60))
+          return { ok: true, kind: 'web', results }
         }
       } else {
         hit.stars = descPayload.stars as number
@@ -193,6 +229,11 @@ export async function GET(req: NextRequest) {
         ...derive(r.full_name),
       } satisfies Hit
     })
+    if (!rows.length) {
+      // 自家库没命中:GitHub 全站按名字兜底,顺手把结果喂进库(下次就是库内查)
+      const results = await fallbackByName(q.slice(0, 60))
+      return { ok: true, kind: 'web', results }
+    }
     return { ok: true, kind: 'keyword', results }
   })
 

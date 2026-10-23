@@ -170,6 +170,7 @@ export const deDict: Dict = {
     searchRelated: 'Ähnlich in unserer Bibliothek',
     searchOutside: 'Nicht auf dieser Liste',
     searchEmpty: 'Keine Treffer',
+    searchAll: 'Aus ganz GitHub',
     allLanguages: 'Alle Sprachen',
     totalLabel: 'gesamt',
     updated: 'Aktualisiert',

@@ -170,6 +170,7 @@ export const koDict: Dict = {
     searchRelated: '라이브러리 내 관련',
     searchOutside: '이 랭킹 밖',
     searchEmpty: '결과 없음',
+    searchAll: 'GitHub 전체에서',
     allLanguages: '전체 언어',
     totalLabel: '누적',
     updated: '갱신',

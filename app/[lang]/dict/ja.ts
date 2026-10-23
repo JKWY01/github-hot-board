@@ -170,6 +170,7 @@ export const jaDict: Dict = {
     searchRelated: 'ライブラリ内の関連',
     searchOutside: 'このランキング外',
     searchEmpty: '見つかりません',
+    searchAll: 'GitHub 全体から',
     allLanguages: '全言語',
     totalLabel: '累計',
     updated: '更新',

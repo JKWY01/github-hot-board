@@ -170,6 +170,7 @@ export const enDict: Dict = {
     searchRelated: 'Related in our library',
     searchOutside: 'Not on this board',
     searchEmpty: 'No results',
+    searchAll: 'From all of GitHub',
     allLanguages: 'All languages',
     totalLabel: 'total',
     updated: 'Updated',

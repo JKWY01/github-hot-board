@@ -171,6 +171,7 @@ export const zhDict: Dict = {
     searchRelated: '库内相关',
     searchOutside: '不在本榜',
     searchEmpty: '没搜到',
+    searchAll: '来自全 GitHub',
     allLanguages: '全部语言',
     totalLabel: '总数',
     updated: '更新于',

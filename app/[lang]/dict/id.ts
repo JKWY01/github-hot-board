@@ -170,6 +170,7 @@ export const idDict: Dict = {
     searchRelated: 'Terkait di perpustakaan kita',
     searchOutside: 'Tidak ada di papan ini',
     searchEmpty: 'Tidak ada hasil',
+    searchAll: 'Dari seluruh GitHub',
     allLanguages: 'Semua bahasa',
     totalLabel: 'total',
     updated: 'Diperbarui',

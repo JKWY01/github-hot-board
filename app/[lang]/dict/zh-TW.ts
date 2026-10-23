@@ -170,6 +170,7 @@ export const zhTWDict: Dict = {
     searchRelated: '庫內相關',
     searchOutside: '不在本榜',
     searchEmpty: '沒搜到',
+    searchAll: '來自全 GitHub',
     allLanguages: '全部語言',
     totalLabel: '總數',
     updated: '更新於',
