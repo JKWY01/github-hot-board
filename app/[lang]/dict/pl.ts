@@ -166,6 +166,10 @@ export const plDict: Dict = {
     milestone: 'Przełomy',
   },
   ui: {
+    searchPlaceholder: 'Szukaj owner/repo lub słowa klucz',
+    searchRelated: 'Podobne w naszej bazie',
+    searchOutside: 'Poza tą listą',
+    searchEmpty: 'Brak wyników',
     allLanguages: 'Wszystkie języki',
     totalLabel: 'łącznie',
     updated: 'Zaktualizowano',

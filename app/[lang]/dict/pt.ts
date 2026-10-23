@@ -166,6 +166,10 @@ export const ptDict: Dict = {
     milestone: 'Milestones',
   },
   ui: {
+    searchPlaceholder: 'Buscar owner/repo ou palavra-chave',
+    searchRelated: 'Relacionados na nossa biblioteca',
+    searchOutside: 'Fora desta lista',
+    searchEmpty: 'Sem resultados',
     allLanguages: 'Todas as linguagens',
     totalLabel: 'total',
     updated: 'Atualizado',

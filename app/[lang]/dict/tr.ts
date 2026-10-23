@@ -166,6 +166,10 @@ export const trDict: Dict = {
     milestone: 'Kilometre',
   },
   ui: {
+    searchPlaceholder: 'owner/repo veya anahtar kelime ara',
+    searchRelated: 'Kütüphanemizde ilgili',
+    searchOutside: 'Bu listede yok',
+    searchEmpty: 'Sonuç yok',
     allLanguages: 'Tüm diller',
     totalLabel: 'toplam',
     updated: 'Son güncelleme',

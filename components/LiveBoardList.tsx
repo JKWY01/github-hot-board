@@ -107,15 +107,24 @@ const TIERS_BY_SLUG: Record<string, Plan[]> = {
   ],
   milestone: [
     { id: 't1k', label: '→1k', target: 1_000, min: 0, max: 0, by: 'target' },
-    { id: 't5k', label: '→5k', target: 5_000, min: 0, max: 0, by: 'target' },
     { id: 't10k', label: '→10k', target: 10_000, min: 0, max: 0, by: 'target' },
     { id: 't50k', label: '→50k', target: 50_000, min: 0, max: 0, by: 'target' },
     { id: 't100k', label: '→100k', target: 100_000, min: 0, max: 0, by: 'target' },
-    { id: 't250k', label: '→250k', target: 250_000, min: 0, max: 0, by: 'target' },
-    { id: 't500k', label: '→500k', target: 500_000, min: 0, max: 0, by: 'target' },
-    { id: 't1m', label: '→1M', target: 1_000_000, min: 0, max: 0, by: 'target' },
   ],
   controversial: [],
+}
+
+/** 搜索:榜内即时过滤 + owner/repo 榜外精查 + 库内关键词发现(A+B+C)。
+ *  名次语义与 API 共用一条谱系:总榜外 300+,里程碑"差 N 到档"。 */
+const MILE_LADDER = [1_000, 10_000, 50_000, 100_000]
+interface SearchHit {
+  fullName: string
+  stars?: number
+  forks?: number
+  pushedAt?: string
+  desc?: Record<string, string>
+  rank?: number
+  cutoff?: number
 }
 
 export default function LiveBoardList({
@@ -163,13 +172,53 @@ export default function LiveBoardList({
    * 筛选/改序只是"人看的透镜",不带 URL 参数,爬虫看到的永远是榜单默认序。 */
   const [tier, setTier] = useState<BucketId>('all')
   const [sortId, setSortId] = useState<SortId>('board')
-  const custom = tier !== 'all' || sortId !== 'board'
+  const [search, setSearch] = useState('')
+  const [searchDeb, setSearchDeb] = useState('')
+  const [searching, setSearching] = useState(false)
+  const [searchHits, setSearchHits] = useState<SearchHit[]>([])
+  const [searchKind, setSearchKind] = useState<'exact' | 'keyword'>('exact')
+  const searchLocal = () => {
+    const q = searchDeb.trim().toLowerCase()
+    return q.length > 0 && items.some((it) => it.fullName.toLowerCase().includes(q))
+  }
+  const searchMode = Boolean(searchDeb) && !searchLocal()
+  const custom = tier !== 'all' || sortId !== 'board' || Boolean(searchDeb)
   const customRef = useRef(custom)
   // 自定义态不摸渲染期 ref(react-hooks/refs):落账放进 useLayoutEffect,
   // 且声明序在 FLIP 效果之前 —— 同一次 commit 里 FLIP 读到的必是本拍状态。
   useLayoutEffect(() => {
     customRef.current = custom
   }, [custom])
+
+  // 搜索防抖 + 服务端(A+B):400ms 静默后发起;榜内已命中则不打扰
+  useEffect(() => {
+    const t = setTimeout(() => setSearchDeb(search.trim()), 400)
+    return () => clearTimeout(t)
+  }, [search])
+  useEffect(() => {
+    const q = searchDeb.trim()
+    if (q.length < 2) {
+      setSearchHits([])
+      return
+    }
+    if (items.some((it) => it.fullName.toLowerCase().includes(q.toLowerCase()))) return
+    let stale = false
+    setSearching(true)
+    fetch(`/api/search?q=${encodeURIComponent(q)}&board=${encodeURIComponent(slug)}&language=${encodeURIComponent(currentLanguage ?? '')}`)
+      .then((r) => (r.ok ? r.json() : { ok: false }))
+      .then((j: { ok: boolean; results?: SearchHit[]; kind?: 'exact' | 'keyword' }) => {
+        if (stale) return
+        setSearching(false)
+        setSearchHits(j.ok ? (j.results ?? []) : [])
+        if (j.kind) setSearchKind(j.kind)
+      })
+      .catch(() => {
+        if (!stale) setSearching(false)
+      })
+    return () => {
+      stale = true
+    }
+  }, [searchDeb, items, slug, currentLanguage])
 
   // 原榜名次表:筛选态下仍按"真实榜单名次"亮前三、显示名次,不因视图重排撒谎
   const rankOf = useMemo(() => {
@@ -197,6 +246,8 @@ export default function LiveBoardList({
               : it.stars >= hit.min && it.stars < hit.max,
         )
     }
+    const qlc = searchDeb.trim().toLowerCase()
+    if (qlc) list = list.filter((it) => it.fullName.toLowerCase().includes(qlc))
     if (sortId !== 'board') {
       list = [...list].sort((a, b) => {
         if (sortId === 'gained') return (b.gained ?? 0) - (a.gained ?? 0)
@@ -207,7 +258,7 @@ export default function LiveBoardList({
       })
     }
     return list
-  }, [items, tier, sortId, custom, tierPlan])
+  }, [items, tier, sortId, custom, tierPlan, searchDeb])
 
   // #r=owner/name:仓库档案页"跳转到榜"的锚。数据在客户端撑出来(轮询流),
   // 浏览器原生 hash 跳转对不上动态行 —— 数据到货后自己滚动到目标行并划光一次。
@@ -592,7 +643,30 @@ export default function LiveBoardList({
                 ))}
             </>
           )}
-          <span className="ml-auto pl-2 text-right text-[11px] tabular-nums text-sub">
+          <span className="ml-auto" />
+          <label className="flex shrink-0 items-center gap-1 pl-2">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" className="text-ink/40" aria-hidden="true">
+              <circle cx="7" cy="7" r="4.6" />
+              <path d="M10.4 10.4 L13.6 13.6" strokeLinecap="round" />
+            </svg>
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={strings.searchPlaceholder}
+              className="w-[150px] rounded-full bg-black/6 px-3 py-1 text-[12px] text-ink outline-none placeholder:text-ink/35 focus:bg-black/10 sm:w-[220px]"
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch('')}
+                className="rounded-full bg-black/6 px-1.5 py-0.5 text-[11px] leading-none text-ink/60 hover:text-ink"
+                aria-label="clear search"
+              >
+                ×
+              </button>
+            )}
+          </label>
+          <span className="pl-2 text-right text-[11px] tabular-nums text-sub">
             {custom ? `${view.length} / ${items.length}` : ''}
           </span>
         </div>
@@ -601,6 +675,28 @@ export default function LiveBoardList({
       {(degraded || stale) && (
         <div className="mb-3 rounded-2xl border-[0.5px] border-black/10 bg-[#fff8e6] px-3.5 py-2 text-[12px] text-bad">
           {stale ? strings.rateLimited : strings.degraded}
+        </div>
+      )}
+
+      {searchMode && (
+        <div className="mb-3 rounded-[18px] border-[0.5px] border-black/10 bg-[#f8f8fa] px-3.5 py-3">
+          <div className="mb-2 text-[12px] font-semibold text-ink">
+            {searching
+              ? `${strings.searchPlaceholder}…`
+              : searchHits.length === 0
+                ? strings.searchEmpty
+                : searchKind === 'keyword'
+                  ? strings.searchRelated
+                  : strings.searchOutside}
+          </div>
+          {!searching &&
+            (searchHits.length === 0 ? (
+              <div className="py-1 text-[12.5px] text-sub">{strings.searchEmpty}</div>
+            ) : (
+              searchHits.slice(0, 6).map((hit, i) => (
+                <SearchResultRow key={hit.fullName + i} hit={hit} locale={locale} slug={slug} first={searchKind === 'exact' && i === 0} />
+              ))
+            ))}
         </div>
       )}
 
@@ -831,4 +927,77 @@ function trimDesc(s: string, n: number): string {
     .replace(/\s+/g, ' ')
     .trim()
   return text.length > n ? `${text.slice(0, n - 1)}…` : text
+}
+
+/** 搜索结果行:档位语义与原榜共用(name 上的徽章)。
+ *  榜内 → #N;总榜外 → 300+(量级越门槛却缺席 → 300+?);里程碑 → 差 N 到下一档。 */
+function SearchResultRow({
+  hit,
+  locale,
+  slug,
+  first,
+}: {
+  hit: SearchHit
+  locale: Locale
+  slug: string
+  first?: boolean
+}) {
+  let badge: string | null = null
+  if (hit.rank !== undefined) badge = `#${hit.rank}`
+  else if (slug === 'milestone' && hit.stars !== undefined) {
+    const t = MILE_LADDER.find((x) => x > hit.stars!)
+    if (t) badge = `+${fmtNum(t - hit.stars!, locale)} →${fmtNum(t, locale)}`
+  } else if (slug === 'overall' && hit.stars !== undefined && hit.cutoff !== undefined) {
+    badge = hit.stars >= hit.cutoff ? '300+?' : '300+'
+  }
+  const desc =
+    hit.desc?.[locale] ?? hit.desc?.en ?? hit.desc?.__gh ?? Object.values(hit.desc ?? {}).find(Boolean) ?? null
+  return (
+    <div
+      className={`flex items-start justify-between gap-3 rounded-2xl px-3 py-2 ${first ? 'bg-white' : ''}`}
+    >
+      <div className="min-w-0">
+        <div className="flex items-center gap-2">
+          <Link
+            href={`/${locale}/repo/${hit.fullName}`}
+            className={`truncate text-ink hover:underline ${first ? 'text-[14px] font-semibold' : 'text-[13px] font-medium'}`}
+          >
+            {hit.fullName}
+          </Link>
+          {badge && (
+            <span
+              className="shrink-0 rounded-full bg-black/8 px-2 py-0.5 text-[10.5px] tabular-nums text-ink/70"
+              title={badge}
+            >
+              {badge}
+            </span>
+          )}
+        </div>
+        {desc && <p className="mt-0.5 truncate text-[12px] text-sub">{desc}</p>}
+      </div>
+      <div className="flex shrink-0 items-center gap-2.5 text-[11.5px] tabular-nums text-sub">
+        {hit.stars !== undefined && (
+          <span className="inline-flex items-center gap-1">
+            <StarIcon size={11} />
+            {fmtNum(hit.stars, locale)}
+          </span>
+        )}
+        {hit.forks !== undefined && hit.forks > 0 && (
+          <span className="inline-flex items-center gap-1">
+            <ForkIcon size={11} />
+            {fmtNum(hit.forks, locale)}
+          </span>
+        )}
+        <a
+          href={`https://github.com/${hit.fullName}`}
+          target="_blank"
+          rel="noreferrer"
+          className="opacity-55 transition-opacity hover:opacity-100"
+          aria-label={`GitHub ${hit.fullName}`}
+        >
+          <GithubIcon size={13} />
+        </a>
+      </div>
+    </div>
+  )
 }

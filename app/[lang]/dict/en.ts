@@ -166,6 +166,10 @@ export const enDict: Dict = {
     milestone: 'Milestones',
   },
   ui: {
+    searchPlaceholder: 'Search owner/repo or keyword',
+    searchRelated: 'Related in our library',
+    searchOutside: 'Not on this board',
+    searchEmpty: 'No results',
     allLanguages: 'All languages',
     totalLabel: 'total',
     updated: 'Updated',

@@ -166,6 +166,10 @@ export const esDict: Dict = {
     milestone: 'Hitos',
   },
   ui: {
+    searchPlaceholder: 'Buscar owner/repo o palabra clave',
+    searchRelated: 'Relacionados en nuestra biblioteca',
+    searchOutside: 'Fuera de esta lista',
+    searchEmpty: 'Sin resultados',
     allLanguages: 'Todos los lenguajes',
     totalLabel: 'total',
     updated: 'Actualizado',

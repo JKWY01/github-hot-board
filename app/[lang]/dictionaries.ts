@@ -122,6 +122,10 @@ export interface Dict {
     drawerNext: string
     drawerRank: string
     drawerFrom: string
+    searchPlaceholder: string
+    searchRelated: string
+    searchOutside: string
+    searchEmpty: string
   }
   footer: {
     about: string
@@ -189,6 +193,10 @@ export function liveStrings(locale: Locale) {
     pushedLabel: d.ui.pushedAt,
     daysOldLabel: d.ui.daysOnline,
     perDayUnit: d.ui.starsPerDayUnit,
+    searchPlaceholder: d.ui.searchPlaceholder,
+    searchRelated: d.ui.searchRelated,
+    searchOutside: d.ui.searchOutside,
+    searchEmpty: d.ui.searchEmpty,
     toLineLabel: d.ui.milestoneGap,
     crossedLabel: d.ui.milestoneGraduated,
     toastPrefix: d.ui.milestoneToast,

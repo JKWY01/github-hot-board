@@ -166,6 +166,10 @@ export const deDict: Dict = {
     milestone: 'Meilensteine',
   },
   ui: {
+    searchPlaceholder: 'owner/repo oder Stichwort suchen',
+    searchRelated: 'Ähnlich in unserer Bibliothek',
+    searchOutside: 'Nicht auf dieser Liste',
+    searchEmpty: 'Keine Treffer',
     allLanguages: 'Alle Sprachen',
     totalLabel: 'gesamt',
     updated: 'Aktualisiert',

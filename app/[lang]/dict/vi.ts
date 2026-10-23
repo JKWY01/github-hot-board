@@ -166,6 +166,10 @@ export const viDict: Dict = {
     milestone: 'Cột mốc',
   },
   ui: {
+    searchPlaceholder: 'Tìm owner/repo hoặc từ khóa',
+    searchRelated: 'Liên quan trong thư viện',
+    searchOutside: 'Không có trong bảng này',
+    searchEmpty: 'Không có kết quả',
     allLanguages: 'Tất cả ngôn ngữ',
     totalLabel: 'tổng',
     updated: 'Cập nhật',

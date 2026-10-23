@@ -166,6 +166,10 @@ export const frDict: Dict = {
     milestone: 'Jalons',
   },
   ui: {
+    searchPlaceholder: 'Rechercher owner/repo ou mot-clé',
+    searchRelated: 'Liés dans notre bibliothèque',
+    searchOutside: 'Hors de ce classement',
+    searchEmpty: 'Aucun résultat',
     allLanguages: 'Toutes les langues',
     totalLabel: 'total',
     updated: 'Mis à jour',

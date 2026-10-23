@@ -166,6 +166,10 @@ export const itDict: Dict = {
     milestone: 'Milestone',
   },
   ui: {
+    searchPlaceholder: 'Cerca owner/repo o parola chiave',
+    searchRelated: 'Correlati nella nostra libreria',
+    searchOutside: 'Fuori da questa lista',
+    searchEmpty: 'Nessun risultato',
     allLanguages: 'Tutti i linguaggi',
     totalLabel: 'totale',
     updated: 'Aggiornato',

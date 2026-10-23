@@ -166,6 +166,10 @@ export const ruDict: Dict = {
     milestone: 'Рубежи',
   },
   ui: {
+    searchPlaceholder: 'Поиск owner/repo или по слову',
+    searchRelated: 'Похожее в нашей базе',
+    searchOutside: 'Не в этом списке',
+    searchEmpty: 'Ничего не найдено',
     allLanguages: 'Все языки',
     totalLabel: 'всего',
     updated: 'Обновлено',

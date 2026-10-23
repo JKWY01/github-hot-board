@@ -166,6 +166,10 @@ export const koDict: Dict = {
     milestone: '마일스톤',
   },
   ui: {
+    searchPlaceholder: 'owner/repo 또는 키워드 검색',
+    searchRelated: '라이브러리 내 관련',
+    searchOutside: '이 랭킹 밖',
+    searchEmpty: '결과 없음',
     allLanguages: '전체 언어',
     totalLabel: '누적',
     updated: '갱신',
