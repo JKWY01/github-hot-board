@@ -139,7 +139,7 @@ export default function LiveBoardList({
   metricHint,
   secondary = 'none',
   showSlope = false,
-  showIssues = false,
+  showIssues = true,
   showPushed = false,
   limit,
   compact = false,
@@ -788,6 +788,9 @@ export default function LiveBoardList({
                     </p>
                   )}
 
+                  {/* 统一底座:语言 · fork · issues(数据真的没有就不画格,不造假)。
+                      本榜主值永远在行右侧大数(总榜=星/斜率榜=星/天/fork 榜=fork)。
+                      本征格式之后是本榜特化格(斜率/更新时间/24h 增量等)。 */}
                   <div className={`flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11.5px] text-sub ${compact ? 'mt-0.5' : 'mt-1'}`}>
                     {item.language && <span>{item.language}</span>}
                     {metric !== 'forks' && (
@@ -796,7 +799,7 @@ export default function LiveBoardList({
                         {fmtNum(item.forks, locale)}
                       </span>
                     )}
-                    {showIssues && item.issues > 0 && (
+                    {showIssues && item.issues !== undefined && (
                       <span className="inline-flex items-center gap-1">
                         <IssueIcon size={11} />
                         {fmtNum(item.issues, locale)}
@@ -818,12 +821,6 @@ export default function LiveBoardList({
                       <span className="inline-flex items-center gap-1">
                         <StarIcon size={11} />
                         {fmtNum(item.stars, locale)}
-                      </span>
-                    )}
-                    {secondary === 'forks' && metric !== 'forks' && (
-                      <span className="inline-flex items-center gap-1">
-                        <ForkIcon size={11} />
-                        {fmtNum(item.forks, locale)}
                       </span>
                     )}
                   </div>

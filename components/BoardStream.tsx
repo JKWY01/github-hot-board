@@ -21,7 +21,7 @@ const METRIC_BY_BOARD: Record<BoardSlug, MetricConfig> = {
   weekly: { metric: 'gained', secondary: 'stars' },
   monthly: { metric: 'gained', secondary: 'stars' },
   annual: { metric: 'stars', secondary: 'none', showSlope: true },
-  rising: { metric: 'slope', secondary: 'stars', showSlope: false },
+  rising: { metric: 'slope', secondary: 'stars', showSlope: false, showPushed: true },
   dark: { metric: 'slope', secondary: 'stars', showPushed: true },
   overlooked: { metric: 'stars', secondary: 'none', showIssues: true, showPushed: true },
   controversial: { metric: 'score', secondary: 'none', showIssues: true },
