@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { withDb } from '@/lib/snapshot'
 import { MILESTONE_THRESHOLDS } from '@/lib/boards'
+import { ghRepo, searchReposByName } from '@/lib/ghrepo'
 import type { BoardItem } from '@/lib/types'
 
 /** 站内搜索(方案 A+B+C):
@@ -8,12 +9,6 @@ import type { BoardItem } from '@/lib/types'
  *  - 关键词:在自己库的 2,633+ 仓多语描述里模糊匹配(零外部 API);
  *  - 名次语义:board_head 载荷里现成名次图 + 榜尾门槛,总榜外给 300+,里程碑给"差 N 到档"。
  *  结果卡是动态视图,不给任何新收录 URL。 */
-
-const TOKENS = (process.env.GITHUB_TOKENS ?? process.env.GITHUB_TOKEN ?? '')
-  .split(/[,\s]+/)
-  .map((s) => s.trim())
-  .filter(Boolean)
-let tokenAt = 0
 
 const DESC_LANG_KEYS = ['en', 'zh', 'zh-TW', 'ja', 'ko', 'de', 'fr', 'es', 'pt', 'it', 'ru', 'uk', 'pl', 'tr', 'vi', 'id']
 
@@ -44,80 +39,6 @@ function throttled(ip: string): boolean {
 }
 
 const escLike = (s: string) => s.replace(/[\\%_]/g, (m) => `\\${m}`)
-
-/** deep 兜底专用:不走 quotaSlot(那是同步主路的全局节流档,排队能把请求拖到 40s),
- *  自带 6s 预算直打 Search API;被限流/超时就回空,前端给"没搜到"。
- *  频率护栏已在上游:每 IP 滑窗 15/min。 */
-const DEEP_TIMEOUT_MS = 6_000
-type DeepRepo = { fullName: string; stars: number; forks: number; desc: string | null; pushedAt: string }
-async function searchAllGitHub(term: string): Promise<DeepRepo[]> {
-  if (!TOKENS.length) return []
-  const url = `https://api.github.com/search/repositories?q=${encodeURIComponent(`${term} in:name`)}&sort=stars&order=desc&per_page=6`
-  for (let i = 0; i < Math.min(3, TOKENS.length); i++) {
-    const token = TOKENS[tokenAt++ % TOKENS.length]
-    try {
-      const res = await fetch(url, {
-        headers: {
-          authorization: `Bearer ${token}`,
-          accept: 'application/vnd.github+json',
-          'user-agent': 'ghb-hot-board',
-        },
-        signal: AbortSignal.timeout(DEEP_TIMEOUT_MS),
-        cache: 'no-store',
-      })
-      if (!res.ok) continue // 403/429 换池里下一枚
-      const j = (await res.json()) as {
-        items?: Array<{ full_name: string; stargazers_count?: number; forks_count?: number; description?: string | null; pushed_at?: string }>
-      }
-      return (j.items ?? []).slice(0, 6).map((it) => ({
-        fullName: it.full_name,
-        stars: it.stargazers_count ?? 0,
-        forks: it.forks_count ?? 0,
-        desc: typeof it.description === 'string' && it.description ? it.description : null,
-        pushedAt: it.pushed_at ?? '',
-      }))
-    } catch {
-      // 超时/网络:下一枚
-    }
-  }
-  return []
-}
-
-async function ghRepo(full: string): Promise<{ stars: number; forks: number; desc?: string; pushedAt?: string } | null> {
-  if (!TOKENS.length) return null
-  for (let attempt = 0; attempt < Math.min(3, TOKENS.length); attempt++) {
-    const token = TOKENS[tokenAt++ % TOKENS.length]
-    try {
-      const res = await fetch(`https://api.github.com/repos/${full}`, {
-        headers: {
-          authorization: `Bearer ${token}`,
-          accept: 'application/vnd.github+json',
-          'user-agent': 'ghb-hot-board',
-        },
-        cache: 'no-store',
-      })
-      if (res.ok) {
-        const j = (await res.json()) as {
-          stargazers_count?: number
-          forks_count?: number
-          description?: string
-          pushed_at?: string
-        }
-        return {
-          stars: j.stargazers_count ?? 0,
-          forks: j.forks_count ?? 0,
-          desc: typeof j.description === 'string' && j.description ? j.description : undefined,
-          pushedAt: j.pushed_at,
-        }
-      }
-      if (res.status === 404) return null
-      // 403/429:轮换池里下一枚再试
-    } catch {
-      // 网络抖动:下一枚
-    }
-  }
-  return null
-}
 
 export async function GET(req: NextRequest) {
   const url = new URL(req.url)
@@ -153,7 +74,7 @@ export async function GET(req: NextRequest) {
     /** 库内无果并获用户确认:全站按名字搜一手(仅名字匹配),结果写回 repo_desc
      *  —— 搜索流量持续把库喂肥,这是和 README/描述收割同一个哲学。 */
     const fallbackByName = async (term: string): Promise<Hit[]> => {
-      const found = await searchAllGitHub(term)
+      const found = await searchReposByName(term)
       const hits: Hit[] = []
       for (const it of found) {
         const patch: Record<string, unknown> = {

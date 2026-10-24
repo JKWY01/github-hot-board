@@ -7,6 +7,7 @@ import { getDict, isLocale, type BoardCopy } from '@/app/[lang]/dictionaries'
 import { altLangs } from '@/lib/locales'
 import type { Locale } from '@/lib/types'
 import BoardStream from '@/components/BoardStream'
+import MoversStrip from '@/components/movers-strip'
 import PendingChip from '@/components/PendingChip'
 
 export default async function BoardPageView({
@@ -56,6 +57,7 @@ export default async function BoardPageView({
           数据走 'use cache'(编译期烘焙 + stale 300),整页阻塞渲染,安全且差不多快。 */}
       <section className="bg-surface py-10">
         <div className="mx-auto max-w-6xl px-5 sm:px-6">
+          {!language && <MoversStrip slug={slug} locale={lang} />}
           <BoardStream slug={slug} locale={lang} language={language} />
         </div>
       </section>

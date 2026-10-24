@@ -7,7 +7,8 @@ import type { BoardItem, Locale, LivePatch } from '@/lib/types'
 import { fmtAgo, fmtDay, fmtNum, fmtSlope, fmtSigned } from '@/lib/format'
 import CountUp from './CountUp'
 import RepoDrawer from './repo-drawer'
-import { ArrowDownIcon, ArrowUpIcon, ArchiveIcon, ClockIcon, ForkIcon, GithubIcon, IssueIcon, StarIcon } from './Icons'
+import WatchBell from './watch-bell'
+import { ArrowDownIcon, ArrowUpIcon, ArchiveIcon, BellIcon, ClockIcon, ForkIcon, GithubIcon, IssueIcon, StarIcon } from './Icons'
 import { celebrateBurst } from './celebrate'
 
 export type LiveStrings = Awaited<ReturnType<typeof import('@/app/[lang]/dictionaries').liveStrings>>
@@ -647,6 +648,14 @@ export default function LiveBoardList({
             </>
           )}
           <span className="ml-auto" />
+          <Link
+            href={`/${locale}/watch`}
+            aria-label={strings.watchTitle}
+            title={strings.watchTitle}
+            className="flex shrink-0 items-center rounded-full bg-black/6 px-2.5 py-1 text-ink/70 transition-colors hover:text-ink"
+          >
+            <BellIcon size={13} />
+          </Link>
           <label className="flex shrink-0 items-center gap-1 pl-2">
             <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" className="text-ink/40" aria-hidden="true">
               <circle cx="7" cy="7" r="4.6" />
@@ -852,6 +861,9 @@ export default function LiveBoardList({
                     >
                       <ArchiveIcon size={15} />
                     </Link>
+                    {!compact && (
+                      <WatchBell fullName={item.fullName} states={{ cap: strings.watchCap, on: strings.watchTitle }} />
+                    )}
                     <a
                       href={item.htmlUrl}
                       target="_blank"

@@ -129,6 +129,15 @@ export interface Dict {
     searchAll: string
     searchMissing: string
     searchAllBtn: string
+    moversTitle: string
+    moversEmpty: string
+    watchTitle: string
+    watchOwn: string
+    watchSee: string
+    watchEmpty: string
+    watchDelta: string
+    watchCap: string
+    watchGone: string
   }
   footer: {
     about: string
@@ -203,6 +212,15 @@ export function liveStrings(locale: Locale) {
     searchAll: d.ui.searchAll,
     searchMissing: d.ui.searchMissing,
     searchAllBtn: d.ui.searchAllBtn,
+    moversTitle: d.ui.moversTitle,
+    moversEmpty: d.ui.moversEmpty,
+    watchTitle: d.ui.watchTitle,
+    watchOwn: d.ui.watchOwn,
+    watchSee: d.ui.watchSee,
+    watchEmpty: d.ui.watchEmpty,
+    watchDelta: d.ui.watchDelta,
+    watchCap: d.ui.watchCap,
+    watchGone: d.ui.watchGone,
     toLineLabel: d.ui.milestoneGap,
     crossedLabel: d.ui.milestoneGraduated,
     toastPrefix: d.ui.milestoneToast,
