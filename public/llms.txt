@@ -41,6 +41,12 @@
 
 - Board pages and repository pages are enumerated at `/sitemap/boards.xml` and chunked repository fragments `/sitemap/{i}.xml` (see the `Sitemap:` lines in /robots.txt for the current list).
 
+## MCP server (agent-native)
+
+- Endpoint: `https://git.vaiox.xyz/api/mcp` — MCP Streamable HTTP, stateless JSON, protocolVersion 2025-06-18.
+- Tools: `list_boards`, `get_board`, `get_board_movers`, `get_repo` (all served from our own cached dataset; no live GitHub API calls, so no extra rate-limit pressure is placed on GitHub).
+- Rate limit: 60 requests/min per IP. Board payloads change once per hourly batch — one fetch per hour per board is enough.
+
 ## Attribution
 
 - Provenance: GitHub official Trending (weekly / monthly) and the GitHub Search API (all other boards), aggregated on our own hourly snapshot schedule. Rank history comes from self-owned snapshot series, which also power the "24h movers" strip and the weekly / monthly net-gain metrics.
