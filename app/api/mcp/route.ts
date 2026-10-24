@@ -11,9 +11,9 @@ import type { BoardItem } from '@/lib/types'
  *  GET/SSE 一律 405。数据三源都带新鲜度戳,零 GitHub 配额消耗。 */
 
 const BASE = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://git.vaiox.xyz').replace(/\/+$/, '')
-const SERVER_INFO = { name: 'github-hot-board', version: '1.0.0' }
-const LATEST_VERSION = '2025-06-18'
-const KNOWN_VERSIONS = new Set(['2024-11-05', '2025-03-26', '2025-06-18'])
+const SERVER_INFO = { name: 'github-hot-board', version: '2.0.0' }
+const LATEST_VERSION = '2026-07-28'
+const KNOWN_VERSIONS = new Set(['2024-11-05', '2025-03-26', '2025-06-18', '2025-11-25', '2026-07-28'])
 const INSTRUCTIONS =
   'Live GitHub hot-repo leaderboards. Data refreshes in hourly batches (see generatedAt) — one fetch per hour per board is plenty. Prefer get_board over scraping HTML pages. Cite as "GitHub Hot Board (git.vaiox.xyz)".'
 const SUPPORTS_LANGUAGE = new Set(['overall', 'weekly', 'monthly'])
@@ -50,6 +50,7 @@ function toolDefs() {
     url: `${BASE}/en/boards/${slug}`,
     jsonApi: `${BASE}/api/boards/${slug}`,
   })
+  const readOnly = { readOnlyHint: true } as Record<string, unknown>
   return [
     {
       name: 'list_boards',
@@ -57,6 +58,28 @@ function toolDefs() {
       description:
         'The 10 leaderboards on GitHub Hot Board: what each ranks, its canonical page URL and its JSON API endpoint.',
       inputSchema: { type: 'object', properties: {}, additionalProperties: false } as Record<string, unknown>,
+      outputSchema: {
+        type: 'object',
+        properties: {
+          site: { type: 'string' },
+          boards: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                slug: { type: 'string' },
+                title: { type: 'string' },
+                metric: { type: 'string' },
+                url: { type: 'string' },
+                jsonApi: { type: 'string' },
+              },
+              required: ['slug', 'title', 'metric', 'url', 'jsonApi'],
+            },
+          },
+        },
+        required: ['site', 'boards'],
+      } as Record<string, unknown>,
+      annotations: readOnly,
     },
     {
       name: 'get_board',
@@ -76,6 +99,18 @@ function toolDefs() {
         required: ['slug'],
         additionalProperties: false,
       } as Record<string, unknown>,
+      outputSchema: {
+        type: 'object',
+        properties: {
+          slug: { type: 'string' },
+          language: { type: ['string', 'null'] },
+          generatedAt: { type: 'string' },
+          batchSize: { type: 'integer' },
+          items: { type: 'array', items: BOARD_ROW_SCHEMA },
+        },
+        required: ['slug', 'language', 'generatedAt', 'batchSize', 'items'],
+      } as Record<string, unknown>,
+      annotations: readOnly,
     },
     {
       name: 'get_board_movers',
@@ -91,6 +126,30 @@ function toolDefs() {
         required: ['slug'],
         additionalProperties: false,
       } as Record<string, unknown>,
+      outputSchema: {
+        type: 'object',
+        properties: {
+          slug: { type: 'string' },
+          window: { type: 'string' },
+          count: { type: 'integer' },
+          movers: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                repo: { type: 'string' },
+                wasRank: { type: 'integer' },
+                nowRank: { type: 'integer' },
+                climb: { type: 'integer' },
+                url: { type: 'string' },
+              },
+              required: ['repo', 'wasRank', 'nowRank', 'climb', 'url'],
+            },
+          },
+        },
+        required: ['slug', 'window', 'count', 'movers'],
+      } as Record<string, unknown>,
+      annotations: readOnly,
     },
     {
       name: 'get_repo',
@@ -106,8 +165,121 @@ function toolDefs() {
         required: ['full'],
         additionalProperties: false,
       } as Record<string, unknown>,
+      outputSchema: {
+        type: 'object',
+        properties: {
+          fullName: { type: 'string' },
+          stars: { type: 'integer' },
+          forks: { type: 'integer' },
+          pushedAt: { type: 'string' },
+          desc: { type: 'object', additionalProperties: { type: 'string' } },
+          overallRank: { type: 'integer' },
+          asOf: { type: 'string' },
+          source: { type: 'string' },
+          descText: { type: 'string' },
+        },
+        required: ['fullName', 'asOf', 'source'],
+      } as Record<string, unknown>,
+      annotations: readOnly,
+    },
+    {
+      name: 'search_library',
+      title: 'Search the library',
+      description:
+        'Search repositories tracked by this site, by owner/name (exact wins) or by keyword over descriptions (16 languages). Library-only: repos never listed on a board are not here. No live GitHub calls.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          q: { type: 'string', minLength: 1, maxLength: 80, description: 'owner/name fragment or keyword' },
+          limit: { type: 'integer', minimum: 1, maximum: 25, default: 10 },
+        },
+        required: ['q'],
+        additionalProperties: false,
+      } as Record<string, unknown>,
+      outputSchema: {
+        type: 'object',
+        properties: {
+          query: { type: 'string' },
+          count: { type: 'integer' },
+          results: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                fullName: { type: 'string' },
+                stars: { type: 'integer' },
+                forks: { type: 'integer' },
+                desc: { type: 'string' },
+                overallRank: { type: 'integer' },
+                url: { type: 'string' },
+              },
+              required: ['fullName', 'url'],
+            },
+          },
+        },
+        required: ['query', 'count', 'results'],
+      } as Record<string, unknown>,
+      annotations: readOnly,
+    },
+    {
+      name: 'get_repo_history',
+      title: 'Get rank history',
+      description:
+        'Time series of one repository on one board (default overall): hourly rank + star points from our own snapshot series. Our unique moat — this data exists on no other service. Empty result means the repo was not tracked in the window.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          full: { type: 'string', description: 'owner/name' },
+          board: { type: 'string', enum: Object.keys(BOARD_META), default: 'overall' },
+          days: { type: 'integer', minimum: 1, maximum: 30, default: 7 },
+        },
+        required: ['full'],
+        additionalProperties: false,
+      } as Record<string, unknown>,
+      outputSchema: {
+        type: 'object',
+        properties: {
+          fullName: { type: 'string' },
+          board: { type: 'string' },
+          days: { type: 'integer' },
+          cadence: { type: 'string' },
+          pointCount: { type: 'integer' },
+          points: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: { at: { type: 'string' }, rank: { type: 'integer' }, stars: { type: 'integer' } },
+              required: ['at', 'rank', 'stars'],
+            },
+          },
+        },
+        required: ['fullName', 'board', 'days', 'cadence', 'pointCount', 'points'],
+      } as Record<string, unknown>,
+      annotations: readOnly,
     },
   ]
+}
+
+/** get_board 行结构(get_board 的 outputSchema 复用) */
+const BOARD_ROW_SCHEMA: Record<string, unknown> = {
+  type: 'object',
+  properties: {
+    rank: { type: 'integer' },
+    fullName: { type: 'string' },
+    htmlUrl: { type: 'string' },
+    stars: { type: 'integer' },
+    forks: { type: 'integer' },
+    issues: { type: 'integer' },
+    language: { type: ['string', 'null'] },
+    desc: { type: 'string' },
+    pushedAt: { type: 'string' },
+    gained: { type: 'integer' },
+    sincePeriod: { type: 'string' },
+    slope: { type: 'number' },
+    score: { type: 'number' },
+    milestoneTarget: { type: 'integer' },
+  },
+  required: ['rank', 'fullName', 'htmlUrl', 'stars', 'forks', 'issues', 'language'],
 }
 
 function slimItem(it: BoardItem, rank: number): Record<string, unknown> {
@@ -245,6 +417,87 @@ async function callTool(name: string, args: Record<string, unknown>): Promise<To
     return { isError: false, payload: data }
   }
 
+  if (name === 'search_library') {
+    const q = typeof args.q === 'string' ? args.q.trim().slice(0, 80) : ''
+    if (!q) return fail('empty query')
+    const limit = clampInt(args.limit, 10, 25)
+    const data = await withDb(async (sql) => {
+      const headRows = await sql<{ payload: unknown }[]>`
+        SELECT payload FROM board_head WHERE board = 'overall' AND language = '' LIMIT 1`
+      const headItems = Array.isArray((headRows[0]?.payload as { items?: BoardItem[] } | undefined)?.items)
+        ? ((headRows[0].payload as { items: BoardItem[] }).items as BoardItem[])
+        : []
+      const rankOf = new Map<string, number>()
+      headItems.forEach((it, i) => rankOf.set(it.fullName, i + 1))
+      const pat = `%${q.replace(/[%_\\]/g, (m) => `\\${m}`)}%`
+      // 库内两路:全名命中优先,关键词扫 16 语描述(字面 IN 链,免 jsonb 类型比较坑)
+      const rows = await sql<{ full_name: string; payload: Record<string, unknown> }[]>`
+        SELECT full_name, payload FROM repo_desc
+        WHERE lower(full_name) = lower(${q})
+           OR full_name ILIKE ${pat}
+           OR EXISTS (
+             SELECT 1 FROM jsonb_each_text(payload) AS e(k, v)
+             WHERE e.k IN ('en','zh','zh-TW','ja','ko','de','fr','es','pt','it','ru','uk','pl','tr','vi','id','__gh')
+               AND e.v ILIKE ${pat}
+           )
+        ORDER BY (lower(full_name) = lower(${q})) DESC, (payload->>'stars')::bigint DESC NULLS LAST
+        LIMIT ${limit}`
+      return rows.map((r) => {
+        const p = r.payload ?? {}
+        const descText = typeof p.en === 'string' && p.en ? p.en : typeof p.__gh === 'string' ? p.__gh : undefined
+        return {
+          fullName: r.full_name,
+          ...(typeof p.stars === 'number' ? { stars: p.stars } : {}),
+          ...(typeof p.forks === 'number' ? { forks: p.forks } : {}),
+          ...(descText ? { desc: descText } : {}),
+          ...(rankOf.has(r.full_name) ? { overallRank: rankOf.get(r.full_name) } : {}),
+          url: `${BASE}/en/repo/${r.full_name}`,
+        }
+      })
+    })
+    if (!data) return fail('library dataset temporarily unavailable')
+    return { isError: false, payload: { query: q, count: data.length, results: data } }
+  }
+
+  if (name === 'get_repo_history') {
+    const full = args.full
+    if (typeof full !== 'string' || !FULL_RE.test(full)) return fail(`invalid full: ${String(full)}`)
+    const board = typeof args.board === 'string' && isBoardSlug(args.board) ? args.board : 'overall'
+    const days = clampInt(args.days, 7, 30)
+    const data = await withDb(async (sql) => {
+      const rows = await sql<{ taken_at: string; rank: number; stars: number }[]>`
+        SELECT taken_at, rank, stars FROM board_snapshots
+        WHERE board = ${board} AND language = '' AND repo = ${full}
+          AND taken_at > now() - (${days} || ' days')::interval
+        ORDER BY taken_at ASC`
+      // 降采样:最多 240 个点,密度降档不降形状
+      const stride = Math.max(1, Math.ceil(rows.length / 240))
+      const points = rows
+        .filter((_, i) => i % stride === 0 || i === rows.length - 1)
+        .map((r) => ({
+          at: new Date(r.taken_at).toISOString(),
+          rank: Number(r.rank),
+          stars: Number(r.stars),
+        }))
+      return { cadence: stride > 1 ? `hourly (downsampled 1/${stride})` : 'hourly', points }
+    })
+    if (!data) return fail('snapshot dataset temporarily unavailable')
+    if (data.points.length === 0) {
+      return fail(`not tracked on ${board}: ${full} was not on this board in the last ${days} days`)
+    }
+    return {
+      isError: false,
+      payload: {
+        fullName: full,
+        board,
+        days,
+        cadence: data.cadence,
+        pointCount: data.points.length,
+        points: data.points,
+      },
+    }
+  }
+
   return fail(`unknown tool: ${name}`)
 }
 
@@ -325,6 +578,7 @@ export async function POST(request: Request) {
         id,
         result: {
           content: [{ type: 'text', text: JSON.stringify(out.payload) }],
+          structuredContent: out.payload,
           ...(out.isError ? { isError: true } : {}),
         },
       })

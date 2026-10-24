@@ -43,9 +43,9 @@
 
 ## MCP server (agent-native)
 
-- Endpoint: `https://git.vaiox.xyz/api/mcp` — MCP Streamable HTTP, stateless JSON, protocolVersion 2025-06-18.
-- Tools: `list_boards`, `get_board`, `get_board_movers`, `get_repo` (all served from our own cached dataset; no live GitHub API calls, so no extra rate-limit pressure is placed on GitHub).
-- Rate limit: 60 requests/min per IP. Board payloads change once per hourly batch — one fetch per hour per board is enough.
+- Endpoint: `https://git.vaiox.xyz/api/mcp` — MCP Streamable HTTP, stateless JSON, latest protocolVersion 2026-07-28 (older clients down-negotiated automatically).
+- Tools (all read-only, structured output): `list_boards`, `get_board`, `get_board_movers`, `get_repo`, `search_library` (keyword search over tracked repos), `get_repo_history` (hourly rank + star time series per repository — served from our own snapshot series, available nowhere else).
+- Data provenance: our own cached dataset; no live GitHub API calls. Rate limit 60 requests/min per IP; board payloads change once per hourly batch — one fetch per hour per board is enough.
 
 ## Attribution
 

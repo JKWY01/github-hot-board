@@ -173,9 +173,9 @@ node scripts/market.mjs risers --days 30 --limit 15      # 涨星火箭榜
 
 榜单数据以 MCP 协议直供 agent,不依赖爬虫路径:
 
-- URL:`https://git.vaiox.xyz/api/mcp`(Streamable HTTP,无状态 JSON,protocolVersion 2025-06-18)
-- 工具:`list_boards` / `get_board` / `get_board_movers` / `get_repo`(全部零 GitHub 配额消耗,`get_repo` 供自有库数据,`get_board` 与页面同一份小时批缓存)
-- 限流:60 次/分钟/IP;数据一小时一拍,别连点
+- URL:`https://git.vaiox.xyz/api/mcp`(Streamable HTTP,无状态 JSON,最新 protocolVersion 2026-07-28,老客户端自动降档)
+- 工具(只读 + 结构化输出):`list_boards` / `get_board` / `get_board_movers` / `get_repo` / `search_library`(库内关键词搜索)/ **`get_repo_history`(仓库级小时名次 + 星数时间线,自有无一物快照序列独供,别的服务拿不出这份数)**
+- 全部零 GitHub 配额消耗;限流 60 次/分钟/IP;数据一小时一拍,别连点
 - 接入示例:Claude Code `claude mcp add --transport http github-hot-board https://git.vaiox.xyz/api/mcp`
 
 ## 已知限制,如实说
