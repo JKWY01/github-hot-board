@@ -8,6 +8,7 @@ import '../globals.css'
 import Nav from '@/components/Nav'
 import Footer from '@/components/Footer'
 import NavProgress from '@/components/NavProgress'
+import BackToTop from '@/components/BackToTop'
 import { getDict, isLocale } from './dictionaries'
 import { LOCALE_HTML_LANG } from '@/lib/locales'
 
@@ -48,6 +49,7 @@ export default async function RootLayout({
         <Nav locale={dict.locale} />
         <main className="min-h-[70vh]">{children}</main>
         <Footer dict={dict} />
+        <BackToTop />
         {/* 匿名页面访问统计(Vercel 托管、免 Cookie、不收个人信息)—— 验证周期的眼睛 */}
         <Analytics />
       </body>

@@ -228,6 +228,14 @@
 .md-body p { margin: 10px 0; }
 .md-body a { color: var(--color-accent); text-decoration: none; }
 .md-body a:hover { text-decoration: underline; }
+/* 抽屉内 README 的外链补"出站"角标:正文链接与锚点/文档链混排,视觉区分免误触出站 */
+.md-body a[target="_blank"]::after {
+  content: "\2197";
+  font-size: 0.72em;
+  vertical-align: super;
+  margin-left: 1px;
+  opacity: 0.55;
+}
 .md-body ul, .md-body ol { margin: 10px 0; padding-left: 22px; }
 .md-body li { margin: 4px 0; }
 .md-body li > ul, .md-body li > ol { margin: 4px 0; }
@@ -257,4 +265,14 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .avatar-ph { animation: none; }
+}
+
+/* 回顶按钮入场:从下方 6px 浮入(出场由组件卸载完成,300ms 内足够安静) */
+@keyframes backtotop-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.backtotop-in { animation: backtotop-in 0.3s ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  .backtotop-in { animation: none; }
 }
