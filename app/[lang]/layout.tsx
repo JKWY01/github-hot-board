@@ -43,7 +43,13 @@ export default async function RootLayout({
     <html lang={LOCALE_HTML_LANG[lang]}>
       <body className="bg-white text-ink antialiased">
         <script
-          dangerouslySetInnerHTML={{ __html: "document.documentElement.classList.add('js')" }}
+          dangerouslySetInnerHTML={{
+            __html:
+              "document.documentElement.classList.add('js');" +
+              // 主题防闪:首访跟随系统,此后读 localStorage(与 ThemeToggle 同一约定)
+              "try{var t=localStorage.getItem('ghb.theme');" +
+              "if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')}catch(e){}",
+          }}
         />
         <NavProgress />
         <Nav locale={dict.locale} />

@@ -5,6 +5,7 @@ import { getDict } from '@/app/[lang]/dictionaries'
 import type { Locale } from '@/lib/types'
 import { GithubIcon, LogoMark } from './Icons'
 import LangSwitch from './LangSwitch'
+import ThemeToggle from './ThemeToggle'
 import NavLinks from './NavLinks'
 
 export default function Nav({ locale }: { locale: Locale }) {
@@ -23,6 +24,7 @@ export default function Nav({ locale }: { locale: Locale }) {
         <NavLinks locale={locale} items={items} />
 
         <div className="flex shrink-0 items-center gap-2">
+          <ThemeToggle />
           <LangSwitch current={locale} />
           <a
             href="https://github.com/JKWY01/github-hot-board"

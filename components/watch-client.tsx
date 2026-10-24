@@ -6,6 +6,7 @@ import { liveStrings } from '@/app/[lang]/dictionaries'
 import type { Locale } from '@/lib/types'
 import { fmtNum } from '@/lib/format'
 import { BellIcon, ForkIcon, StarIcon } from './Icons'
+import RepoDrawer from './repo-drawer'
 import WatchBell, {
   readWatch,
   writeWatch,
@@ -78,6 +79,15 @@ export default function WatchClient({ locale, pushKey }: { locale: Locale; pushK
   const [pushOn, setPushOn] = useState(false)
   const [pushBlocked, setPushBlocked] = useState(false)
   const pushBusyRef = useRef(false)
+
+  /* 点项目 → 打开 README 抽屉(与榜单行同一只):档案页跳转慢且重,抽屉就地看 README */
+  const [drawerFull, setDrawerFull] = useState<string | null>(null)
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  const openDrawer = (full: string) => {
+    setDrawerFull(full)
+    setDrawerOpen(true)
+  }
+  const closeDrawer = () => setDrawerOpen(false)
 
   useEffect(() => {
     if (!pushKey || typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return
@@ -297,26 +307,22 @@ export default function WatchClient({ locale, pushKey }: { locale: Locale; pushK
                   const chip = st ? rankChip(st) : null
                   return (
                     <li key={e.f} className="border-b border-black/5 px-4 py-3 last:border-b-0 sm:px-5">
-                      <div className="flex items-center justify-between gap-3">
+                      <div
+                        className="flex cursor-pointer items-center justify-between gap-3"
+                        onClick={(ev) => {
+                          if ((ev.target as HTMLElement).closest('a,button')) return
+                          openDrawer(e.f)
+                        }}
+                      >
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2">
-                            {st?.onBoard === false ? (
-                              <a
-                                href={`https://github.com/${e.f}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="truncate text-[14px] font-semibold text-ink hover:underline"
-                              >
-                                {e.f}
-                              </a>
-                            ) : (
-                              <Link
-                                href={`/${locale}/repo/${e.f}`}
-                                className="truncate text-[14px] font-semibold text-ink hover:underline"
-                              >
-                                {e.f}
-                              </Link>
-                            )}
+                            <button
+                              type="button"
+                              onClick={() => openDrawer(e.f)}
+                              className="min-w-0 truncate text-left text-[14px] font-semibold text-ink hover:underline"
+                            >
+                              {e.f}
+                            </button>
                             {chip && (
                               <span className="shrink-0 rounded-full bg-black/8 px-2 py-0.5 text-[10.5px] tabular-nums text-ink/70">
                                 {chip}
@@ -381,6 +387,33 @@ export default function WatchClient({ locale, pushKey }: { locale: Locale; pushK
               </ul>
             </div>
           ),
+      )}
+      {drawerFull && (
+        <RepoDrawer
+          fullName={drawerFull}
+          item={
+            status[drawerFull]
+              ? {
+                  id: 0,
+                  fullName: drawerFull,
+                  owner: drawerFull.split('/')[0] ?? '',
+                  name: drawerFull.split('/')[1] ?? drawerFull,
+                  htmlUrl: `https://github.com/${drawerFull}`,
+                  avatarUrl: `https://github.com/${drawerFull.split('/')[0] ?? 'github'}.png`,
+                  desc: describe(status[drawerFull]?.desc) ?? null,
+                  stars: status[drawerFull]?.stars ?? 0,
+                  forks: status[drawerFull]?.forks ?? 0,
+                  issues: 0,
+                  language: null,
+                  topics: [],
+                }
+              : undefined
+          }
+          locale={locale}
+          strings={strings}
+          open={drawerOpen}
+          onClose={closeDrawer}
+        />
       )}
     </section>
   )

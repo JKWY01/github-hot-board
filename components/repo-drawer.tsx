@@ -28,15 +28,16 @@ export default function RepoDrawer({
 }: {
   fullName: string
   item: BoardItem | undefined
-  rank: number
-  total: number
+  /** 榜位语义:榜单行打开时有;关注页/无榜语境缺省 → 头部不显示"榜位 N / M"与翻页钮 */
+  rank?: number
+  total?: number
   locale: Locale
   strings: LiveStrings
   open: boolean
   neighbors?: string[]
   onClose: () => void
-  onPrev: () => void
-  onNext: () => void
+  onPrev?: () => void
+  onNext?: () => void
 }) {
   const drawer = strings.drawer
   const [html, setHtml] = useState<string | null>(null)
@@ -118,8 +119,8 @@ export default function RepoDrawer({
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
-      if (e.key === 'ArrowLeft') onPrev()
-      if (e.key === 'ArrowRight') onNext()
+      if (e.key === 'ArrowLeft' && onPrev) onPrev()
+      if (e.key === 'ArrowRight' && onNext) onNext()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -189,28 +190,34 @@ export default function RepoDrawer({
         } motion-safe:transition-transform motion-safe:duration-[320ms] motion-safe:ease-[cubic-bezier(0.22,1,0.36,1)]`}
       >
         <div className="flex items-center justify-between gap-2 border-b-[0.5px] border-black/8 px-5 py-2.5">
-          <span className="rounded-full bg-ink px-2.5 py-1 text-[11.5px] font-semibold tabular-nums text-white">
-            {drawer.rank} {rank} / {total}
-          </span>
+          {rank !== undefined && total !== undefined && (
+            <span className="rounded-full bg-ink px-2.5 py-1 text-[11.5px] font-semibold tabular-nums text-white">
+              {drawer.rank} {rank} / {total}
+            </span>
+          )}
           <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={onPrev}
-              disabled={rank <= 1}
-              aria-label={drawer.prev}
-              className="rounded-full px-3 py-1.5 text-[13px] font-medium text-ink/60 transition-colors hover:bg-black/5 hover:text-ink disabled:opacity-35"
-            >
-              ← {drawer.prev}
-            </button>
-            <button
-              type="button"
-              onClick={onNext}
-              disabled={rank >= total}
-              aria-label={drawer.next}
-              className="rounded-full px-3 py-1.5 text-[13px] font-medium text-ink/60 transition-colors hover:bg-black/5 hover:text-ink disabled:opacity-35"
-            >
-              {drawer.next} →
-            </button>
+            {rank !== undefined && total !== undefined && (
+              <>
+                <button
+                  type="button"
+                  onClick={onPrev}
+                  disabled={rank <= 1}
+                  aria-label={drawer.prev}
+                  className="rounded-full px-3 py-1.5 text-[13px] font-medium text-ink/60 transition-colors hover:bg-black/5 hover:text-ink disabled:opacity-35"
+                >
+                  ← {drawer.prev}
+                </button>
+                <button
+                  type="button"
+                  onClick={onNext}
+                  disabled={rank >= total}
+                  aria-label={drawer.next}
+                  className="rounded-full px-3 py-1.5 text-[13px] font-medium text-ink/60 transition-colors hover:bg-black/5 hover:text-ink disabled:opacity-35"
+                >
+                  {drawer.next} →
+                </button>
+              </>
+            )}
             <button
               ref={closeBtnRef}
               type="button"

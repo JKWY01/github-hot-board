@@ -818,6 +818,12 @@ export default function LiveBoardList({
                     </span>
                     {/* 站内档案/出站 GitHub 的门都收进行右缘(见行尾动作组);名字行保持干净 */}
                     {flag && flagBadge(flag.kind, flag.delta, strings)}
+                    {/* 新入榜:上一拍没这家且无实时旗 —— 榜单的诚实增量信号 */}
+                    {!flag && !custom && prev === undefined && (
+                      <span className="hidden shrink-0 whitespace-nowrap rounded-full bg-accent/10 px-1.5 py-0.5 text-[10.5px] font-semibold text-accent sm:inline-flex">
+                        {strings.newLabel}
+                      </span>
+                    )}
                     {/* 关注铃铛贴着仓库名:点击先问"你的项目还是想关注",选完就地给列表入口 */}
                     {!compact && (
                       <WatchBell
@@ -980,7 +986,7 @@ function flagBadge(kind: RowFlag['kind'], delta: number, strings: LiveStrings): 
     return (
       <span
         title={strings.upLabel}
-        className="inline-flex items-center gap-0.5 rounded-full bg-good/10 px-1.5 py-0.5 text-[10.5px] font-semibold tabular-nums text-good"
+        className="inline-flex shrink-0 items-center gap-0.5 whitespace-nowrap rounded-full bg-good/10 px-1.5 py-0.5 text-[10.5px] font-semibold tabular-nums text-good"
       >
         <ArrowUpIcon size={8} />
         {delta > 1 ? delta : ''}
@@ -990,7 +996,7 @@ function flagBadge(kind: RowFlag['kind'], delta: number, strings: LiveStrings): 
   return (
     <span
       title={strings.downLabel}
-      className="inline-flex items-center gap-0.5 rounded-full bg-bad/10 px-1.5 py-0.5 text-[10.5px] font-semibold tabular-nums text-bad"
+      className="inline-flex shrink-0 items-center gap-0.5 whitespace-nowrap rounded-full bg-bad/10 px-1.5 py-0.5 text-[10.5px] font-semibold tabular-nums text-bad"
     >
       <ArrowDownIcon size={8} />
       {delta > 1 ? Math.abs(delta) : ''}
