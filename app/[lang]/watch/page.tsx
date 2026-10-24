@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
-import { getDict, isLocale, liveStrings } from '@/app/[lang]/dictionaries'
+import { isLocale, liveStrings } from '@/app/[lang]/dictionaries'
 import WatchClient from '@/components/watch-client'
 import { LOCALES } from '@/lib/locales'
 
@@ -20,7 +20,8 @@ export async function generateMetadata({
   const { lang } = await params
   if (!isLocale(lang)) return {}
   return {
-    title: `${liveStrings(lang).watchTitle} · ${getDict(lang).meta.siteName}`,
+    // 布局模板会自动追加 siteName,这里只给裸标题
+    title: liveStrings(lang).watchTitle,
     description: undefined,
     robots: { index: false, follow: true },
   }

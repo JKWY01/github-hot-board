@@ -76,7 +76,8 @@ export async function generateMetadata({
   const { lang } = await params
   if (!isLocale(lang)) return { robots: { index: false, follow: true } }
   return {
-    title: `${T[lang].title} · ${getDict(lang).meta.siteName}`,
+    // 布局模板会自动追加 siteName,这里只给裸标题
+    title: T[lang].title,
     robots: { index: false, follow: true },
     alternates: { canonical: `/${lang}/status` },
   }
