@@ -166,6 +166,10 @@ export const enDict: Dict = {
     milestone: 'Milestones',
   },
   ui: {
+    filterAll: 'All',
+    filterOrder: 'Order',
+    filterNet: 'Net gain',
+    filterRate: 'Rate',
     searchPlaceholder: 'Search owner/repo or keyword',
     searchRelated: 'Related in our library',
     searchOutside: 'Not on this board',

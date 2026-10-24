@@ -166,6 +166,10 @@ export const ptDict: Dict = {
     milestone: 'Milestones',
   },
   ui: {
+    filterAll: 'Todos',
+    filterOrder: 'Ordem',
+    filterNet: 'Ganhos',
+    filterRate: 'Taxa',
     searchPlaceholder: 'Buscar owner/repo ou palavra-chave',
     searchRelated: 'Relacionados na nossa biblioteca',
     searchOutside: 'Fora desta lista',

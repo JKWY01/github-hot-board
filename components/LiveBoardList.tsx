@@ -41,26 +41,6 @@ interface RowFlag {
 
 const FLIP_EASING = 'cubic-bezier(0.22, 1, 0.36, 1)'
 
-/* 梯队筛选对齐 16 语;数值档位本身语言中立,只翻四个动作词。 */
-const CTRL: Record<Locale, { all: string; board: string; net: string; rate: string }> = {
-  en: { all: 'All', board: 'Order', net: 'Net gain', rate: 'Growth' },
-  zh: { all: '全部', board: '榜序', net: '净增', rate: '增速' },
-  'zh-TW': { all: '全部', board: '榜序', net: '淨增', rate: '增速' },
-  ja: { all: '全て', board: '順位', net: '増加', rate: '増加率' },
-  ko: { all: '전체', board: '순위', net: '증가', rate: '증가율' },
-  de: { all: 'Alle', board: 'Rang', net: 'Zuwachs', rate: 'Rate' },
-  fr: { all: 'Tout', board: 'Classement', net: 'Gains', rate: 'Taux' },
-  es: { all: 'Todos', board: 'Tabla', net: 'Ganancia', rate: 'Crecim.' },
-  pt: { all: 'Todos', board: 'Ordem', net: 'Ganhos', rate: 'Taxa' },
-  it: { all: 'Tutti', board: 'Classifica', net: 'Guadagni', rate: 'Tasso' },
-  ru: { all: 'Все', board: 'Рейтинг', net: 'Прирост', rate: 'Темп' },
-  uk: { all: 'Усі', board: 'Рейтинг', net: 'Приріст', rate: 'Темп' },
-  pl: { all: 'Wszystkie', board: 'Pozycje', net: 'Przyrost', rate: 'Tempo' },
-  tr: { all: 'Tümü', board: 'Sıra', net: 'Kazanç', rate: 'Oran' },
-  vi: { all: 'Tất cả', board: 'Thứ hạng', net: 'Tăng', rate: 'Tốc độ' },
-  id: { all: 'Semua', board: 'Peringkat', net: 'Tambahan', rate: 'Laju' },
-}
-
 type BucketId = string
 type SortId = 'board' | 'gained' | 'rate'
 
@@ -524,7 +504,8 @@ export default function LiveBoardList({
   )
 
   const primaryUsesCountUp = metric === 'stars' || metric === 'forks' || metric === 'gap'
-  const ctrl = CTRL[locale]
+  // 筛选/排序四词随字典走(strings.filterXxx,原内嵌 CTRL 表已并入词典体系)
+  const ctrl = { all: strings.filterAll, board: strings.filterOrder, net: strings.filterNet, rate: strings.filterRate }
 
   /* 点行抽屉:开着的抽屉不挡 60 秒轮询;切仓不重挂(内容原位切换)。 */
   const [drawerFull, setDrawerFull] = useState<string | null>(null)

@@ -166,6 +166,10 @@ export const ukDict: Dict = {
     milestone: 'Рубежі',
   },
   ui: {
+    filterAll: 'Усі',
+    filterOrder: 'Рейтинг',
+    filterNet: 'Приріст',
+    filterRate: 'Темп',
     searchPlaceholder: 'Пошук owner/repo або за словом',
     searchRelated: 'Схожі в нашій базі',
     searchOutside: 'Не в цьому списку',

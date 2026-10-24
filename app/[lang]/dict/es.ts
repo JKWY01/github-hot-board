@@ -166,6 +166,10 @@ export const esDict: Dict = {
     milestone: 'Hitos',
   },
   ui: {
+    filterAll: 'Todos',
+    filterOrder: 'Tabla',
+    filterNet: 'Ganancia',
+    filterRate: 'Crecim.',
     searchPlaceholder: 'Buscar owner/repo o palabra clave',
     searchRelated: 'Relacionados en nuestra biblioteca',
     searchOutside: 'Fuera de esta lista',

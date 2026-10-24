@@ -166,6 +166,10 @@ export const trDict: Dict = {
     milestone: 'Kilometre',
   },
   ui: {
+    filterAll: 'Tümü',
+    filterOrder: 'Sıra',
+    filterNet: 'Kazanç',
+    filterRate: 'Oran',
     searchPlaceholder: 'owner/repo veya anahtar kelime ara',
     searchRelated: 'Kütüphanemizde ilgili',
     searchOutside: 'Bu listede yok',

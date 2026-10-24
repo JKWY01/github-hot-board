@@ -166,6 +166,10 @@ export const zhTWDict: Dict = {
     milestone: '里程碑',
   },
   ui: {
+    filterAll: '全部',
+    filterOrder: '榜序',
+    filterNet: '淨增',
+    filterRate: '增速',
     searchPlaceholder: '搜 owner/repo 或關鍵詞',
     searchRelated: '庫內相關',
     searchOutside: '不在本榜',

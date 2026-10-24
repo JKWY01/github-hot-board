@@ -166,6 +166,10 @@ export const plDict: Dict = {
     milestone: 'Przełomy',
   },
   ui: {
+    filterAll: 'Wszystkie',
+    filterOrder: 'Pozycje',
+    filterNet: 'Przyrost',
+    filterRate: 'Tempo',
     searchPlaceholder: 'Szukaj owner/repo lub słowa klucz',
     searchRelated: 'Podobne w naszej bazie',
     searchOutside: 'Poza tą listą',

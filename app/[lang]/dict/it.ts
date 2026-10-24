@@ -166,6 +166,10 @@ export const itDict: Dict = {
     milestone: 'Milestone',
   },
   ui: {
+    filterAll: 'Tutti',
+    filterOrder: 'Classifica',
+    filterNet: 'Guadagni',
+    filterRate: 'Tasso',
     searchPlaceholder: 'Cerca owner/repo o parola chiave',
     searchRelated: 'Correlati nella nostra libreria',
     searchOutside: 'Fuori da questa lista',

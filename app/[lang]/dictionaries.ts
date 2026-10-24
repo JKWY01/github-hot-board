@@ -77,6 +77,11 @@ export interface Dict {
   boards: Record<BoardSlug, BoardCopy>
   shortBoards: Record<BoardSlug, string>
   ui: {
+    /** 榜单行上方的筛选/排序控件四词(原内嵌于 LiveBoardList 的 CTRL 表,已并入字典单一体系) */
+    filterAll: string
+    filterOrder: string
+    filterNet: string
+    filterRate: string
     allLanguages: string
     /** “总榜”这类累计口径列的小标签(区别于周/月增量) */
     totalLabel: string
@@ -198,6 +203,10 @@ export function liveStrings(locale: Locale) {
     autoRefresh: d.ui.autoRefresh,
     rateLimited: d.ui.rateLimited,
     degraded: d.ui.degradedFallback,
+    filterAll: d.ui.filterAll,
+    filterOrder: d.ui.filterOrder,
+    filterNet: d.ui.filterNet,
+    filterRate: d.ui.filterRate,
     starsUnit: d.ui.stars,
     forksUnit: d.ui.forks,
     issueUnit: d.ui.issues,

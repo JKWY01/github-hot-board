@@ -79,7 +79,8 @@ export function isFacetLanguage(value: string): value is FacetLanguage {
   return (FACET_LANGUAGES as readonly string[]).includes(value)
 }
 
-function slopeStarsPerDay(repo: { stars: number; createdAt?: string }): number | undefined {
+/** 纯函数导出:星/天斜率(无 createdAt 或日期非法时 undefined),单测共用。 */
+export function slopeStarsPerDay(repo: { stars: number; createdAt?: string }): number | undefined {
   if (!repo.createdAt) return undefined
   const age = (Date.now() - Date.parse(repo.createdAt)) / DAY_MS
   if (!Number.isFinite(age)) return undefined
@@ -295,11 +296,11 @@ export interface MilestoneThreshold {
 export const MILESTONE_THRESHOLDS = [1_000, 10_000, 50_000, 100_000] as const
 
 export async function getMilestoneData(): Promise<BoardData> {
-  const tenDaysAgo = isoDaysAgo(30)
+  const activeSince = isoDaysAgo(30)
   const settled = await Promise.allSettled(
     MILESTONE_THRESHOLDS.map((threshold) =>
       // 只搜未过线区间 [t-80, t-1]:窗口顶那种已跨线的仓库不占"差 0"位置
-      ghSearch(`stars:${threshold - 80}..${threshold - 1} pushed:>${tenDaysAgo} fork:false`, {
+      ghSearch(`stars:${threshold - 80}..${threshold - 1} pushed:>${activeSince} fork:false`, {
         perPage: 50,
         pages: 1,
       }),
@@ -340,7 +341,7 @@ export async function getMilestoneData(): Promise<BoardData> {
 }
 
 /** 冲线语义:目标档 = 还没跨过的下一档(旧逻辑取"最近档"会把已跨线仓库判回原线,差值钳 0 冒充冠军)。 */
-function nextThreshold(stars: number): number | null {
+export function nextThreshold(stars: number): number | null {
   for (const t of MILESTONE_THRESHOLDS) if (stars < t) return t
   return null
 }

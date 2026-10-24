@@ -166,6 +166,10 @@ export const jaDict: Dict = {
     milestone: '節目',
   },
   ui: {
+    filterAll: '全て',
+    filterOrder: '順位',
+    filterNet: '増加',
+    filterRate: '増加率',
     searchPlaceholder: 'owner/repo またはキーワードを検索',
     searchRelated: 'ライブラリ内の関連',
     searchOutside: 'このランキング外',

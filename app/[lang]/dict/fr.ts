@@ -166,6 +166,10 @@ export const frDict: Dict = {
     milestone: 'Jalons',
   },
   ui: {
+    filterAll: 'Tout',
+    filterOrder: 'Classement',
+    filterNet: 'Gains',
+    filterRate: 'Taux',
     searchPlaceholder: 'Rechercher owner/repo ou mot-clé',
     searchRelated: 'Liés dans notre bibliothèque',
     searchOutside: 'Hors de ce classement',

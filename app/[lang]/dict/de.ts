@@ -166,6 +166,10 @@ export const deDict: Dict = {
     milestone: 'Meilensteine',
   },
   ui: {
+    filterAll: 'Alle',
+    filterOrder: 'Rang',
+    filterNet: 'Zuwachs',
+    filterRate: 'Rate',
     searchPlaceholder: 'owner/repo oder Stichwort suchen',
     searchRelated: 'Ähnlich in unserer Bibliothek',
     searchOutside: 'Nicht auf dieser Liste',

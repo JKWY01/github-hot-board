@@ -166,6 +166,10 @@ export const ruDict: Dict = {
     milestone: 'Рубежи',
   },
   ui: {
+    filterAll: 'Все',
+    filterOrder: 'Рейтинг',
+    filterNet: 'Прирост',
+    filterRate: 'Темп',
     searchPlaceholder: 'Поиск owner/repo или по слову',
     searchRelated: 'Похожее в нашей базе',
     searchOutside: 'Не в этом списке',

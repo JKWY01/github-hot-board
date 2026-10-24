@@ -166,6 +166,10 @@ export const idDict: Dict = {
     milestone: 'Milestone',
   },
   ui: {
+    filterAll: 'Semua',
+    filterOrder: 'Peringkat',
+    filterNet: 'Tambahan',
+    filterRate: 'Laju',
     searchPlaceholder: 'Cari owner/repo atau kata kunci',
     searchRelated: 'Terkait di perpustakaan kita',
     searchOutside: 'Tidak ada di papan ini',
