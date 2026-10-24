@@ -171,6 +171,7 @@ export const trDict: Dict = {
     pushOn: 'açık',
     pushOff: 'kapalı',
     pushBlocked: 'Tarayıcı bildirimleri engelledi',
+    etaDays: '~{n} g',
     filterAll: 'Tümü',
     filterOrder: 'Sıra',
     filterNet: 'Kazanç',

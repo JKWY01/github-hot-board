@@ -171,6 +171,7 @@ export const jaDict: Dict = {
     pushOn: 'オン',
     pushOff: 'オフ',
     pushBlocked: 'ブラウザが通知を拒否しました',
+    etaDays: '約{n}日',
     filterAll: '全て',
     filterOrder: '順位',
     filterNet: '増加',

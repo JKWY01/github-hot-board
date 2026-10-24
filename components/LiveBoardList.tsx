@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import Link from 'next/link'
+import { track } from '@vercel/analytics'
 
 import type { BoardItem, Locale, LivePatch } from '@/lib/types'
 import { fmtAgo, fmtDay, fmtNum, fmtSlope, fmtSigned } from '@/lib/format'
@@ -190,6 +191,7 @@ export default function LiveBoardList({
     if (items.some((it) => it.fullName.toLowerCase().includes(q.toLowerCase()))) return
     let stale = false
     setSearching(true)
+    track('library_search')
     fetch(`/api/search?q=${encodeURIComponent(q)}&board=${encodeURIComponent(slug)}&language=${encodeURIComponent(currentLanguage ?? '')}&deep=${webConfirmed === q ? 1 : 0}`)
       .then((r) => (r.ok ? r.json() : { ok: false }))
       .then((j: { ok: boolean; results?: SearchHit[]; kind?: 'exact' | 'keyword' | 'web' | 'empty' }) => {
@@ -515,6 +517,7 @@ export default function LiveBoardList({
   const [drawerItem, setDrawerItem] = useState<BoardItem | null>(null)
   const drawerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const openDrawer = useCallback((full: string, item: BoardItem) => {
+    track('drawer_open')
     if (drawerTimerRef.current) {
       clearTimeout(drawerTimerRef.current)
       drawerTimerRef.current = null
@@ -575,7 +578,7 @@ export default function LiveBoardList({
                   key={`t-${id}`}
                   type="button"
                   aria-pressed={on}
-                  onClick={() => setTier(id)}
+                  onClick={() => { track('board_filter'); setTier(id) }}
                   className={`rounded-full px-2.5 py-1 text-[11.5px] font-medium tabular-nums transition-colors ${
                     on ? 'bg-ink text-white' : 'text-ink/55 hover:bg-black/8 hover:text-ink'
                   }`}
@@ -729,6 +732,11 @@ export default function LiveBoardList({
                     : { kind: 'down' as const, delta: rankShown - prev })
           const crossed =
             variant === 'milestone' && item.milestoneTarget ? item.stars >= item.milestoneTarget : false
+          // 里程碑"预计跨线":gap ÷ 当拍斜率,>90 天视为斜率失真不显示(诚实:估不出来就不估)
+          const etaDays =
+            variant === 'milestone' && item.milestoneTarget && item.stars < item.milestoneTarget && (item.slope ?? 0) > 0
+              ? Math.ceil((item.milestoneTarget - item.stars) / (item.slope as number))
+              : null
           // 行描述按站点语言挑:载荷里备好的对应语言描述(descLng),没有就回仓库原文
           const shown = item.descLng?.[locale] || item.desc || null
           return (
@@ -822,6 +830,11 @@ export default function LiveBoardList({
                       <span className="inline-flex items-center gap-1" suppressHydrationWarning>
                         <ClockIcon size={11} />
                         {fmtAgo(item.pushedAt, locale, nowAnchor || dataNowMs)}
+                      </span>
+                    )}
+                    {etaDays !== null && etaDays <= 90 && (
+                      <span className="font-medium text-accent/85">
+                        {strings.etaDays.replace('{n}', String(etaDays))}
                       </span>
                     )}
                     {secondary === 'stars' && metric !== 'stars' && (

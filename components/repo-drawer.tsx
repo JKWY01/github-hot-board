@@ -230,7 +230,7 @@ export default function RepoDrawer({
               height={42}
               loading="lazy"
               decoding="async"
-              className="h-[42px] w-[42px] shrink-0 rounded-full border-[0.5px] border-black/8 bg-surface object-cover"
+              className="h-[42px] w-[42px] shrink-0 rounded-full border-[0.5px] border-black/8 avatar-ph object-cover"
             />
             <div className="min-w-0 flex-1">
               <h2 className="truncate text-[16.5px] font-semibold tracking-tight text-ink">{fullName}</h2>

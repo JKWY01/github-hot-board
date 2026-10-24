@@ -172,6 +172,7 @@ export const zhDict: Dict = {
     pushOn: '已开启',
     pushOff: '已关闭',
     pushBlocked: '浏览器拒绝了通知权限',
+    etaDays: '约{n}天',
     filterAll: '全部',
     filterOrder: '榜序',
     filterNet: '净增',

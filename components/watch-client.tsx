@@ -27,6 +27,7 @@ interface WatchStatus {
   rank?: number
   cutoff?: number
   missing?: boolean
+  onBoard?: boolean
 }
 
 const SEEN_KEY = 'ghb.watch.seen.v1'

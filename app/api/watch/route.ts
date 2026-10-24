@@ -19,6 +19,8 @@ export interface WatchStatus {
   rank?: number
   cutoff?: number
   missing?: boolean
+  /** 站内是否有档案:无档案的行名链回落 GitHub(站内档案页对未上榜仓库是诚实 404) */
+  onBoard?: boolean
 }
 
 // 每 IP 滑窗限流:20 只一次请求,窗口放宽到 30/min(共享实现,带条目修剪)
@@ -96,6 +98,13 @@ export async function GET(req: NextRequest) {
       }),
     )
     for (const r of settled) if (r.status === 'fulfilled') items.push(r.value)
+    // 档案存在性标注:关注列表里的仓库未必上过榜;无档案的行前端回落 GitHub 外链
+    const names = items.map((it) => it.fullName)
+    if (names.length > 0) {
+      const seenRows = await sql`SELECT repo FROM repo_seen WHERE repo = ANY(${names})`
+      const seen = new Set((seenRows as unknown as Array<{ repo: string }>).map((r) => r.repo))
+      for (const it of items) it.onBoard = seen.has(it.fullName)
+    }
     return { ok: true, items }
   })
 

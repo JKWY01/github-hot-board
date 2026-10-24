@@ -171,6 +171,7 @@ export const esDict: Dict = {
     pushOn: 'activadas',
     pushOff: 'desactivadas',
     pushBlocked: 'El navegador bloqueó las notificaciones',
+    etaDays: '~{n} d',
     filterAll: 'Todos',
     filterOrder: 'Tabla',
     filterNet: 'Ganancia',

@@ -171,6 +171,7 @@ export const enDict: Dict = {
     pushOn: 'on',
     pushOff: 'off',
     pushBlocked: 'Browser blocked notifications',
+    etaDays: '~{n}d',
     filterAll: 'All',
     filterOrder: 'Order',
     filterNet: 'Net gain',

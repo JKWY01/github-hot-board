@@ -171,6 +171,7 @@ export const ruDict: Dict = {
     pushOn: 'вкл.',
     pushOff: 'выкл.',
     pushBlocked: 'Браузер запретил уведомления',
+    etaDays: '~{n} дн.',
     filterAll: 'Все',
     filterOrder: 'Рейтинг',
     filterNet: 'Прирост',

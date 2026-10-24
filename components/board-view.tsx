@@ -4,6 +4,7 @@ import type { Metadata } from 'next'
 
 import { BOARD_META, BOARD_ORDER, FACET_LANGUAGES, facetDisplay, isBoardSlug, facetLangSlug, type BoardSlug } from '@/lib/boards'
 import { getDict, isLocale, type BoardCopy } from '@/app/[lang]/dictionaries'
+import { guideFor } from '@/lib/guide'
 import { jsonLdScript } from '@/lib/jsonld'
 import { altLangs } from '@/lib/locales'
 import type { Locale } from '@/lib/types'
@@ -70,6 +71,14 @@ export default async function BoardPageView({
               <li>{dict.ui.sourceGithubSearch} / {dict.ui.sourceGithubTrending}</li>
               <li>{dict.ui.autoRefresh} · {dict.ui.dataUpdated}</li>
             </ul>
+            {/* 十榜交叉读法的入口:指南页长文在此给一个可见的落点(此前只在页脚) */}
+            <Link
+              href={`/${lang}/guide`}
+              prefetch={false}
+              className="mt-4 inline-flex items-center gap-1.5 text-[13px] font-medium text-accent-strong hover:underline"
+            >
+              {guideFor(lang).homeCta} →
+            </Link>
           </div>
           <div>
             <h2 className="text-[15px] font-semibold uppercase tracking-[0.14em] text-sub">{dict.ui.openQuestions}</h2>

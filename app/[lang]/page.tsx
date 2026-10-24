@@ -293,8 +293,9 @@ async function HeroStats({ locale }: { locale: Locale }) {
   }
 
   const stats = [
-    { label: `${dict.home.heroStatStars} · Top 300`, value: statA },
-    { label: `${dict.home.heroStatRepos} · Top 100`, value: statB },
+    // 后缀不硬编码:榜面规模随口径走,字典文案里已含"300"语义,避免再出现 Top 100/300 分歧
+    { label: dict.home.heroStatStars, value: statA },
+    { label: dict.home.heroStatRepos, value: statB },
     { label: dict.home.heroStatDaily, value: statC },
   ]
 

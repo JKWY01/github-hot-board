@@ -171,6 +171,7 @@ export const plDict: Dict = {
     pushOn: 'wł.',
     pushOff: 'wył.',
     pushBlocked: 'Przeglądarka zablokowała powiadomienia',
+    etaDays: '~{n} d',
     filterAll: 'Wszystkie',
     filterOrder: 'Pozycje',
     filterNet: 'Przyrost',

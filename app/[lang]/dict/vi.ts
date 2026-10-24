@@ -171,6 +171,7 @@ export const viDict: Dict = {
     pushOn: 'bật',
     pushOff: 'tắt',
     pushBlocked: 'Trình duyệt đã chặn thông báo',
+    etaDays: '~{n} ngày',
     filterAll: 'Tất cả',
     filterOrder: 'Thứ hạng',
     filterNet: 'Tăng',

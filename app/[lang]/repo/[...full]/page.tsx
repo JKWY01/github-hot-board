@@ -84,7 +84,12 @@ export default async function RepoPage({
   const descText = descs?.[lang] ?? descs?.en ?? null
 
   // 同榜近邻(内链网):读现成 board_head payload,零新查询;失败静默,别拖档案页。
-  const primary = archive.appearances[0]
+  // 语境选基准口径(总榜)优先 —— appearances 是字母序,拿第一个会拿去黑红榜的
+  // 名次语境,和用户心里的总榜名次对不上(走查实测踩中)。
+  const primary =
+    archive.appearances.find((a) => a.board === 'overall' && a.language === '') ??
+    archive.appearances.find((a) => a.language === '') ??
+    archive.appearances[0]
   const related = primary
     ? await readBoardNeighbors(primary.board, fullName).catch(() => [])
     : []
@@ -103,6 +108,7 @@ export default async function RepoPage({
       locale={lang}
       descText={descText}
       related={related}
+      relatedBoard={primary?.board}
       readmeHtml={readmeHtml}
     />
   )

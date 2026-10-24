@@ -171,6 +171,7 @@ export const frDict: Dict = {
     pushOn: 'activées',
     pushOff: 'désactivées',
     pushBlocked: 'Le navigateur a refusé les notifications',
+    etaDays: '~{n} j',
     filterAll: 'Tout',
     filterOrder: 'Classement',
     filterNet: 'Gains',

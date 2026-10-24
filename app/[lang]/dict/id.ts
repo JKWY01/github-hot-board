@@ -171,6 +171,7 @@ export const idDict: Dict = {
     pushOn: 'aktif',
     pushOff: 'nonaktif',
     pushBlocked: 'Browser memblokir notifikasi',
+    etaDays: '~{n} hr',
     filterAll: 'Semua',
     filterOrder: 'Peringkat',
     filterNet: 'Tambahan',

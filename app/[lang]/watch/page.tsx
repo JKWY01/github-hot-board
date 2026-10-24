@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
-import { isLocale, liveStrings } from '@/app/[lang]/dictionaries'
+import { getDict, isLocale, liveStrings } from '@/app/[lang]/dictionaries'
 import WatchClient from '@/components/watch-client'
 import { LOCALES } from '@/lib/locales'
 
@@ -20,7 +20,7 @@ export async function generateMetadata({
   const { lang } = await params
   if (!isLocale(lang)) return {}
   return {
-    title: `${liveStrings(lang).watchTitle} · GitHub Hot Board`,
+    title: `${liveStrings(lang).watchTitle} · ${getDict(lang).meta.siteName}`,
     description: undefined,
     robots: { index: false, follow: true },
   }

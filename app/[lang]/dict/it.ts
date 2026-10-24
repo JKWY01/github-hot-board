@@ -171,6 +171,7 @@ export const itDict: Dict = {
     pushOn: 'attivi',
     pushOff: 'disattivi',
     pushBlocked: 'Il browser ha bloccato le notifiche',
+    etaDays: '~{n} g',
     filterAll: 'Tutti',
     filterOrder: 'Classifica',
     filterNet: 'Guadagni',

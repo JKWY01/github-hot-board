@@ -171,6 +171,7 @@ export const deDict: Dict = {
     pushOn: 'an',
     pushOff: 'aus',
     pushBlocked: 'Browser hat Benachrichtigungen blockiert',
+    etaDays: '~{n} T.',
     filterAll: 'Alle',
     filterOrder: 'Rang',
     filterNet: 'Zuwachs',

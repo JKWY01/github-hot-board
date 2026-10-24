@@ -171,6 +171,7 @@ export const koDict: Dict = {
     pushOn: '켜짐',
     pushOff: '꺼짐',
     pushBlocked: '브라우저가 알림을 거부했습니다',
+    etaDays: '약 {n}일',
     filterAll: '전체',
     filterOrder: '순위',
     filterNet: '증가',

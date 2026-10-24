@@ -22,6 +22,8 @@ interface Hit {
   desc?: Record<string, string>
   rank?: number
   cutoff?: number
+  /** 站内是否有档案(repo_seen):库内命中的仓库未必上过榜,无档案的行前端回落 GitHub 外链 */
+  onBoard?: boolean
 }
 
 // 简易每 IP 滑窗限流:搜索是人手速,不是爬虫节奏(共享实现,带条目修剪)
@@ -203,5 +205,16 @@ export async function GET(req: NextRequest) {
   })
 
   if (!data) return NextResponse.json({ ok: false, reason: 'db' }, { status: 503 })
+  // 档案存在性标注:一次 repo_seen 批查,防"点搜索结果吃 404"的断链(库内命中 ≠ 上过榜)
+  const names = [...new Set((data.results ?? []).map((r) => r.fullName))].filter(Boolean)
+  if (names.length > 0) {
+    const seen = await withDb(async (sql) => {
+      const rows = await sql`SELECT repo FROM repo_seen WHERE repo = ANY(${names})`
+      return new Set((rows as unknown as Array<{ repo: string }>).map((r) => r.repo))
+    })
+    if (seen) {
+      for (const r of data.results ?? []) r.onBoard = seen.has(r.fullName)
+    }
+  }
   return NextResponse.json(data, { headers: { 'cache-control': 'no-store' } })
 }

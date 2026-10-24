@@ -245,3 +245,16 @@
 .md-body summary { cursor: pointer; font-weight: 600; }
 .md-body .emoji { vertical-align: middle; }
 .md-body g-emoji { vertical-align: middle; font-style: normal; }
+
+/* 头像加载占位:图片像素一旦绘制即盖住背景,加载中/破图时显示微光扫过 */
+.avatar-ph {
+  background: linear-gradient(110deg, #ececef 8%, #f6f6f8 18%, #ececef 33%);
+  background-size: 200% 100%;
+  animation: avatar-shimmer 1.4s linear infinite;
+}
+@keyframes avatar-shimmer {
+  to { background-position: -200% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .avatar-ph { animation: none; }
+}

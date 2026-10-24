@@ -171,6 +171,7 @@ export const ptDict: Dict = {
     pushOn: 'ativas',
     pushOff: 'inativas',
     pushBlocked: 'O navegador bloqueou as notificações',
+    etaDays: '~{n} d',
     filterAll: 'Todos',
     filterOrder: 'Ordem',
     filterNet: 'Ganhos',

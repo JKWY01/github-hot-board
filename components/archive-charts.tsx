@@ -59,6 +59,18 @@ export default function ArchiveCharts({
 
       const grid = { left: 10, right: 14, top: 30, bottom: 10, containLabel: true }
 
+      // 轴标签:紧凑格式(1.4万)在相近量级会让所有刻度同文,轴用全数字;同日标签去重
+      const axisNum = new Intl.NumberFormat(locale === 'zh' ? 'zh-CN' : 'en-US')
+      const dayLabels = () => {
+        let last = ''
+        return (v: number) => {
+          const s = dateLabel(v)
+          if (s === last) return ''
+          last = s
+          return s
+        }
+      }
+
       // --- Star 走势 ---
       const starChart = echarts.init(starRef.current!)
       starChart.setOption({
@@ -71,13 +83,13 @@ export default function ArchiveCharts({
           type: 'time',
           axisLine: { lineStyle: { color: 'rgba(0,0,0,0.25)' } },
           axisTick: { show: false },
-          axisLabel: { color: '#6e6e73', fontSize: 11, formatter: dateLabel },
+          axisLabel: { color: '#6e6e73', fontSize: 11, formatter: dayLabels() },
           splitLine: { show: false },
         },
         yAxis: {
           type: 'value',
           scale: true,
-          axisLabel: { color: '#6e6e73', fontSize: 11, formatter: (v: number) => fmtNum(v, locale) },
+          axisLabel: { color: '#6e6e73', fontSize: 11, formatter: (v: number) => axisNum.format(v) },
           splitLine: { lineStyle: { color: 'rgba(0,0,0,0.06)' } },
         },
         series: [
@@ -112,7 +124,7 @@ export default function ArchiveCharts({
           type: 'time',
           axisLine: { lineStyle: { color: 'rgba(0,0,0,0.25)' } },
           axisTick: { show: false },
-          axisLabel: { color: '#6e6e73', fontSize: 11, formatter: dateLabel },
+          axisLabel: { color: '#6e6e73', fontSize: 11, formatter: dayLabels() },
           splitLine: { show: false },
         },
         yAxis: {

@@ -7,6 +7,13 @@ import { GithubIcon } from './Icons'
 
 const nf = (n: number) => new Intl.NumberFormat('en-US', { notation: n >= 10000 ? 'compact' : 'standard', maximumFractionDigits: 1 }).format(n)
 
+/** 往日榜指标列名:按各榜快照里实际存的 metric 语义给名(board_snapshots.metric = slope ?? score ?? gained)。 */
+function metricLabelFor(slug: string, dict: ReturnType<typeof getDict>): string {
+  if (slug === 'weekly' || slug === 'monthly') return dict.boards[slug as 'weekly']?.metricLabel ?? dict.history.metricLabel
+  if (slug === 'controversial') return dict.boards.controversial.metricLabel
+  return dict.ui.starsPerDayUnit
+}
+
 function fmtTime(iso: string, lang: string): string {
   const locale = lang === 'en' ? 'en-US' : 'zh-CN'
   return new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit', timeZone: 'UTC', hour12: false }).format(new Date(iso))
@@ -112,7 +119,9 @@ export function HistoryView({
                       </span>
                     </div>
                     <span className="tabular-nums text-[13px] text-ink/70">
-                      {h.metricLabel} {nf(Math.round(r.metric * 10) / 10)}
+                      {/* 列名跟实际存储语义走:snapshot.metric = 斜率(搜索系)/净增(trending)/指数(黑红),
+                          不能笼统叫"指标" —— 否则总榜的 179.9 会被读成星数(走查实测) */}
+                      {metricLabelFor(slug, dict)} {nf(Math.round(r.metric * 10) / 10)}
                     </span>
                   </li>
                 ))}

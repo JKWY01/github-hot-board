@@ -29,7 +29,9 @@ export default function Reveal({ children, className = '', delay = 0 }: RevealPr
           }
         }
       },
-      { threshold: 0.12, rootMargin: '0px 0px -8% 0px' },
+      // 提前 160px 预触发:快速滚动/跳锚时入场动画在可见前就开始,
+      // 不再出现"滚到即白屏一帧"的中间态(threshold 降到 0.05 同理)
+      { threshold: 0.05, rootMargin: '160px 0px 0px 0px' },
     )
     io.observe(el)
     return () => io.disconnect()

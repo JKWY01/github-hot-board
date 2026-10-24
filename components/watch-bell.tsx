@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
+import { track } from '@vercel/analytics'
 
 import { BellIcon } from './Icons'
 
@@ -127,6 +128,7 @@ export default function WatchBell({
     const cur = readWatch()
     if (cur.some((e) => e.f === fullName)) {
       writeWatch(cur.filter((e) => e.f !== fullName))
+      track('watch_remove')
       setPanel(null)
       return
     }
@@ -137,6 +139,7 @@ export default function WatchBell({
     const cur = readWatch()
     if (cur.length >= WATCH_CAP) return
     writeWatch([...cur, { f: fullName, t, at: Date.now() }])
+    track('watch_add')
     const r = btnRef.current?.getBoundingClientRect()
     if (r) setRect({ top: r.bottom, left: r.left })
     setPanel('added')
