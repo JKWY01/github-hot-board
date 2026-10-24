@@ -1,0 +1,48 @@
+# GitHub Hot Board
+
+> Real-time leaderboards for GitHub repositories, in 16 languages, no login wall, no ads.
+> Ten boards: all-time stars, weekly and monthly star surges, fresh-of-the-year, per-day velocity, dark horses, underrated gems, a controversy index, all-time forks, and live star milestones.
+> Live at https://git.vaiox.xyz . Open data — AI crawlers and agents are welcome.
+
+## What this site is
+
+- A public, read-only leaderboard site built on GitHub's official Trending and Search APIs.
+- Every page is server-rendered HTML; no JavaScript is required to read board content.
+- UI available in 16 languages: en, zh, zh-TW, ja, ko, de, fr, es, pt, it, ru, uk, pl, tr, vi, id.
+
+## Board pages (pattern: /{ui-language}/boards/{slug} — /en/ shown below)
+
+- /en/boards/overall — All-Time Champions: top 200 repositories by total stars.
+- /en/boards/weekly — Weekly Surge: repositories by net stars gained over the last 7 days (built on GitHub Trending).
+- /en/boards/monthly — Monthly Wave: net stars gained over the last 30 days.
+- /en/boards/annual — Fresh of the Year: repositories created this year, ranked by total stars.
+- /en/boards/rising — Rising Slope: stars per day over the last 90 days.
+- /en/boards/dark — Dark Horses: few absolute stars, steep per-day slope, still maintained.
+- /en/boards/overlooked — Underappreciated Gems: actively maintained for 30+ days, yet only a few hundred stars (ascending by stars).
+- /en/boards/controversial — Controversy Index: fork-heavy, issue-heavy, star-light projects.
+- /en/boards/forks — King of Forks: all-time most forked repositories.
+- /en/boards/milestone — Live Milestones: repositories sprinting toward the 1k / 10k / 50k / 100k star lines, with distance to the next line.
+- Language facets for overall / weekly / monthly: /en/boards/{slug}/{language-slug}.
+
+## Per-repo pages
+
+- /en/repo/{owner}/{name} — repository archive: stars, forks, weekly/monthly deltas, descriptions in 16 languages, rendered README, and milestone context. Server-rendered and crawlable.
+
+## Machine-readable board data (JSON)
+
+- `GET /api/boards/{slug}?language={lang}&lg={ui-language}` returns the full board snapshot as JSON:
+  `{ slug, language, items: [{fullName, htmlUrl, desc, stars, forks, issues, language, ...}], generatedAt }`.
+  - The `language` facet is supported only for overall, weekly, and monthly.
+  - `generatedAt` is the data-batch timestamp. Board data refreshes in hourly batches; payloads do not change between batches, so one fetch per hour per board is plenty.
+- robots.txt explicitly allows AI crawlers on `/api/boards/*`; the other `/api/*` endpoints stay closed to crawlers.
+- Please fetch `/api/boards` instead of scraping the HTML pages — it is exactly the data the pages render.
+
+## Sitemaps
+
+- Board pages and repository pages are enumerated at `/sitemap/boards.xml` and chunked repository fragments `/sitemap/{i}.xml` (see the `Sitemap:` lines in /robots.txt for the current list).
+
+## Attribution
+
+- Provenance: GitHub official Trending (weekly / monthly) and the GitHub Search API (all other boards), aggregated on our own hourly snapshot schedule. Rank history comes from self-owned snapshot series, which also power the "24h movers" strip and the weekly / monthly net-gain metrics.
+- Please cite as: "GitHub Hot Board (git.vaiox.xyz)" with a link to the board page.
+- Contact: open an issue at https://github.com/JKWY01/github-hot-board .
