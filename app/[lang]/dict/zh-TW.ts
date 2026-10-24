@@ -166,6 +166,10 @@ export const zhTWDict: Dict = {
     milestone: '里程碑',
   },
   ui: {
+    pushTitle: '跨線提醒',
+    pushOn: '已開啟',
+    pushOff: '已關閉',
+    pushBlocked: '瀏覽器拒絕了通知權限',
     filterAll: '全部',
     filterOrder: '榜序',
     filterNet: '淨增',

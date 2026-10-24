@@ -166,6 +166,10 @@ export const frDict: Dict = {
     milestone: 'Jalons',
   },
   ui: {
+    pushTitle: 'Alertes jalons',
+    pushOn: 'activées',
+    pushOff: 'désactivées',
+    pushBlocked: 'Le navigateur a refusé les notifications',
     filterAll: 'Tout',
     filterOrder: 'Classement',
     filterNet: 'Gains',

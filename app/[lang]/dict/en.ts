@@ -166,6 +166,10 @@ export const enDict: Dict = {
     milestone: 'Milestones',
   },
   ui: {
+    pushTitle: 'Milestone alerts',
+    pushOn: 'on',
+    pushOff: 'off',
+    pushBlocked: 'Browser blocked notifications',
     filterAll: 'All',
     filterOrder: 'Order',
     filterNet: 'Net gain',

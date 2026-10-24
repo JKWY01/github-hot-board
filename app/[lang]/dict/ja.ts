@@ -166,6 +166,10 @@ export const jaDict: Dict = {
     milestone: '節目',
   },
   ui: {
+    pushTitle: 'マイルストーン通知',
+    pushOn: 'オン',
+    pushOff: 'オフ',
+    pushBlocked: 'ブラウザが通知を拒否しました',
     filterAll: '全て',
     filterOrder: '順位',
     filterNet: '増加',

@@ -166,6 +166,10 @@ export const ruDict: Dict = {
     milestone: 'Рубежи',
   },
   ui: {
+    pushTitle: 'Уведомления о рубежах',
+    pushOn: 'вкл.',
+    pushOff: 'выкл.',
+    pushBlocked: 'Браузер запретил уведомления',
     filterAll: 'Все',
     filterOrder: 'Рейтинг',
     filterNet: 'Прирост',

@@ -166,6 +166,10 @@ export const viDict: Dict = {
     milestone: 'Cột mốc',
   },
   ui: {
+    pushTitle: 'Cảnh báo cột mốc',
+    pushOn: 'bật',
+    pushOff: 'tắt',
+    pushBlocked: 'Trình duyệt đã chặn thông báo',
     filterAll: 'Tất cả',
     filterOrder: 'Thứ hạng',
     filterNet: 'Tăng',

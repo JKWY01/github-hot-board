@@ -166,6 +166,10 @@ export const deDict: Dict = {
     milestone: 'Meilensteine',
   },
   ui: {
+    pushTitle: 'Meilenstein-Alerts',
+    pushOn: 'an',
+    pushOff: 'aus',
+    pushBlocked: 'Browser hat Benachrichtigungen blockiert',
     filterAll: 'Alle',
     filterOrder: 'Rang',
     filterNet: 'Zuwachs',

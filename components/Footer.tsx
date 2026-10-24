@@ -44,6 +44,15 @@ export default function Footer({ dict }: { dict: Dict }) {
             >
               {dict.history.title} →
             </Link>
+            {/* 数据健康入口:固定双语硬标签(与 not-found 同款先例),不占字典位 */}
+            <br />
+            <Link
+              className="mt-1.5 inline-block text-[13px] text-ink/65 transition-colors hover:text-accent-strong"
+              href={`/${locale}/status`}
+              prefetch={false}
+            >
+              Status · 数据健康 →
+            </Link>
             <p className="mt-4 max-w-[220px] text-[12px] leading-relaxed text-sub">{dict.footer.disclaimer}</p>
           </div>
         </div>

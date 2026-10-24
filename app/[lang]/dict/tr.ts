@@ -166,6 +166,10 @@ export const trDict: Dict = {
     milestone: 'Kilometre',
   },
   ui: {
+    pushTitle: 'Kilometre taşı uyarıları',
+    pushOn: 'açık',
+    pushOff: 'kapalı',
+    pushBlocked: 'Tarayıcı bildirimleri engelledi',
     filterAll: 'Tümü',
     filterOrder: 'Sıra',
     filterNet: 'Kazanç',

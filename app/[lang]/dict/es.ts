@@ -166,6 +166,10 @@ export const esDict: Dict = {
     milestone: 'Hitos',
   },
   ui: {
+    pushTitle: 'Alertas de hitos',
+    pushOn: 'activadas',
+    pushOff: 'desactivadas',
+    pushBlocked: 'El navegador bloqueó las notificaciones',
     filterAll: 'Todos',
     filterOrder: 'Tabla',
     filterNet: 'Ganancia',

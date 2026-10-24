@@ -77,6 +77,11 @@ export interface Dict {
   boards: Record<BoardSlug, BoardCopy>
   shortBoards: Record<BoardSlug, string>
   ui: {
+    /** Web Push 跨线提醒(关注页开关;VAPID 未配置时客户端不渲染) */
+    pushTitle: string
+    pushOn: string
+    pushOff: string
+    pushBlocked: string
     /** 榜单行上方的筛选/排序控件四词(原内嵌于 LiveBoardList 的 CTRL 表,已并入字典单一体系) */
     filterAll: string
     filterOrder: string
@@ -203,6 +208,10 @@ export function liveStrings(locale: Locale) {
     autoRefresh: d.ui.autoRefresh,
     rateLimited: d.ui.rateLimited,
     degraded: d.ui.degradedFallback,
+    pushTitle: d.ui.pushTitle,
+    pushOn: d.ui.pushOn,
+    pushOff: d.ui.pushOff,
+    pushBlocked: d.ui.pushBlocked,
     filterAll: d.ui.filterAll,
     filterOrder: d.ui.filterOrder,
     filterNet: d.ui.filterNet,

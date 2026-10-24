@@ -166,6 +166,10 @@ export const idDict: Dict = {
     milestone: 'Milestone',
   },
   ui: {
+    pushTitle: 'Peringatan milestone',
+    pushOn: 'aktif',
+    pushOff: 'nonaktif',
+    pushBlocked: 'Browser memblokir notifikasi',
     filterAll: 'Semua',
     filterOrder: 'Peringkat',
     filterNet: 'Tambahan',

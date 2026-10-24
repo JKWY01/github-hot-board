@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { liveStrings } from '@/app/[lang]/dictionaries'
 import type { Locale } from '@/lib/types'
 import { fmtNum } from '@/lib/format'
-import { ForkIcon, StarIcon } from './Icons'
+import { BellIcon, ForkIcon, StarIcon } from './Icons'
 import WatchBell, {
   readWatch,
   writeWatch,
@@ -30,6 +30,7 @@ interface WatchStatus {
 }
 
 const SEEN_KEY = 'ghb.watch.seen.v1'
+const PUSH_ENDPOINT_KEY = 'ghb.push.endpoint.v1'
 
 function readSeen(): Record<string, { s: number; t: number }> {
   try {
@@ -40,7 +41,30 @@ function readSeen(): Record<string, { s: number; t: number }> {
   }
 }
 
-export default function WatchClient({ locale }: { locale: Locale }) {
+/** VAPID 公钥(base64url)→ PushManager 要的 Uint8Array(显式 ArrayBuffer,避开 TS5.7 泛型坑)。 */
+function urlBase64ToUint8Array(base64: string): Uint8Array<ArrayBuffer> {
+  const padding = '='.repeat((4 - (base64.length % 4)) % 4)
+  const b64 = (base64 + padding).replace(/-/g, '+').replace(/_/g, '/')
+  const raw = atob(b64)
+  const out = new Uint8Array(new ArrayBuffer(raw.length))
+  for (let i = 0; i < raw.length; i += 1) out[i] = raw.charCodeAt(i)
+  return out
+}
+
+async function postJson(url: string, body: unknown): Promise<boolean> {
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+    return res.ok
+  } catch {
+    return false
+  }
+}
+
+export default function WatchClient({ locale, pushKey }: { locale: Locale; pushKey?: string }) {
   const strings = liveStrings(locale)
   const [ready, setReady] = useState(false)
   const [entries, setEntries] = useState<WatchEntry[]>([])
@@ -48,6 +72,98 @@ export default function WatchClient({ locale }: { locale: Locale }) {
   const [deltas, setDeltas] = useState<Record<string, number>>({})
   const [fetching, setFetching] = useState(false)
   const lastFetchKey = useRef('')
+
+  /* ---- 跨线提醒(Web Push,可选):端点存本地,关注列表变化时静默续订 ---- */
+  const [pushOn, setPushOn] = useState(false)
+  const [pushBlocked, setPushBlocked] = useState(false)
+  const pushBusyRef = useRef(false)
+
+  useEffect(() => {
+    if (!pushKey || typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return
+    void (async () => {
+      const saved = localStorage.getItem(PUSH_ENDPOINT_KEY)
+      if (!saved) return
+      try {
+        const reg = await navigator.serviceWorker.getRegistration('/sw.js')
+        const sub = await reg?.pushManager.getSubscription()
+        if (sub && sub.endpoint === saved) setPushOn(true)
+        else localStorage.removeItem(PUSH_ENDPOINT_KEY)
+      } catch {
+        /* 隐私模式等:保持关 */
+      }
+    })()
+  }, [pushKey])
+
+  const togglePush = async () => {
+    if (!pushKey || pushBusyRef.current) return
+    pushBusyRef.current = true
+    try {
+      if (pushOn) {
+        const endpoint = localStorage.getItem(PUSH_ENDPOINT_KEY)
+        if (endpoint) await postJson('/api/push/unsubscribe', { endpoint })
+        localStorage.removeItem(PUSH_ENDPOINT_KEY)
+        try {
+          const reg = await navigator.serviceWorker.getRegistration('/sw.js')
+          await (await reg?.pushManager.getSubscription())?.unsubscribe()
+        } catch {
+          /* 退订失败不拦本地状态 */
+        }
+        setPushOn(false)
+        return
+      }
+      if (typeof Notification === 'undefined' || (await Notification.requestPermission()) !== 'granted') {
+        setPushBlocked(true)
+        return
+      }
+      const reg = (await navigator.serviceWorker.getRegistration('/sw.js'))
+        ?? (await navigator.serviceWorker.register('/sw.js'))
+      const existing = await reg.pushManager.getSubscription()
+      const sub = existing ?? (await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(pushKey),
+      }))
+      const json = sub.toJSON()
+      if (!json.endpoint || !json.keys?.p256dh || !json.keys?.auth) return
+      const ok = await postJson('/api/push/subscribe', {
+        endpoint: json.endpoint,
+        keys: { p256dh: json.keys.p256dh, auth: json.keys.auth },
+        locale,
+        repos: entries.map((e) => e.f),
+      })
+      if (!ok) {
+        await sub.unsubscribe().catch(() => undefined)
+        return
+      }
+      localStorage.setItem(PUSH_ENDPOINT_KEY, json.endpoint)
+      setPushOn(true)
+      setPushBlocked(false)
+    } catch {
+      /* 订阅链路任何失败:保持关,不抛错扰民 */
+    } finally {
+      pushBusyRef.current = false
+    }
+  }
+
+  // 已开启后关注列表变化 → 3 秒静默续订(端点 upsert,服务器侧列表换新)
+  useEffect(() => {
+    if (!pushOn || entries.length === 0) return
+    const t = setTimeout(() => {
+      const endpoint = localStorage.getItem(PUSH_ENDPOINT_KEY)
+      if (!endpoint) return
+      void navigator.serviceWorker.getRegistration('/sw.js').then(async (reg) => {
+        const sub = await reg?.pushManager.getSubscription()
+        const json = sub?.toJSON()
+        if (!json?.keys?.p256dh || !json.keys.auth) return
+        await postJson('/api/push/subscribe', {
+          endpoint,
+          keys: { p256dh: json.keys.p256dh, auth: json.keys.auth },
+          locale,
+          repos: entries.map((e) => e.f),
+        })
+      })
+    }, 3_000)
+    return () => clearTimeout(t)
+  }, [pushOn, entries, locale])
 
   useEffect(() => {
     const sync = () => setEntries(readWatch())
@@ -132,6 +248,24 @@ export default function WatchClient({ locale }: { locale: Locale }) {
       <p className="mt-2 text-[12.5px] text-sub">
         {strings.watchCap} · {strings.watchGone}
       </p>
+
+      {/* 跨线提醒:仅在部署方配置了 VAPID 时出现;开启即把关注列表交给推送服务,关即刻删 */}
+      {pushKey && (
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={() => void togglePush()}
+            aria-pressed={pushOn}
+            className={`inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-[12.5px] font-medium transition-colors ${
+              pushOn ? 'bg-accent text-white' : 'border-[0.5px] border-black/15 bg-white text-ink/70 hover:border-ink hover:text-ink'
+            }`}
+          >
+            <BellIcon size={13} filled={pushOn} />
+            {strings.pushTitle} · {pushOn ? strings.pushOn : strings.pushOff}
+          </button>
+          {pushBlocked && <span className="text-[11.5px] text-bad">{strings.pushBlocked}</span>}
+        </div>
+      )}
 
       {ready && entries.length === 0 && (
         <div className="mt-10 rounded-[18px] border-[0.5px] border-black/10 bg-[#f8f8fa] px-5 py-8 text-center">

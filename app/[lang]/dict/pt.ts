@@ -166,6 +166,10 @@ export const ptDict: Dict = {
     milestone: 'Milestones',
   },
   ui: {
+    pushTitle: 'Alertas de marcos',
+    pushOn: 'ativas',
+    pushOff: 'inativas',
+    pushBlocked: 'O navegador bloqueou as notificações',
     filterAll: 'Todos',
     filterOrder: 'Ordem',
     filterNet: 'Ganhos',

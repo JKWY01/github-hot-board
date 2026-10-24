@@ -166,6 +166,10 @@ export const koDict: Dict = {
     milestone: '마일스톤',
   },
   ui: {
+    pushTitle: '마일스톤 알림',
+    pushOn: '켜짐',
+    pushOff: '꺼짐',
+    pushBlocked: '브라우저가 알림을 거부했습니다',
     filterAll: '전체',
     filterOrder: '순위',
     filterNet: '증가',

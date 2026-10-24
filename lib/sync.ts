@@ -2,6 +2,7 @@ import { BOARD_META, BOARD_ORDER, getBoardData } from './boards'
 import type { BoardSlug } from './boards'
 import { prefillRepoDescs } from './descfill'
 import { FACET_LANGUAGES } from './facet'
+import { sendMilestonePushes } from './push'
 import { savePersistedBoard } from './persist'
 import { isRepoFullName } from './reposhape'
 import { dbKey, pruneOld, upsertRepoDesc, writeHeadAndRows } from './snapshot'
@@ -111,6 +112,17 @@ export async function syncAllBoards(
   }
 
   const pruned = await pruneOld()
+
+  // Web Push 跨线提醒:VAPID 未配置时零成本跳过;有订阅才逐个对账(每轮上限 300 发)。
+  // 失败静默 —— 推送是馈赠,不是依赖。
+  try {
+    const pushStat = await sendMilestonePushes()
+    if (pushStat.sent > 0 || pushStat.removed > 0) {
+      console.error(`[push] subs=${pushStat.subs} sent=${pushStat.sent} removed=${pushStat.removed}`)
+    }
+  } catch {
+    /* 推送失败不影响同步结果 */
+  }
 
   // 同步尾部:主动收割仓库描述(库里缺、上游有的语种收进 repo_desc)。
   // Vercel 需给 route 的 300s 预算留余量;本地无单请求上限,放宽到 20 分钟收更多仓库。

@@ -166,6 +166,10 @@ export const ukDict: Dict = {
     milestone: 'Рубежі',
   },
   ui: {
+    pushTitle: 'Сповіщення про рубежі',
+    pushOn: 'увімк.',
+    pushOff: 'вимк.',
+    pushBlocked: 'Браузер заблокував сповіщення',
     filterAll: 'Усі',
     filterOrder: 'Рейтинг',
     filterNet: 'Приріст',

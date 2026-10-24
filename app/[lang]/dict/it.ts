@@ -166,6 +166,10 @@ export const itDict: Dict = {
     milestone: 'Milestone',
   },
   ui: {
+    pushTitle: 'Avvisi traguardi',
+    pushOn: 'attivi',
+    pushOff: 'disattivi',
+    pushBlocked: 'Il browser ha bloccato le notifiche',
     filterAll: 'Tutti',
     filterOrder: 'Classifica',
     filterNet: 'Guadagni',

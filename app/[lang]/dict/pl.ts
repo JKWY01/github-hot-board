@@ -166,6 +166,10 @@ export const plDict: Dict = {
     milestone: 'Przełomy',
   },
   ui: {
+    pushTitle: 'Alerty kamieni milowych',
+    pushOn: 'wł.',
+    pushOff: 'wył.',
+    pushBlocked: 'Przeglądarka zablokowała powiadomienia',
     filterAll: 'Wszystkie',
     filterOrder: 'Pozycje',
     filterNet: 'Przyrost',
