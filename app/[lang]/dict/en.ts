@@ -4,7 +4,7 @@ import type { Dict } from '../dictionaries'
 const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
   overall: {
     name: 'All-Time Champions',
-    tagline: 'The 300 most starred projects in GitHub history.',
+    tagline: 'The 500 most starred projects in GitHub history.',
     metricLabel: 'Total stars',
     metricHint: 'lifetime',
     desc: 'Ranked by lifetime star count, sourced from the GitHub Search API (stars:>1000, forks excluded), refreshed every 5–15 minutes.',
@@ -84,7 +84,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: 'Fork-heavy, issue-heavy, star-light — projects that polarize the crowd.',
     metricLabel: 'Controversy index',
     metricHint: 'heuristic',
-    desc: 'Index = (forks × 2 + open issues) ÷ stars, extremes among repos with over 3000 stars. It measures the structural tension of “attention far exceeding endorsement”. A heuristic, not a sentiment analysis. The candidate pool is the all-time top-300 board filtered to ≥3000 stars — a comparison inside the hall of fame, not a platform-wide scan.',
+    desc: 'Index = (forks × 2 + open issues) ÷ stars, extremes among repos with over 3000 stars. It measures the structural tension of “attention far exceeding endorsement”. A heuristic, not a sentiment analysis. The candidate pool is the all-time top-500 board filtered to ≥3000 stars — a comparison inside the hall of fame, not a platform-wide scan.',
     faqs: [
       { q: 'Is this index scientific?', a: 'No, and it does not pretend to be. It is a structural proxy: repos that get widely copied (forks) or endlessly questioned (issues) while earning few stars usually live in a polarized spotlight.' },
       { q: 'Why do issues include PRs?', a: 'GitHub’s open_issues field itself includes pull requests. We do not subtract them and we say so.' },
@@ -139,8 +139,8 @@ export const enDict: Dict = {
     heroTitleTop: 'Open source is ',
     heroTitleGradient: 'burning.',
     heroSub: 'Ten lenses on the GitHub firehose: all-time champions, weekly & monthly surges, rising slopes, dark horses, underappreciated gems and the drama index — all measured, none fabricated.',
-    heroStatRepos: 'Cutoff: stars of the #300 repo',
-    heroStatStars: 'Stars on the top-300 chart',
+    heroStatRepos: 'Cutoff: stars of the #500 repo',
+    heroStatStars: 'Stars on the top-500 chart',
     heroStatDaily: 'Stars this week',
     weeklySectionKicker: 'WEEKLY SURGE',
     weeklySectionTitle: 'This week’s fire',
@@ -254,7 +254,7 @@ export const enDict: Dict = {
     subtitle: 'The full board is photographed every 30 minutes — rewind by date to see the ranking at that moment.',
     pickDate: 'Pick a date',
     latest: 'latest tap',
-    daysCount: 'd',
+    daysCount: 'days archived',
     empty: 'No archive exists for this date.',
     accumulating: 'Archive is accumulating — a few snapshots are stored automatically every day.',
     metricLabel: 'metric',

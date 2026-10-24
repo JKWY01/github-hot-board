@@ -4,7 +4,7 @@ import type { Dict } from '../dictionaries'
 const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
   overall: {
     name: '종합 랭킹 · 역대 최강',
-    tagline: 'GitHub 오픈소스 역사상 누적 스타 수가 가장 많은 300개 프로젝트.',
+    tagline: 'GitHub 오픈소스 역사상 누적 스타 수가 가장 많은 500개 프로젝트.',
     metricLabel: '총 스타 수',
     metricHint: '누적',
     desc: '저장소의 누적 스타 수 기준 내림차순 랭킹. 데이터는 GitHub Search API(stars:>1000, fork 제외)에서 가져오며, 캐시를 두고 약 5~15분마다 갱신합니다.',
@@ -51,7 +51,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: '스타/일 증가 기울기 기준 정렬, 90일 이내 신생 저장소의 가장 큰 다크호스 풀.',
     metricLabel: '스타 / 일',
     metricHint: '기울기',
-    desc: '최근 90일 내 생성된 저장소를, 하루 평균 획득 스타(누적 스타 ÷ 경과일) 기준 내림차순으로 정렬합니다. 기울기는 생성 시점 차이를 정규화하므로 현재의 추진력이 더 정확하게 드러나는 지표입니다. 후보는 먼저 ‘90일 내 생성 + 누적 스타 상위 300개’(Search API 실제 작업 세트)로 좁힌 뒤 기울기 순으로 재정렬됩니다.',
+    desc: '최근 90일 내 생성된 저장소를, 하루 평균 획득 스타(누적 스타 ÷ 경과일) 기준 내림차순으로 정렬합니다. 기울기는 생성 시점 차이를 정규화하므로 현재의 추진력이 더 정확하게 드러나는 지표입니다. 후보는 먼저 ‘90일 내 생성 + 누적 스타 상위 500개’(Search API 실제 작업 세트)로 좁힌 뒤 기울기 순으로 재정렬됩니다.',
     faqs: [
       { q: '기울기를 단기 부풀림으로 왜곡할 수 있나요?', a: '될 수 있습니다. 공개 직후 수천 스타를 모은 신작은 그 며칠만으로 기울기가 과하게 높아집니다. 절대 스타 수를 제한하는 다크호스 랭킹과 병행해서 읽는 것이 안전한 독법입니다.' },
       { q: '올해의 신예와 어떻게 다른가요?', a: '올해의 신예는 "올해 생성" 한정으로 총수 기준 정렬입니다. 이 랭킹은 90일 이내 한정, 일 단위 기울기 기준 정렬로, 창이 더 짧고 지금의 기세에 더 민감합니다.' },
@@ -139,8 +139,8 @@ export const koDict: Dict = {
     heroTitleTop: '오픈소스는 ',
     heroTitleGradient: '불타고 있다.',
     heroSub: 'GitHub의 뜨거운 흐름을 10개 렌즈로 훑어봅니다: 역대 총합, 주간·월간의 불, 90일 기울기, 다크호스, 잠든 보석, 논쟁 지수 — 전부 실측치이며 꾸며낸 숫자는 없습니다.',
-    heroStatRepos: '진입 문턱 · 300위 스타 수',
-    heroStatStars: '종합 300위 스타 합계',
+    heroStatRepos: '진입 문턱 · 500위 스타 수',
+    heroStatStars: '종합 500위 스타 합계',
     heroStatDaily: '이번 주 증가',
     weeklySectionKicker: 'WEEKLY SURGE',
     weeklySectionTitle: '이번 주 불씨',
@@ -254,7 +254,7 @@ export const koDict: Dict = {
     subtitle: '30분마다 랭킹 전체를 한 장 촬영합니다. 날짜를 고르면 그 시점의 순위로 되감을 수 있습니다.',
     pickDate: '날짜 선택',
     latest: '최신 컷',
-    daysCount: '일',
+    daysCount: '일 보관됨',
     empty: '이 날짜의 아카이브가 없습니다.',
     accumulating: '아카이브는 쌓이는 중입니다 — 매일 몇 장의 스냅샷이 자동 저장됩니다.',
     metricLabel: '지표값',

@@ -4,7 +4,7 @@ import type { Dict } from '../dictionaries'
 const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
   overall: {
     name: 'Tüm Zamanların Şampiyonları',
-    tagline: 'GitHub tarihinin en çok Star alan 300 projesi.',
+    tagline: 'GitHub tarihinin en çok Star alan 500 projesi.',
     metricLabel: 'Toplam Star',
     metricHint: 'yaşam boyu',
     desc: 'Yaşam boyu Star sayısına göre sıralanır; veri GitHub Search API’den gelir (stars:>1000, fork’lar hariç) ve 5–15 dakikada bir yenilenir.',
@@ -84,7 +84,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: 'Çok Fork, çok Issue, az Star — kalabalığı ikiye bölen projeler.',
     metricLabel: 'Tartışma endeksi',
     metricHint: 'sezgisel',
-    desc: 'Endeks = (Fork × 2 + açık Issue) ÷ Star; 3000 üzeri Star’lı repolar arasında uç değerleri yakalar. “İlgi, onayın çok ötesinde” anlamındaki yapısal gerilimi ölçer. Bu bir sezgisel ölçüttür, duygu analizi değildir. Aday havuzu, ≥3000 Star’a filtrelenmiş tüm zamanların ilk 300 tablosudur — bir şöhret salonu içi karşılaştırma, tüm platformu tarama değil.',
+    desc: 'Endeks = (Fork × 2 + açık Issue) ÷ Star; 3000 üzeri Star’lı repolar arasında uç değerleri yakalar. “İlgi, onayın çok ötesinde” anlamındaki yapısal gerilimi ölçer. Bu bir sezgisel ölçüttür, duygu analizi değildir. Aday havuzu, ≥3000 Star’a filtrelenmiş tüm zamanların ilk 500 tablosudur — bir şöhret salonu içi karşılaştırma, tüm platformu tarama değil.',
     faqs: [
       { q: 'Bu endeks bilimsel mi?', a: 'Hayır ve öyle olduğunu da iddia etmiyoruz. Yapısal bir vekil: yaygın biçimde kopyalanan (yüksek Fork) ya da durmaksızın sorgulanan (yüksek Issue) ama az Star toplayan repolar, çoğunlukla kutuplaşmış bir spot ışığında yaşarlar.' },
       { q: 'Issue sayısı neden PR’leri de kapsıyor?', a: 'GitHub’ın open_issues alanının sayımı zaten Pull Request’leri de kapsar. Biz bunları çıkarmıyoruz ve bunu açıkça belirtiyoruz.' },
@@ -139,8 +139,8 @@ export const trDict: Dict = {
     heroTitleTop: 'Açık kaynak ',
     heroTitleGradient: 'yanıyor.',
     heroSub: 'GitHub’ın devasa akışına on farklı ölçümle bakın: tüm zamanların şampiyonları, haftalık ve aylık yükselişler, yükselen eğriler, kara atlar, ihmal edilmiş hazineler ve tartışma endeksi — her şey ölçülür, hiçbir şey uydurulmaz.',
-    heroStatRepos: 'Eşik: 300. sıranın yıldızı',
-    heroStatStars: 'Top 300 yıldız toplamı',
+    heroStatRepos: 'Eşik: 500. sıranın yıldızı',
+    heroStatStars: 'Top 500 yıldız toplamı',
     heroStatDaily: 'Bu hafta eklenen',
     weeklySectionKicker: 'WEEKLY SURGE',
     weeklySectionTitle: 'Bu haftanın yangını',
@@ -254,7 +254,7 @@ export const trDict: Dict = {
     subtitle: 'Tüm liste her 30 dakikada bir fotoğraflanır — o güne geri dönüp o anki sıralamayı görün.',
     pickDate: 'Tarih seç',
     latest: 'son kayıt',
-    daysCount: 'g',
+    daysCount: 'gün arşivlendi',
     empty: 'Bu tarih için arşiv yok.',
     accumulating: 'Arşiv birikiyor — her gün otomatik olarak birkaç anlık görüntü kaydedilir.',
     metricLabel: 'metrik',

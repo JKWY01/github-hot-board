@@ -4,7 +4,7 @@ import type { Dict } from '../dictionaries'
 const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
   overall: {
     name: 'Champions de tous les temps',
-    tagline: 'Les 300 projets les plus étoilés de l’histoire de GitHub.',
+    tagline: 'Les 500 projets les plus étoilés de l’histoire de GitHub.',
     metricLabel: 'Stars totales',
     metricHint: 'à vie',
     desc: 'Classement par nombre de stars cumulées, données issues de la GitHub Search API (stars:>1000, forks exclus), rafraîchies toutes les 5 à 15 minutes.',
@@ -84,7 +84,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: 'Gourmands en forks, gorgés d’issues, avares en stars — des projets qui clivent les foules.',
     metricLabel: 'Indice de controverse',
     metricHint: 'heuristique',
-    desc: 'Indice = (forks × 2 + issues ouvertes) ÷ stars, extrêmes parmi les dépôts de plus de 3000 stars. Il mesure la tension structurelle d’une « attention qui dépasse largement l’adhésion ». Une heuristique, pas une analyse de sentiment. Le vivier de candidats est le classement historique du top 300 filtré à ≥3000 stars — une comparaison à l’intérieur du panthéon, pas un scan de toute la plateforme.',
+    desc: 'Indice = (forks × 2 + issues ouvertes) ÷ stars, extrêmes parmi les dépôts de plus de 3000 stars. Il mesure la tension structurelle d’une « attention qui dépasse largement l’adhésion ». Une heuristique, pas une analyse de sentiment. Le vivier de candidats est le classement historique du top 500 filtré à ≥3000 stars — une comparaison à l’intérieur du panthéon, pas un scan de toute la plateforme.',
     faqs: [
       { q: 'Cet indice est-il scientifique ?', a: 'Non, et il ne prétend pas l’être. C’est un indicateur de structure : les dépôts massivement copiés (forks) ou inlassablement questionnés (issues) tout en récoltant peu de stars vivent en général sous des projecteurs qui clivent les opinions.' },
       { q: 'Pourquoi les issues incluent-elles les PR ?', a: 'Le champ open_issues de GitHub inclut par lui-même les pull requests. Nous ne les soustrayons pas, et nous le disons.' },
@@ -139,8 +139,8 @@ export const frDict: Dict = {
     heroTitleTop: 'L’open source ',
     heroTitleGradient: 's’embrase.',
     heroSub: 'Dix angles sur le déversoir GitHub : champions de tous les temps, poussées hebdo et mensuelles, pentes montantes, outsiders, pépites sous-estimées et l’indice de controverse — tout est mesuré, rien n’est fabriqué.',
-    heroStatRepos: 'Seuil : étoiles du n° 300',
-    heroStatStars: 'Étoiles du top 300',
+    heroStatRepos: 'Seuil : étoiles du n° 500',
+    heroStatStars: 'Étoiles du top 500',
     heroStatDaily: 'Stars cette semaine',
     weeklySectionKicker: 'WEEKLY SURGE',
     weeklySectionTitle: 'Le feu de la semaine',
@@ -254,7 +254,7 @@ export const frDict: Dict = {
     subtitle: 'Un cliché complet du tableau toutes les 30 minutes — revenez par date pour voir le classement de ce moment.',
     pickDate: 'Choisir une date',
     latest: 'dernier cliché',
-    daysCount: 'j',
+    daysCount: 'jours archivés',
     empty: 'Aucun archivage pour cette date.',
     accumulating: 'L’archive se constitue — quelques clichés sont stockés automatiquement chaque jour.',
     metricLabel: 'métrique',

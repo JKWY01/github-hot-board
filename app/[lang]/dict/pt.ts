@@ -254,7 +254,7 @@ export const ptDict: Dict = {
     subtitle: 'O ranking completo é fotografado a cada 30 minutos — volta pela data e vê como estava a classificação naquele momento.',
     pickDate: 'Escolhe uma data',
     latest: 'última foto',
-    daysCount: 'd',
+    daysCount: 'dias arquivados',
     empty: 'Não existe arquivo para essa data.',
     accumulating: 'O arquivo está se acumulando — algumas fotos são salvas automaticamente todo dia.',
     metricLabel: 'métrica',

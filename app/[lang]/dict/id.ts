@@ -4,7 +4,7 @@ import type { Dict } from '../dictionaries'
 const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
   overall: {
     name: 'Juara Sepanjang Masa',
-    tagline: '300 proyek dengan Star terbanyak dalam sejarah GitHub.',
+    tagline: '500 proyek dengan Star terbanyak dalam sejarah GitHub.',
     metricLabel: 'Total Star',
     metricHint: 'sepanjang masa',
     desc: 'Diperingkat berdasarkan jumlah Star sepanjang masa, data dari GitHub Search API (stars:>1000, repo fork dikecualikan), diperbarui tiap 5–15 menit.',
@@ -84,7 +84,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: 'Fork banyak, Issue banyak, Star sedikit — proyek yang memecah kerumunan.',
     metricLabel: 'Indeks kontroversial',
     metricHint: 'heuristik',
-    desc: 'Indeks = (Fork × 2 + Issue terbuka) ÷ Star, mengambil nilai ekstrem di antara repo dengan lebih dari 3000 Star. Mengukur ketegangan struktural “perhatian jauh melebihi dukungan”. Ini heuristik, bukan analisis sentimen. Kumpulan kandidat adalah papan top 300 sepanjang masa yang difilter ≥3000 Star — perbandingan di dalam balai legenda, bukan pemindaian seluruh platform.',
+    desc: 'Indeks = (Fork × 2 + Issue terbuka) ÷ Star, mengambil nilai ekstrem di antara repo dengan lebih dari 3000 Star. Mengukur ketegangan struktural “perhatian jauh melebihi dukungan”. Ini heuristik, bukan analisis sentimen. Kumpulan kandidat adalah papan top 500 sepanjang masa yang difilter ≥3000 Star — perbandingan di dalam balai legenda, bukan pemindaian seluruh platform.',
     faqs: [
       { q: 'Apakah indeks ini ilmiah?', a: 'Tidak, dan tidak mengaku pun. Ini proksi struktural: repo yang banyak disalin (Fork) atau terus dipertanyakan (Issue) namun Star-nya sedikit biasanya berada di bawah sorotan yang membelah.' },
       { q: 'Kenapa jumlah issue termasuk PR?', a: 'Field open_issues milik GitHub memang sudah mencakup pull request. Kami tidak menguranginya dan mengatakannya apa adanya.' },
@@ -139,8 +139,8 @@ export const idDict: Dict = {
     heroTitleTop: 'Open source ',
     heroTitleGradient: 'membara.',
     heroSub: 'Sepuluh lensa berbeda untuk membaca denyut GitHub: juara sepanjang masa, gelombang mingguan & bulanan, kemiringan naik, kuda hitam, permata yang terlupakan, hingga indeks kontroversi — semua terukur, tidak ada yang rekaan.',
-    heroStatRepos: 'Ambang: star peringkat 300',
-    heroStatStars: 'Total star top 300',
+    heroStatRepos: 'Ambang: star peringkat 500',
+    heroStatStars: 'Total star top 500',
     heroStatDaily: 'Star minggu ini',
     weeklySectionKicker: 'WEEKLY SURGE',
     weeklySectionTitle: 'Api minggu ini',
@@ -254,7 +254,7 @@ export const idDict: Dict = {
     subtitle: 'Papan penuh difoto tiap 30 menit — gulir kembali berdasarkan tanggal untuk melihat peringkat saat itu.',
     pickDate: 'Pilih tanggal',
     latest: 'tangkapan terbaru',
-    daysCount: 'h',
+    daysCount: 'hari terarsip',
     empty: 'Tidak ada arsip untuk tanggal ini.',
     accumulating: 'Arsip masih terakumulasi — beberapa snapshot tersimpan otomatis setiap hari.',
     metricLabel: 'metrik',

@@ -117,13 +117,13 @@ function toItems(repos: PoolRepo[], decorate?: (item: BoardItem, repo: PoolRepo)
 
 export async function getOverallData(language?: string): Promise<BoardData> {
   const q = `stars:>1000 fork:false${language ? ` language:${language}` : ''}`
-  // 3 页 × 100 = Top 300:与全站文案/README 承诺的"总榜 300"口径一致
-  // (此前只取 2 页 200 条,文案说 300 —— 数字对不上,现在对齐)。
-  const repos = await ghSearch(q, { pages: 3 })
+  // 5 页 × 100 = Top 500:Search API 单查询 1000 条上限内的工作集。
+  // DB 实测(2026-10-24):快照日增 ~28 万行、60 天 ≈ 1650 万行 ≈ 7GB,40G 盘余量充足。
+  const repos = await ghSearch(q, { pages: 5 })
   repos.sort((a, b) => b.stars - a.stars)
   return {
     slug: 'overall',
-    items: toItems(repos).slice(0, 300),
+    items: toItems(repos).slice(0, 500),
     language,
     source: 'github-search',
     generatedAt: new Date().toISOString(),
@@ -200,12 +200,11 @@ export async function getTrendingBoardData({ period, language }: TrendingParams)
 }
 
 export async function getAnnualData(): Promise<BoardData> {
-  // 同总榜：第 1 页即今年的星数 Top100
-  const repos = await ghSearch(`created:>${YEAR_START} stars:>10 fork:false`, { pages: 2 })
+  const repos = await ghSearch(`created:>${YEAR_START} stars:>10 fork:false`, { pages: 3 })
   repos.sort((a, b) => b.stars - a.stars)
   return {
     slug: 'annual',
-    items: toItems(repos).slice(0, 200),
+    items: toItems(repos).slice(0, 300),
     source: 'github-search',
     generatedAt: new Date().toISOString(),
   }
@@ -218,7 +217,7 @@ export async function getRisingData(): Promise<BoardData> {
   repos.sort((a, b) => (slopeStarsPerDay(b as PoolRepo) ?? 0) - (slopeStarsPerDay(a as PoolRepo) ?? 0))
   return {
     slug: 'rising',
-    items: toItems(repos).slice(0, 200),
+    items: toItems(repos).slice(0, 300),
     source: 'github-search',
     generatedAt: new Date().toISOString(),
   }
@@ -249,12 +248,12 @@ export async function getDarkData(): Promise<BoardData> {
 export async function getOverlookedData(): Promise<BoardData> {
   const repos = await ghSearch(
     `pushed:>${isoDaysAgo(30)} stars:100..800 fork:false`,
-    { pages: 2, order: 'asc' },
+    { pages: 3, order: 'asc' },
   )
   repos.sort((a, b) => a.stars - b.stars)
   return {
     slug: 'overlooked',
-    items: toItems(repos).slice(0, 200),
+    items: toItems(repos).slice(0, 300),
     source: 'github-search',
     generatedAt: new Date().toISOString(),
     degraded: !repos.length ? true : undefined,
@@ -262,7 +261,7 @@ export async function getOverlookedData(): Promise<BoardData> {
 }
 
 export async function getControversialData(): Promise<BoardData> {
-  // 候选池 = 总榜(史上星数前 300)中 ≥3000 星者 —— "争议指数"是头部明星仓内部的
+  // 候选池 = 总榜(史上星数前 500)中 ≥3000 星者 —— "争议指数"是头部明星仓内部的
   // 结构性对比,不是全平台扫描;池子口径页面文案已披露。
   const pool = await getOverallData()
   const repos = pool.items
@@ -272,7 +271,7 @@ export async function getControversialData(): Promise<BoardData> {
       score: (item.forks * 2 + item.issues) / Math.max(1, item.stars),
     }))
     .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
-    .slice(0, 100)
+    .slice(0, 200)
   return {
     slug: 'controversial',
     items: repos,
@@ -282,12 +281,11 @@ export async function getControversialData(): Promise<BoardData> {
 }
 
 export async function getForksData(): Promise<BoardData> {
-  // 同总榜：按 fork 排序第 1 页即 Top100
-  const repos = await ghSearch('forks:>500 fork:false', { sort: 'forks', pages: 2 })
+  const repos = await ghSearch('forks:>500 fork:false', { sort: 'forks', pages: 3 })
   repos.sort((a, b) => b.forks - a.forks)
   return {
     slug: 'forks',
-    items: toItems(repos).slice(0, 200),
+    items: toItems(repos).slice(0, 300),
     source: 'github-search',
     generatedAt: new Date().toISOString(),
   }

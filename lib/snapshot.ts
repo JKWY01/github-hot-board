@@ -67,6 +67,8 @@ async function migrate(sql: Sql): Promise<void> {
   await sql`ALTER TABLE board_snapshots ADD COLUMN IF NOT EXISTS degraded BOOLEAN NOT NULL DEFAULT false`
   await sql`CREATE INDEX IF NOT EXISTS board_snapshots_repo_time ON board_snapshots (repo, taken_at DESC)`
   await sql`CREATE INDEX IF NOT EXISTS board_snapshots_board_time ON board_snapshots (board, language, taken_at DESC)`
+  // 保留期清理走 taken_at 过滤:量级到千万行后,专用索引让 DELETE 不再全索引扫
+  await sql`CREATE INDEX IF NOT EXISTS board_snapshots_taken_at ON board_snapshots (taken_at)`
   // 仓库级多语描述缓存(访问驱动渐进填充,跨全榜复用)
   await sql`
     CREATE TABLE IF NOT EXISTS repo_desc (
@@ -241,13 +243,16 @@ export async function readBoardHead(key: string): Promise<{ data: BoardData; age
 }
 
 /** 保留期治理:明细行超龄即清理(head 表只留最新,天然自洁);
- * repo_seen 与明细同窗清理 —— 名单语义 = "保留期内上过榜的仓库"。 */
+ * repo_seen 与明细同窗清理 —— 名单语义 = "保留期内上过榜的仓库";
+ * repo_docs(README 渲染缓存,实测占库最大头)30 天轮换,冷门仓库按需重取。 */
 export async function pruneOld(): Promise<number> {
   return (await withDb(async (sql) => {
     const result = await sql`
       DELETE FROM board_snapshots WHERE taken_at < now() - (${RETENTION_DAYS} || ' days')::interval`
     await sql`
       DELETE FROM repo_seen WHERE last_seen < now() - (${RETENTION_DAYS} || ' days')::interval`
+    await sql`
+      DELETE FROM repo_docs WHERE fetched_at < now() - interval '30 days'`
     return Number(result.count)
   })) ?? 0
 }

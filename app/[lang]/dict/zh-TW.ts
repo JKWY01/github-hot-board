@@ -4,7 +4,7 @@ import type { Dict } from '../dictionaries'
 const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
   overall: {
     name: '總榜 · 史上最強',
-    tagline: 'GitHub 開源歷史上，累計星星數最多的三百個專案。',
+    tagline: 'GitHub 開源歷史上，累計星星數最多的五百個專案。',
     metricLabel: '累計星星',
     metricHint: '總數',
     desc: '按儲存庫歷史累計星星數降序排列，資料來自 GitHub Search API（stars:>1000、排除 fork 儲存庫），快取約 5～15 分鐘更新一次。',
@@ -84,7 +84,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: 'Fork 與 Issue 異常多、星星平平 —— 流量與評價兩極的專案。',
     metricLabel: '爭議指數',
     metricHint: '啟發式',
-    desc: '爭議指數 = (Fork 數 × 2 + Issue 數) ÷ 星星數，在累計星星超過 3000 的儲存庫裡取極值。它衡量的是「關注遠大於認可」的結構性矛盾；這是啟發式指標，不代表社群的真實情緒。候選池為總榜(史上星星前三百)中 ≥3000 星的儲存庫,即明星庫內部的爭議對比,不是全平台掃描。',
+    desc: '爭議指數 = (Fork 數 × 2 + Issue 數) ÷ 星星數，在累計星星超過 3000 的儲存庫裡取極值。它衡量的是「關注遠大於認可」的結構性矛盾；這是啟發式指標，不代表社群的真實情緒。候選池為總榜(史上星星前五百)中 ≥3000 星的儲存庫,即明星庫內部的爭議對比,不是全平台掃描。',
     faqs: [
       { q: '這個指數科學嗎？', a: '不科學，也不假裝科學。它是結構性的代理指標：一個被廣泛複製改造（Fork 多）、或讓人不斷開 Issue（Issue 多）卻拿到很少星星的專案，通常正是話題最熱、評價兩極的那種。' },
       { q: '為什麼 Issue 數會包含 PR？', a: 'GitHub 的 open_issues 欄位本身就把 Pull Request 算進去，本榜不做剔除，頁面也如實標註。' },
@@ -139,8 +139,8 @@ export const zhTWDict: Dict = {
     heroTitleTop: '今天，',
     heroTitleGradient: '誰在燃燒。',
     heroSub: '十種不同維度的 GitHub 榜單：史上最強、週月風潮、潛力與黑馬、被埋沒的寶藏、黑紅的爭議，全部來自官方資料的即時脈動。',
-    heroStatRepos: '入榜門檻 · 第 300 名星星數',
-    heroStatStars: '總榜前 300 星星合計',
+    heroStatRepos: '入榜門檻 · 第 500 名星星數',
+    heroStatStars: '總榜前 500 星星合計',
     heroStatDaily: '本週新增',
     weeklySectionKicker: 'WEEKLY SURGE',
     weeklySectionTitle: '本週點火',
@@ -254,7 +254,7 @@ export const zhTWDict: Dict = {
     subtitle: '每半小時為整張榜拍一張快照，按日期回看當時的完整排名。',
     pickDate: '選擇日期',
     latest: '最新一拍',
-    daysCount: '天',
+    daysCount: '天存檔',
     empty: '這一天沒有留下檔案。',
     accumulating: '檔案還在累積——每天會自動多存幾拍。',
     metricLabel: '指標值',

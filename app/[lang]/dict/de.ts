@@ -4,7 +4,7 @@ import type { Dict } from '../dictionaries'
 const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
   overall: {
     name: 'Allzeit-Champions',
-    tagline: 'Die 300 Projekte mit den meisten Stars in der Geschichte von GitHub.',
+    tagline: 'Die 500 Projekte mit den meisten Stars in der Geschichte von GitHub.',
     metricLabel: 'Stars insgesamt',
     metricHint: 'seit Erstellung',
     desc: 'Absteigend sortiert nach der Gesamtzahl aller jemals vergebenen Stars, Quelle ist die GitHub Search API (stars:>1000, Forks ausgenommen), Aktualisierung alle 5–15 Minuten.',
@@ -84,7 +84,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: 'Fork-reich, Issue-reich, Star-arm – Projekte, die die Community spalten.',
     metricLabel: 'Kontroversindex',
     metricHint: 'Heuristik',
-    desc: 'Index = (Forks × 2 + offene Issues) ÷ Sterne, Extremwerte unter Repos mit mehr als 3000 Stars. Er misst die strukturelle Spannung von „Aufmerksamkeit weit vor Zustimmung“. Eine Heuristik, keine Stimmungsanalyse. Der Kandidatenpool ist das All-Time-Top-300-Board, gefiltert auf ≥3000 Sterne — ein Vergleich innerhalb der Hall of Fame, kein plattformweiter Scan.',
+    desc: 'Index = (Forks × 2 + offene Issues) ÷ Sterne, Extremwerte unter Repos mit mehr als 3000 Stars. Er misst die strukturelle Spannung von „Aufmerksamkeit weit vor Zustimmung“. Eine Heuristik, keine Stimmungsanalyse. Der Kandidatenpool ist das All-Time-Top-500-Board, gefiltert auf ≥3000 Sterne — ein Vergleich innerhalb der Hall of Fame, kein plattformweiter Scan.',
     faqs: [
       { q: 'Ist dieser Index wissenschaftlich?', a: 'Nein, und er tut auch nicht so. Ein struktureller Proxy: Repos, die überall kopiert werden (viele Forks) oder endlos hinterfragt werden (viele Issues), aber kaum Sterne einsammeln, stehen meist im polarisierten Rampenlicht.' },
       { q: 'Warum zählen die Issues PRs mit?', a: 'Das Feld open_issues von GitHub schließt Pull Requests von Haus aus ein. Wir ziehen sie nicht ab – und sagen es dazu.' },
@@ -139,8 +139,8 @@ export const deDict: Dict = {
     heroTitleTop: 'Open Source ',
     heroTitleGradient: 'brennt.',
     heroSub: 'Zehn Blickwinkel auf den GitHub-Strom: Allzeit-Champions, Wochen- und Monatswellen, steile Sterne-Kurven, Geheimtipps, unterschätzte Perlen und der Kontroversindex – alles gemessen, nichts erfunden.',
-    heroStatRepos: 'Schwelle: Sterne von Platz 300',
-    heroStatStars: 'Sterne der Top-300-Liste',
+    heroStatRepos: 'Schwelle: Sterne von Platz 500',
+    heroStatStars: 'Sterne der Top-500-Liste',
     heroStatDaily: 'Sterne diese Woche',
     weeklySectionKicker: 'WEEKLY SURGE',
     weeklySectionTitle: 'Das Feuer dieser Woche',
@@ -254,7 +254,7 @@ export const deDict: Dict = {
     subtitle: 'Alle 30 Minuten wird das komplette Board fotografiert – blättere per Datum zurück und sieh, wie die Liste damals stand.',
     pickDate: 'Datum wählen',
     latest: 'neuestes Foto',
-    daysCount: 'T',
+    daysCount: 'Tage archiviert',
     empty: 'Für dieses Datum gibt es kein Archiv.',
     accumulating: 'Das Archiv wächst – jeden Tag landen automatisch ein paar Fotos drin.',
     metricLabel: 'Metrik',

@@ -222,7 +222,7 @@ export default function WatchClient({ locale, pushKey }: { locale: Locale; pushK
   const describe = (d?: Record<string, string>) => d?.[locale] ?? d?.en ?? d?.__gh ?? null
   const rankChip = (st: WatchStatus): string | null => {
     if (st.rank !== undefined) return `#${st.rank}`
-    if (st.stars !== undefined && st.cutoff !== undefined) return st.stars >= st.cutoff ? '300+?' : '300+'
+    if (st.stars !== undefined && st.cutoff !== undefined) return st.stars >= st.cutoff ? '500+?' : '500+'
     return null
   }
   const sortEntries = (list: WatchEntry[]) =>
@@ -299,12 +299,23 @@ export default function WatchClient({ locale, pushKey }: { locale: Locale; pushK
                       <div className="flex items-center justify-between gap-3">
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2">
-                            <Link
-                              href={`/${locale}/repo/${e.f}`}
-                              className="truncate text-[14px] font-semibold text-ink hover:underline"
-                            >
-                              {e.f}
-                            </Link>
+                            {st?.onBoard === false ? (
+                              <a
+                                href={`https://github.com/${e.f}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="truncate text-[14px] font-semibold text-ink hover:underline"
+                              >
+                                {e.f}
+                              </a>
+                            ) : (
+                              <Link
+                                href={`/${locale}/repo/${e.f}`}
+                                className="truncate text-[14px] font-semibold text-ink hover:underline"
+                              >
+                                {e.f}
+                              </Link>
+                            )}
                             {chip && (
                               <span className="shrink-0 rounded-full bg-black/8 px-2 py-0.5 text-[10.5px] tabular-nums text-ink/70">
                                 {chip}

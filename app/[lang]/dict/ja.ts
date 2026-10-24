@@ -4,7 +4,7 @@ import type { Dict } from '../dictionaries'
 const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
   overall: {
     name: '総合 · 歴代最強',
-    tagline: 'GitHub OSS 史上、最もスターを集めた 300 プロジェクト。',
+    tagline: 'GitHub OSS 史上、最もスターを集めた 500 プロジェクト。',
     metricLabel: '総スター数',
     metricHint: '累計',
     desc: 'リポジトリの累計スター数による降順ランキング。データは GitHub Search API（stars:>1000、fork は除外）から取得し、キャッシュを挟みつつ約 5〜15 分ごとに更新します。',
@@ -51,7 +51,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: '直近 90 日間の「スター / 日」ペースで並べる、新進勢の一番大きな登竜門。',
     metricLabel: 'スター / 日',
     metricHint: '傾き',
-    desc: '過去 90 日以内に作成されたリポジトリを、1 日平均のスター獲得数（累計スター ÷ 経過日数）で降順に。作成日の差を正規化して比較するため、いまの勢いが反映されやすい指標です。候補はまず「過去90日以内に作成され、星数上位300件」(Search API の実働セット)に絞り、その後スロープ順に並べ替えます。',
+    desc: '過去 90 日以内に作成されたリポジトリを、1 日平均のスター獲得数（累計スター ÷ 経過日数）で降順に。作成日の差を正規化して比較するため、いまの勢いが反映されやすい指標です。候補はまず「過去90日以内に作成され、星数上位500件」(Search API の実働セット)に絞り、その後スロープ順に並べ替えます。',
     faqs: [
       { q: '短期の集客で傾きを歪められる？', a: 'できます。公開直後に数千スターを集めた新着は、その数日だけで傾きを押し上げます。絶対スター数を絞るダークホースのランキングと並べて読むのが安全な読み方です。' },
       { q: '年間新星と何が違う？', a: '年間新星は「今年生まれた」を条件に総数で並べます。こちらは 90 日で切り、1 日当たりの傾きで並べます。時間の窓が短いぶん、いまの勢いに敏感です。' },
@@ -139,8 +139,8 @@ export const jaDict: Dict = {
     heroTitleTop: 'オープンソースは',
     heroTitleGradient: '燃えている。',
     heroSub: 'GitHub の熱い人流を 10 個のレンズで覗きます：歴代累計、週間・月間の勢い、90 日スロープ、ダークホース、影の宝石、論争指数 — すべて実測値で、捏造は 1 個もありません。',
-    heroStatRepos: '入賞ライン · 300 位のスター数',
-    heroStatStars: '総合 300 位のスター合計',
+    heroStatRepos: '入賞ライン · 500 位のスター数',
+    heroStatStars: '総合 500 位のスター合計',
     heroStatDaily: '今週の増分',
     weeklySectionKicker: 'WEEKLY SURGE',
     weeklySectionTitle: '今週の火元',
@@ -254,7 +254,7 @@ export const jaDict: Dict = {
     subtitle: '30 分ごとにランキング全体を 1 枚スナップショット。日付を選べば、その瞬間のランキングに戻れます。',
     pickDate: '日付を選ぶ',
     latest: '最新の 1 枚',
-    daysCount: '日',
+    daysCount: '日分のアーカイブ',
     empty: 'この日のアーカイブはありません。',
     accumulating: 'アーカイブは着実に積み上がっています — 毎日自動でいくつかのスナップショットが保存されます。',
     metricLabel: '指標値',

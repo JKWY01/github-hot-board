@@ -4,7 +4,7 @@ import type { Dict } from '../dictionaries'
 const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
   overall: {
     name: 'Campeones del Star',
-    tagline: 'Los 300 proyectos con más Star de la historia de GitHub.',
+    tagline: 'Los 500 proyectos con más Star de la historia de GitHub.',
     metricLabel: 'Star acumuladas',
     metricHint: 'acumulado',
     desc: 'Ordenados por Star acumuladas desde siempre, con datos del GitHub Search API (stars:>1000, se excluyen los Fork), refrescados cada 5–15 minutos.',
@@ -84,7 +84,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: 'Fork para arriba, Issue para arriba, Star flojos — proyectos que dividen a la gente.',
     metricLabel: 'Índice de polémica',
     metricHint: 'heurístico',
-    desc: 'Índice = (Fork × 2 + Issues abiertos) ÷ Star, con los extremos entre repos de más de 3000 Star. Mide la tensión estructural de “mucha atención, poco respaldo”. Es una heurística, no análisis de sentimientos. El conjunto de candidatos es la tabla histórica del top 300 filtrada a ≥3000 Star: una comparación dentro del salón de la fama, no un escaneo de toda la plataforma.',
+    desc: 'Índice = (Fork × 2 + Issues abiertos) ÷ Star, con los extremos entre repos de más de 3000 Star. Mide la tensión estructural de “mucha atención, poco respaldo”. Es una heurística, no análisis de sentimientos. El conjunto de candidatos es la tabla histórica del top 500 filtrada a ≥3000 Star: una comparación dentro del salón de la fama, no un escaneo de toda la plataforma.',
     faqs: [
       { q: '¿Es científico este índice?', a: 'No, y no pretende serlo. Es una proxy estructural: los repos que todo el mundo copia (Fork) o donde las preguntas no cesan (Issue) pero que ganan pocas Star suelen vivir en un foco de doble filo.' },
       { q: '¿Por qué los Issue incluyen PR?', a: 'El campo open_issues de GitHub ya incluye los Pull Request por definición. No los descontamos, y lo decimos claro en pantalla.' },
@@ -139,8 +139,8 @@ export const esDict: Dict = {
     heroTitleTop: 'El open source está ',
     heroTitleGradient: 'en llamas.',
     heroSub: 'Diez miradas sobre el torrente de GitHub: campeones históricos, acelerones semanales y mensuales, pendientes ascendentes, caballos oscuros, gemas ignoradas y el índice de polémica — todo medido, nada inventado.',
-    heroStatRepos: 'Corte: estrellas del n.º 300',
-    heroStatStars: 'Estrellas del top 300',
+    heroStatRepos: 'Corte: estrellas del n.º 500',
+    heroStatStars: 'Estrellas del top 500',
     heroStatDaily: 'Star esta semana',
     weeklySectionKicker: 'WEEKLY SURGE',
     weeklySectionTitle: 'El fuego de la semana',
@@ -254,7 +254,7 @@ export const esDict: Dict = {
     subtitle: 'Se toma una foto completa del ranking cada 30 minutos — retrocede por fecha y mira cómo quedaba la lista en ese momento.',
     pickDate: 'Elige una fecha',
     latest: 'última foto',
-    daysCount: 'd',
+    daysCount: 'días archivados',
     empty: 'Para esta fecha no hay archivo.',
     accumulating: 'El archivo se está llenando — cada día se guardan unas cuantas fotos de forma automática.',
     metricLabel: 'métrica',

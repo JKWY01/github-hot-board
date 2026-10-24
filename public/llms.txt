@@ -12,14 +12,14 @@
 
 ## Board pages (pattern: /{ui-language}/boards/{slug} — /en/ shown below)
 
-- /en/boards/overall — All-Time Champions: top 300 repositories by total stars.
+- /en/boards/overall — All-Time Champions: top 500 repositories by total stars.
 - /en/boards/weekly — Weekly Surge: repositories by net stars gained over the last 7 days (built on GitHub Trending).
 - /en/boards/monthly — Monthly Wave: net stars gained over the last 30 days.
 - /en/boards/annual — Fresh of the Year: repositories created this year, ranked by total stars.
 - /en/boards/rising — Rising Slope: stars per day over the last 90 days. Candidates are first limited to the top 300 ninety-day repos by stars (the Search API working set), then re-ranked by slope.
 - /en/boards/dark — Dark Horses: repos under 90 days old with 30–1500 total stars and a positive slope, top 100 by stars-per-day.
 - /en/boards/overlooked — Underappreciated Gems: actively maintained for 30+ days, 100–800 stars (ascending by stars).
-- /en/boards/controversial — Controversy Index: (forks×2 + open issues) ÷ stars, extremes among the all-time top 300 filtered to ≥3000 stars. Open issues include PRs (GitHub field semantics). A heuristic, not sentiment analysis.
+- /en/boards/controversial — Controversy Index: (forks×2 + open issues) ÷ stars, extremes among the all-time top 500 filtered to ≥3000 stars. Open issues include PRs (GitHub field semantics). A heuristic, not sentiment analysis.
 - /en/boards/forks — King of Forks: all-time most forked repositories.
 - /en/boards/milestone — Live Milestones: repositories sprinting toward the 1k / 10k / 50k / 100k star lines, with distance to the next line.
 - Language facets for overall / weekly / monthly: /en/boards/{slug}/{language-slug}.

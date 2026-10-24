@@ -4,7 +4,7 @@ import type { Dict } from '../dictionaries'
 const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
   overall: {
     name: 'Campioni di sempre',
-    tagline: 'I 300 progetti con più star nella storia di GitHub.',
+    tagline: 'I 500 progetti con più star nella storia di GitHub.',
     metricLabel: 'Star totali',
     metricHint: 'storico',
     desc: 'Ordinati per star totali dall’inizio, con dati del GitHub Search API (stars:>1000, fork esclusi), aggiornati ogni 5–15 minuti.',
@@ -84,7 +84,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: 'Fork in abbondanza, Issue in abbondanza, star in scarsità — progetti che dividono la platea.',
     metricLabel: 'Indice di polemica',
     metricHint: 'euristica',
-    desc: 'Indice = (fork × 2 + Issue aperti) ÷ star, ai punti estremi tra i repo oltre i 3000 star. Misura la tensione strutturale di “tanta attenzione, poco consenso”. È un’euristica, non analisi dei sentimenti. Il bacino di candidati è la classifica storica del top 300 filtrata a ≥3000 stelle: un confronto dentro il pantheon, non una scansione dell’intera piattaforma.',
+    desc: 'Indice = (fork × 2 + Issue aperti) ÷ star, ai punti estremi tra i repo oltre i 3000 star. Misura la tensione strutturale di “tanta attenzione, poco consenso”. È un’euristica, non analisi dei sentimenti. Il bacino di candidati è la classifica storica del top 500 filtrata a ≥3000 stelle: un confronto dentro il pantheon, non una scansione dell’intera piattaforma.',
     faqs: [
       { q: 'È scientifico questo indice?', a: 'No, e non finge di esserlo. È una proxy strutturale: i repo che tutti copiano (fork) o dove le domande non finiscono mai (Issue) ma che guadagnano poche star, di solito vivono in una zona di opinione divisa.' },
       { q: 'Perché gli Issue includono le PR?', a: 'Il campo open_issues di GitHub include già i Pull Request per definizione. Non li sottraiamo, e lo dichiariamo chiaramente.' },
@@ -139,8 +139,8 @@ export const itDict: Dict = {
     heroTitleTop: 'L’open source è ',
     heroTitleGradient: 'in fiamme.',
     heroSub: 'Dieci lenti puntate sul flusso di GitHub: campioni di sempre, impennate settimanali e mensili, curve in salita, outsider, gemme ignorate e l’indice di polemica — tutto misurato, niente inventato.',
-    heroStatRepos: 'Soglia: stelle del n. 300',
-    heroStatStars: 'Stelle della top 300',
+    heroStatRepos: 'Soglia: stelle del n. 500',
+    heroStatStars: 'Stelle della top 500',
     heroStatDaily: 'Star questa settimana',
     weeklySectionKicker: 'WEEKLY SURGE',
     weeklySectionTitle: 'Il fuoco della settimana',
@@ -254,7 +254,7 @@ export const itDict: Dict = {
     subtitle: 'Ogni 30 minuti viene scattata una foto completa della classifica — ripercorri le date e guarda com’era la classifica in quel momento.',
     pickDate: 'Scegli una data',
     latest: 'ultima foto',
-    daysCount: 'g',
+    daysCount: 'giorni archiviati',
     empty: 'Per questa data non esiste archivio.',
     accumulating: 'L’archivio si sta accumulando — ogni giorno vengono salvate automaticamente altre foto.',
     metricLabel: 'metrica',

@@ -96,7 +96,7 @@ const TIERS_BY_SLUG: Record<string, Plan[]> = {
 }
 
 /** 搜索:榜内即时过滤 + owner/repo 榜外精查 + 库内关键词发现(A+B+C)。
- *  名次语义与 API 共用一条谱系:总榜外 300+,里程碑"差 N 到档"。 */
+ *  名次语义与 API 共用一条谱系:总榜外 500+,里程碑"差 N 到档"。 */
 const MILE_LADDER = [1_000, 10_000, 50_000, 100_000]
 interface SearchHit {
   fullName: string
@@ -106,6 +106,8 @@ interface SearchHit {
   desc?: Record<string, string>
   rank?: number
   cutoff?: number
+  /** 服务端标注:站内是否有档案;无档案时名字链回落 GitHub(站内档案页对未上榜仓库诚实 404) */
+  onBoard?: boolean
 }
 
 export default function LiveBoardList({
@@ -759,7 +761,7 @@ export default function LiveBoardList({
                   width={compact ? 30 : 38}
                   height={compact ? 30 : 38}
                   loading="lazy"
-                  className={`shrink-0 rounded-[10px] border-[0.5px] border-black/8 bg-surface object-cover ${compact ? 'h-[30px] w-[30px]' : 'h-[38px] w-[38px]'}`}
+                  className={`shrink-0 rounded-[10px] border-[0.5px] border-black/8 avatar-ph object-cover ${compact ? 'h-[30px] w-[30px]' : 'h-[38px] w-[38px]'}`}
                 />
 
                 <div className="min-w-0 flex-1">
@@ -949,7 +951,7 @@ function trimDesc(s: string, n: number): string {
 }
 
 /** 搜索结果行:档位语义与原榜共用(name 上的徽章)。
- *  榜内 → #N;总榜外 → 300+(量级越门槛却缺席 → 300+?);里程碑 → 差 N 到下一档。 */
+ *  榜内 → #N;总榜外 → 500+(量级越门槛却缺席 → 500+?);里程碑 → 差 N 到下一档。 */
 function SearchResultRow({
   hit,
   locale,
@@ -967,7 +969,7 @@ function SearchResultRow({
     const t = MILE_LADDER.find((x) => x > hit.stars!)
     if (t) badge = `+${fmtNum(t - hit.stars!, locale)} →${fmtNum(t, locale)}`
   } else if (slug === 'overall' && hit.stars !== undefined && hit.cutoff !== undefined) {
-    badge = hit.stars >= hit.cutoff ? '300+?' : '300+'
+    badge = hit.stars >= hit.cutoff ? '500+?' : '500+'
   }
   const desc =
     hit.desc?.[locale] ?? hit.desc?.en ?? hit.desc?.__gh ?? Object.values(hit.desc ?? {}).find(Boolean) ?? null
@@ -977,12 +979,23 @@ function SearchResultRow({
     >
       <div className="min-w-0">
         <div className="flex items-center gap-2">
-          <Link
-            href={`/${locale}/repo/${hit.fullName}`}
-            className={`truncate text-ink hover:underline ${first ? 'text-[14px] font-semibold' : 'text-[13px] font-medium'}`}
-          >
-            {hit.fullName}
-          </Link>
+          {hit.onBoard === false ? (
+            <a
+              href={`https://github.com/${hit.fullName}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`truncate text-ink hover:underline ${first ? 'text-[14px] font-semibold' : 'text-[13px] font-medium'}`}
+            >
+              {hit.fullName}
+            </a>
+          ) : (
+            <Link
+              href={`/${locale}/repo/${hit.fullName}`}
+              className={`truncate text-ink hover:underline ${first ? 'text-[14px] font-semibold' : 'text-[13px] font-medium'}`}
+            >
+              {hit.fullName}
+            </Link>
+          )}
           {badge && (
             <span
               className="shrink-0 rounded-full bg-black/8 px-2 py-0.5 text-[10.5px] tabular-nums text-ink/70"

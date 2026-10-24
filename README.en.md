@@ -111,7 +111,7 @@ One platform fact worth keeping (established 2026-10): GitHub has removed the RE
 ## Known limits, stated plainly
 
 - Trending numbers can lag the official page by up to one sync cycle (≤30 min).
-- Search caps at 1,000 results per query; the all-time board shows the top 300 pool, which covers the entire front page story.
+- Search caps at 1,000 results per query; the all-time board shows the top 500 pool, which covers the entire front page story.
 - The controversy board is a structural heuristic (fork/issue ratios), clearly labeled as such. Its candidate pool is the all-time top-300 board filtered to ≥3000 stars — a comparison inside the hall of fame, not a platform-wide scan. `open_issues` includes PRs (that is the GitHub field's semantics, stated on the page).
 - The rising board (90-day slope) first narrows to the top 300 ninety-day repos by stars (the Search API working set), then re-ranks by slope; the slope itself favors younger repos.
 - The dark-horse board keeps the top 100 by slope (page copy says the same).

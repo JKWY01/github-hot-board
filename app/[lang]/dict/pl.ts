@@ -4,7 +4,7 @@ import type { Dict } from '../dictionaries'
 const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
   overall: {
     name: 'Mistrzowie wszech czasów',
-    tagline: 'Trzysta najbardziej gwiazdkowych projektów w historii GitHuba.',
+    tagline: 'Pięćset najbardziej gwiazdkowych projektów w historii GitHuba.',
     metricLabel: 'Gwiazdki ogółem',
     metricHint: 'łącznie',
     desc: 'Pozycje według łącznej liczby gwiazdek za cały czas; przychodzi to z GitHub Search API (stars:>1000, forków brak), odświeżane co 5–15 minut.',
@@ -84,7 +84,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: 'Forków i issues co niemiara, gwiazdek jak na lekarstwo — projekty, które dzielą tłum na dwa obozy.',
     metricLabel: 'Indeks tarcia',
     metricHint: 'heurystyka',
-    desc: 'Indeks = (forki × 2 + otwarte issues) ÷ gwiazdki; bierzemy skrajne wartości spośród repozytoriów z ponad 3000 gwiazdek. Wskaźnik mierzy strukturalne napięcie „uwagi wyraźnie więcej niż uznania”. To heurystyka, nie analiza nastrojów. Pula kandydatów to historyczna top-300 przefiltrowana do ≥3000 gwiazdek — porównanie wewnątrz panteonu, nie skan całej platformy.',
+    desc: 'Indeks = (forki × 2 + otwarte issues) ÷ gwiazdki; bierzemy skrajne wartości spośród repozytoriów z ponad 3000 gwiazdek. Wskaźnik mierzy strukturalne napięcie „uwagi wyraźnie więcej niż uznania”. To heurystyka, nie analiza nastrojów. Pula kandydatów to historyczna top-500 przefiltrowana do ≥3000 gwiazdek — porównanie wewnątrz panteonu, nie skan całej platformy.',
     faqs: [
       { q: 'Czy ten indeks jest naukowy?', a: 'Nie — i nie udaje, że jest. To strukturalny przybliżacz: repozytoria masowo kopiowane (forki) albo bez końca przesłuchiwane w issues przy trochę gwiazdek zwykle żyją w spolaryzowanym reflektorze.' },
       { q: 'Dlaczego w issues liczą się PR-y?', a: 'Pole GitHuba open_issues już wlicza pull requesty. Niczego nie odejmujemy i otwarcie to mówimy.' },
@@ -139,8 +139,8 @@ export const plDict: Dict = {
     heroTitleTop: 'W open source ',
     heroTitleGradient: 'gorąco.',
     heroSub: 'Dziesięć soczewek na githubowy hydrant: mistrzowie wszech czasów, tygodniowe i miesięczne zrywy, kąt wznoszenia, ciemne konie, niedoceniane perełki i indeks tarcia — wszystko jest mierzone, nic nie jest wymyślane.',
-    heroStatRepos: 'Próg: gwiazdki 300. miejsca',
-    heroStatStars: 'Gwiazdek TOP-300',
+    heroStatRepos: 'Próg: gwiazdki 500. miejsca',
+    heroStatStars: 'Gwiazdek TOP-500',
     heroStatDaily: 'Gwiazdek w tym tygodniu',
     weeklySectionKicker: 'WEEKLY SURGE',
     weeklySectionTitle: 'Ogień tego tygodnia',
@@ -254,7 +254,7 @@ export const plDict: Dict = {
     subtitle: 'Każde 30 minut lista zostaje zatrzymana w kadrze — wybierz datę i zobacz ranking dokładnie tamtego momentu.',
     pickDate: 'Wybierz datę',
     latest: 'świeży kadr',
-    daysCount: 'dni',
+    daysCount: 'dni w archiwum',
     empty: 'Ta data nie zostawiła po sobie zapisu.',
     accumulating: 'Archiwum rośnie — codziennie zapisuje się automatycznie kilka zrzutów.',
     metricLabel: 'metryka',

@@ -4,7 +4,7 @@ import type { Dict } from '../dictionaries'
 const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
   overall: {
     name: 'Nhà Vô Địch Mọi Thời Đại',
-    tagline: '300 dự án có nhiều Star nhất trong lịch sử GitHub.',
+    tagline: '500 dự án có nhiều Star nhất trong lịch sử GitHub.',
     metricLabel: 'Tổng Star',
     metricHint: 'trọn đời',
     desc: 'Xếp theo tổng số Star trọn đời, dữ liệu lấy từ GitHub Search API (stars:>1000, loại trừ repo fork), làm mới mỗi 5–15 phút.',
@@ -84,7 +84,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: 'Fork nhiều, Issue nhiều, Star ít — những dự án chia đôi công luận.',
     metricLabel: 'Chỉ số gây tranh cãi',
     metricHint: 'heuristic',
-    desc: 'Chỉ số = (số Fork × 2 + Issue mở) ÷ Star, lấy các mức cực đoan trong nhóm repo trên 3000 Star. Nó đo căng thẳng cấu trúc kiểu “được để ý nhiều nhưng được công nhận ít”. Đây là heuristic, không phải phân tích cảm xúc. Nhóm ứng viên là bảng top 300 lịch sử lọc còn ≥3000 Star — so sánh bên trong đại sảnh danh vọng, không phải quét toàn nền tảng.',
+    desc: 'Chỉ số = (số Fork × 2 + Issue mở) ÷ Star, lấy các mức cực đoan trong nhóm repo trên 3000 Star. Nó đo căng thẳng cấu trúc kiểu “được để ý nhiều nhưng được công nhận ít”. Đây là heuristic, không phải phân tích cảm xúc. Nhóm ứng viên là bảng top 500 lịch sử lọc còn ≥3000 Star — so sánh bên trong đại sảnh danh vọng, không phải quét toàn nền tảng.',
     faqs: [
       { q: 'Chỉ số này có khoa học không?', a: 'Không, và nó cũng chẳng tự nhận là khoa học. Đây là đại diện cấu trúc: repo bị sao chép rộng (Fork nhiều) hoặc bị chất vấn không ngừng (Issue nhiều) mà Star lại ít thường nằm trong vùng tranh cãi dữ dội.' },
       { q: 'Vì sao số Issue bao gồm cả PR?', a: 'Trường open_issues trên GitHub tự nó đã tính cả pull request. Chúng tôi không trừ phần đó đi và cũng nói thẳng như vậy.' },
@@ -139,8 +139,8 @@ export const viDict: Dict = {
     heroTitleTop: 'Mã nguồn mở ',
     heroTitleGradient: 'đang cháy.',
     heroSub: 'Mười góc nhìn khác nhau về GitHub: nhà vô địch mọi thời đại, phong trào tuần/tháng, tiềm năng, ngựa ô, kho báu bị bỏ quên, danh sách gây tranh cãi — tất cả đều là nhịp sống dữ liệu chính thức theo thời gian thực.',
-    heroStatRepos: 'Ngưỡng: sao của hạng 300',
-    heroStatStars: 'Tổng sao của top 300',
+    heroStatRepos: 'Ngưỡng: sao của hạng 500',
+    heroStatStars: 'Tổng sao của top 500',
     heroStatDaily: 'Star tuần này',
     weeklySectionKicker: 'WEEKLY SURGE',
     weeklySectionTitle: 'Ngọn lửa tuần này',
@@ -254,7 +254,7 @@ export const viDict: Dict = {
     subtitle: 'Cả bảng được chụp mỗi 30 phút — kéo lại theo ngày để xem bảng xếp hạng tại thời điểm đó.',
     pickDate: 'Chọn ngày',
     latest: 'ảnh mới nhất',
-    daysCount: 'ng',
+    daysCount: 'ngày đã lưu',
     empty: 'Không có lưu trữ cho ngày này.',
     accumulating: 'Kho lưu trữ đang tích lũy — mỗi ngày tự động lưu thêm vài ảnh.',
     metricLabel: 'số liệu',

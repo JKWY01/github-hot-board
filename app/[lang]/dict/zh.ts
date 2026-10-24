@@ -4,7 +4,7 @@ import type { Dict } from '../dictionaries'
 const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
   overall: {
     name: '总榜 · 史上最强',
-    tagline: 'GitHub 开源历史上，累计 Star 数最多的三百个项目。',
+    tagline: 'GitHub 开源历史上，累计 Star 数最多的五百个项目。',
     metricLabel: '累计 Star',
     metricHint: '总数',
     desc: '按仓库历史累计 Star 数降序排列，数据来自 GitHub Search API（stars:>1000、排除 fork 仓库），缓存约 5～15 分钟刷新一次。',
@@ -84,7 +84,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: 'Fork 与 Issue 异常高、Star 平平 —— 流量与风评两极分化的项目。',
     metricLabel: '争议指数',
     metricHint: '启发式',
-    desc: '争议指数 = (Fork 数 × 2 + Issue 数) ÷ Star 数，在累计 Star 超 3000 的仓库中取极值。它衡量的是“关注远大于认可”的结构性矛盾；这是启发式指标，不代表社区真实情感。候选池为总榜(史上 Star 前三百)中 ≥3000 星的仓库,即明星仓内部的争议对比,不是全平台扫描。',
+    desc: '争议指数 = (Fork 数 × 2 + Issue 数) ÷ Star 数，在累计 Star 超 3000 的仓库中取极值。它衡量的是“关注远大于认可”的结构性矛盾；这是启发式指标，不代表社区真实情感。候选池为总榜(史上 Star 前五百)中 ≥3000 星的仓库,即明星仓内部的争议对比,不是全平台扫描。',
     faqs: [
       { q: '这个指数科学吗？', a: '不科学，也不假装科学。它是结构性代理指标：一个被广泛复制改造（高 Fork）或让人疯狂提问题（高 Issue）却收获很少 Star 的项目，通常都处于“黑红”的舆论场。' },
       { q: '为什么 Issue 数会包含 PR？', a: 'GitHub 的 open_issues 字段口径本身包含 Pull Request，本榜不做剔除，页面如实标注。' },
@@ -140,8 +140,8 @@ export const zhDict: Dict = {
     heroTitleTop: '今天，',
     heroTitleGradient: '谁在燃烧。',
     heroSub: '十个不同维度的 GitHub 榜单：史上最强、周月风潮、潜力与黑马、被忽视的宝藏、黑红的争议，全部来自官方数据的实时脉搏。',
-    heroStatRepos: '入榜门槛 · 第 300 名星数',
-    heroStatStars: '总榜前 300 星标合计',
+    heroStatRepos: '入榜门槛 · 第 500 名星数',
+    heroStatStars: '总榜前 500 星标合计',
     heroStatDaily: '本周新增',
     weeklySectionKicker: 'WEEKLY SURGE',
     weeklySectionTitle: '本周点火',
@@ -255,7 +255,7 @@ export const zhDict: Dict = {
     subtitle: '每半小时拍一整张榜，按日期回看当时的完整排名。',
     pickDate: '选择日期',
     latest: '最新一拍',
-    daysCount: '天',
+    daysCount: '天存档',
     empty: '这一天没有留下档案。',
     accumulating: '档案正在积累——每天自动多存几拍。',
     metricLabel: '指标值',
