@@ -5,16 +5,16 @@
 
 | # | 项目 | 累计 Star | 本周新增 Star | 简介 |
 |---|---|---|---|---|
-| 1 | [cloudflare/security-audit-skill](https://git.vaiox.xyz/zh/repo/cloudflare/security-audit-skill) | 44.2k | 11.2k | A coding-agent skill for multi-phase security audits with in… |
-| 2 | [morluto/rea](https://git.vaiox.xyz/zh/repo/morluto/rea) | 378.1k | 88.2k | Reverse engineer anything with agents, from app behavior dow… |
+| 1 | [cloudflare/security-audit-skill](https://git.vaiox.xyz/zh/repo/cloudflare/security-audit-skill) | 44.5k | 11.2k | A coding-agent skill for multi-phase security audits with in… |
+| 2 | [morluto/rea](https://git.vaiox.xyz/zh/repo/morluto/rea) | 378.6k | 88.2k | Reverse engineer anything with agents, from app behavior dow… |
 | 3 | [anthropics/claude-plugins-official](https://git.vaiox.xyz/zh/repo/anthropics/claude-plugins-official) | 44.3k | 4.3k | Official, Anthropic-managed directory of high quality Claude… |
 | 4 | [ruvnet/ruflo](https://git.vaiox.xyz/zh/repo/ruvnet/ruflo) | 79.0k | 3.3k | The original agent harness. Deploy intelligent multi-player … |
 | 5 | [stablyai/orca](https://git.vaiox.xyz/zh/repo/stablyai/orca) | 104.9k | 9.5k | Orca is the place for working with a fleet of agents (e.g. G… |
-| 6 | [anomalyco/opencode](https://git.vaiox.xyz/zh/repo/anomalyco/opencode) | 221.0k | 6.8k | The open source coding agent. |
+| 6 | [anomalyco/opencode](https://git.vaiox.xyz/zh/repo/anomalyco/opencode) | 221.1k | 6.8k | The open source coding agent. |
 | 7 | [cursor/plugins](https://git.vaiox.xyz/zh/repo/cursor/plugins) | 13.9k | 1.9k | Cursor plugin specification and official plugins |
 | 8 | [android/skills](https://git.vaiox.xyz/zh/repo/android/skills) | 9.6k | 1.5k |  |
 | 9 | [anthropics/knowledge-work-plugins](https://git.vaiox.xyz/zh/repo/anthropics/knowledge-work-plugins) | 32.6k | 2.6k | Open source repository of plugins primarily intended for kno… |
-| 10 | [heygen-com/hyperframes](https://git.vaiox.xyz/zh/repo/heygen-com/hyperframes) | 71.4k | 5.6k | Write HTML. Render video. Built for agents. |
+| 10 | [heygen-com/hyperframes](https://git.vaiox.xyz/zh/repo/heygen-com/hyperframes) | 71.5k | 5.6k | Write HTML. Render video. Built for agents. |
 | 11 | [Comfy-Org/ComfyUI](https://git.vaiox.xyz/zh/repo/Comfy-Org/ComfyUI) | 142.6k | 4.5k | The most powerful and modular diffusion model GUI, api and b… |
 | 12 | [akitaonrails/ai-memory](https://git.vaiox.xyz/zh/repo/akitaonrails/ai-memory) | 13.3k | 3.4k | Solution for long term memory for agent coding CLIs and to f… |
 | 13 | [Graphify-Labs/graphify](https://git.vaiox.xyz/zh/repo/Graphify-Labs/graphify) | 134.4k | 6.9k | Turn any codebase, with its docs, SQL schemas, configs, and … |
