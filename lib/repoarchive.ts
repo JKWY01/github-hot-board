@@ -1,6 +1,10 @@
 import { cacheLife, cacheTag } from 'next/cache'
 
+import { isRepoFullName } from './reposhape'
 import { readRepoArchiveRows, type RepoAppearance, type RepoDayRank } from './snapshot'
+
+// 仓库名形状校验统一由 lib/reposhape 提供(全站单一事实源);此处再导出保持既有 import 兼容。
+export { isRepoFullName }
 
 /** 仓库档案:'use cache' 包装 —— (仓库) 一次会话最多重算一次,
  * 之后边缘缓存直接吞吐;标签挂在 'github' 上,可被 /api/refresh 统一刷新。 */
@@ -18,13 +22,6 @@ export interface RepoArchive {
   /** 基准口径最新一拍的 star/fork 总量(没有基准行就取在场第一条)。 */
   totalStars: number | null
   totalForks: number | null
-}
-
-const NAME_OK = /^[A-Za-z0-9_.-]{1,64}$/
-
-export function isRepoFullName(value: string): boolean {
-  const parts = value.split('/')
-  return parts.length === 2 && NAME_OK.test(parts[0]) && NAME_OK.test(parts[1])
 }
 
 export async function getRepoArchiveCached(fullName: string): Promise<RepoArchive | null> {
