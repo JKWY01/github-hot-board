@@ -172,6 +172,7 @@ export const deDict: Dict = {
     pushOff: 'aus',
     pushBlocked: 'Browser hat Benachrichtigungen blockiert',
     etaDays: '~{n} T.',
+    filterEmpty: 'Keine Repos in dieser Spanne',
     filterAll: 'Alle',
     filterOrder: 'Rang',
     filterNet: 'Zuwachs',

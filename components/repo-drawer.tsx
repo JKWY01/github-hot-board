@@ -106,9 +106,13 @@ export default function RepoDrawer({
   }, [loadDoc])
 
   useEffect(() => {
+    // 开抽屉抢焦点,关抽屉把焦点还给触发行(键盘用户不会"丢"在页面顶端);
+    // 换仓/轮询重渲染不重跑本效果(仅挂载/卸载)
+    const prev = document.activeElement as HTMLElement | null
     closeBtnRef.current?.focus()
-    // 仅首次挂载聚焦;换仓/轮询重渲染不抢焦点
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => {
+      prev?.focus?.()
+    }
   }, [])
 
   useEffect(() => {

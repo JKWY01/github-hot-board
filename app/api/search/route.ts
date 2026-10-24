@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
   const ip = clientIpOf(req)
 
   if (!q) return NextResponse.json({ ok: false, reason: 'empty' }, { status: 400 })
-  if (!rate.allow(ip, PER_WINDOW, WINDOW_MS)) return NextResponse.json({ ok: false, reason: 'rate' }, { status: 429 })
+  if (!rate.allow(ip, PER_WINDOW, WINDOW_MS)) return NextResponse.json({ ok: false, reason: 'rate' }, { status: 429, headers: { 'Retry-After': '60' } })
 
   const isExact = isRepoFullName(q)
 

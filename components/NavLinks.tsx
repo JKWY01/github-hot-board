@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
@@ -15,8 +16,17 @@ import type { BoardSlug } from '@/lib/boards'
  * 配合 [slug]/loading.tsx 的骨架过渡,体感几乎无差,稳定性优先。 */
 export default function NavLinks({ items, locale }: { items: Array<{ slug: BoardSlug; label: string }>; locale: string }) {
   const pathname = usePathname() || ''
+  const navRef = useRef<HTMLElement>(null)
+
+  useEffect(() => {
+    // 手机上 10 个芯片要横滑,激活项常在屏外;进页把它滚进视野(横向居中,不动纵向)
+    navRef.current
+      ?.querySelector('[aria-current="page"]')
+      ?.scrollIntoView({ inline: 'center', block: 'nearest' })
+  }, [pathname])
+
   return (
-    <nav aria-label="Boards" className="no-scrollbar -mx-1 flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto">
+    <nav ref={navRef} aria-label="Boards" className="no-scrollbar -mx-1 flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto">
       {items.map(({ slug, label }) => {
         const active = pathname.startsWith(`/${locale}/boards/${slug}`)
         return (

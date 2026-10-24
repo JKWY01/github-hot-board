@@ -518,12 +518,17 @@ function boardMetaEntry(
 const json = (body: unknown, status = 200): Response =>
   Response.json(body, {
     status,
-    headers: { 'cache-control': 'no-store', 'content-type': 'application/json; charset=utf-8' },
+    headers: {
+      'cache-control': 'no-store',
+      'content-type': 'application/json; charset=utf-8',
+      // 限流回执带标准重试提示:agent 客户端按此退避,不必盲试
+      ...(status === 429 ? { 'retry-after': '60' } : {}),
+    },
   })
 
 export async function POST(request: Request) {
   if (!rate.allow(clientIpOf(request), PER_WINDOW, WINDOW_MS)) {
-    return json({ jsonrpc: '2.0', id: null, error: { code: -32000, message: 'rate limited (60/min/IP)' } }, 429)
+    return json({ jsonrpc: '2.0', id: null, error: { code: -32000, message: 'rate limited (60/min/IP); retry after 60s' } }, 429)
   }
 
   let msg: { jsonrpc?: string; id?: unknown; method?: unknown; params?: Record<string, unknown> }

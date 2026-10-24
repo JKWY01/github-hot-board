@@ -85,6 +85,8 @@ export interface Dict {
     pushBlocked: string
     /** 里程碑榜行内“预计 N 天跨线”(slope 估算;>90 天不显示) */
     etaDays: string
+    /** 档位筛选结果为空时的提示 */
+    filterEmpty: string
     /** 榜单行上方的筛选/排序控件四词(原内嵌于 LiveBoardList 的 CTRL 表,已并入字典单一体系) */
     filterAll: string
     filterOrder: string
@@ -217,6 +219,7 @@ export function liveStrings(locale: Locale) {
     pushOff: d.ui.pushOff,
     pushBlocked: d.ui.pushBlocked,
     etaDays: d.ui.etaDays,
+    filterEmpty: d.ui.filterEmpty,
     filterAll: d.ui.filterAll,
     filterOrder: d.ui.filterOrder,
     filterNet: d.ui.filterNet,

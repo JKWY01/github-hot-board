@@ -29,7 +29,7 @@ export async function GET(request: Request) {
     return Response.json({ ok: false }, { status: 400, headers: { 'Cache-Control': 'no-store' } })
   }
   if (!rate.allow(clientIpOf(request), PER_WINDOW, WINDOW_MS)) {
-    return Response.json({ ok: false }, { status: 429, headers: { 'Cache-Control': 'no-store' } })
+    return Response.json({ ok: false }, { status: 429, headers: { 'Cache-Control': 'no-store', 'Retry-After': '60' } })
   }
 
   if (path) {

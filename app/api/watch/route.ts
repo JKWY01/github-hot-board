@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
   ).slice(0, 20)
   const ip = clientIpOf(req)
   if (fulls.length === 0) return NextResponse.json({ ok: false, reason: 'empty' }, { status: 400 })
-  if (!rate.allow(ip, PER_WINDOW, WINDOW_MS)) return NextResponse.json({ ok: false, reason: 'rate' }, { status: 429 })
+  if (!rate.allow(ip, PER_WINDOW, WINDOW_MS)) return NextResponse.json({ ok: false, reason: 'rate' }, { status: 429, headers: { 'Retry-After': '60' } })
 
   const data = await withDb(async (sql): Promise<{ ok: boolean; items: WatchStatus[] }> => {
     // 总榜名次图与门槛(一次查询,全列表共用)

@@ -172,6 +172,7 @@ export const viDict: Dict = {
     pushOff: 'tắt',
     pushBlocked: 'Trình duyệt đã chặn thông báo',
     etaDays: '~{n} ngày',
+    filterEmpty: 'Không có repo trong khoảng này',
     filterAll: 'Tất cả',
     filterOrder: 'Thứ hạng',
     filterNet: 'Tăng',

@@ -14,7 +14,7 @@ export async function POST(request: Request) {
     return Response.json({ ok: false, reason: 'push-not-configured' }, { status: 503, headers: { 'Cache-Control': 'no-store' } })
   }
   if (!rate.allow(clientIpOf(request), 10, 60_000)) {
-    return Response.json({ ok: false, reason: 'rate' }, { status: 429, headers: { 'Cache-Control': 'no-store' } })
+    return Response.json({ ok: false, reason: 'rate' }, { status: 429, headers: { 'Cache-Control': 'no-store', 'Retry-After': '60' } })
   }
 
   let body: {

@@ -276,3 +276,9 @@
 @media (prefers-reduced-motion: reduce) {
   .backtotop-in { animation: none; }
 }
+
+/* 键盘可见焦点:Apple 味界面默认几乎不可见,统一一圈强调色描边(仅键盘导航时出现,不打扰鼠标) */
+:focus-visible {
+  outline: 2px solid var(--color-accent, #0071e3);
+  outline-offset: 2px;
+}

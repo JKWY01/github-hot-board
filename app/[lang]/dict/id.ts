@@ -172,6 +172,7 @@ export const idDict: Dict = {
     pushOff: 'nonaktif',
     pushBlocked: 'Browser memblokir notifikasi',
     etaDays: '~{n} hr',
+    filterEmpty: 'Tidak ada repo di rentang ini',
     filterAll: 'Semua',
     filterOrder: 'Peringkat',
     filterNet: 'Tambahan',

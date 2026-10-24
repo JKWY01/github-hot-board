@@ -162,6 +162,13 @@ export default function LiveBoardList({
   const [searchHits, setSearchHits] = useState<SearchHit[]>([])
   const [searchKind, setSearchKind] = useState<'exact' | 'keyword' | 'web' | 'empty'>('exact')
   const [webConfirmed, setWebConfirmed] = useState('')
+  const searchRef = useRef<HTMLInputElement>(null)
+  /* 渐进渲染:总榜 500 行一次全渲染约 1.5 万 DOM 节点,移动端水合吃力。
+   * SSR 首批 RENDER_CHUNK 行,滚动接近尾部自动续批;筛选/搜索照常作用于全集。
+   * tradeoff(已拍板):HTML 里行数截到首批 —— JSON-LD 本就只标 150,档案页才是 SEO 主粮。 */
+  const RENDER_CHUNK = 100
+  const [visibleCount, setVisibleCount] = useState(limit ?? RENDER_CHUNK)
+  const sentinelRef = useRef<HTMLDivElement | null>(null)
   const searchLocal = () => {
     const q = searchDeb.trim().toLowerCase()
     return q.length > 0 && items.some((it) => it.fullName.toLowerCase().includes(q))
@@ -260,6 +267,23 @@ export default function LiveBoardList({
   useEffect(() => {
     setNowAnchor(Date.now())
   }, [items])
+
+  // 哨兵续批:滚动到距尾部 ~600px 时再挂下一批(依赖 visibleCount:新哨兵节点出现后重挂观察)
+  useEffect(() => {
+    const el = sentinelRef.current
+    if (!el) return
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          setVisibleCount((c) => c + RENDER_CHUNK)
+        }
+      },
+      { rootMargin: '600px 0px 0px 0px' },
+    )
+    io.observe(el)
+    return () => io.disconnect()
+  }, [visibleCount])
+
   useEffect(() => {
     const target = locateRef.current
     if (!target || items.length === 0) return
@@ -549,6 +573,19 @@ export default function LiveBoardList({
   useEffect(() => {
     if (drawerFull && drawerOpen) rowElsRef.current.get(drawerFull)?.scrollIntoView({ block: 'nearest' })
   }, [drawerFull, drawerOpen])
+  // '/' 聚焦搜索(GitHub 本尊惯例):输入态与抽屉开着时让路(依赖 drawerOpen 重挂,免 ref)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== '/' || e.metaKey || e.ctrlKey || e.altKey) return
+      const t = e.target as HTMLElement | null
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return
+      if (drawerOpen) return
+      e.preventDefault()
+      searchRef.current?.focus()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [drawerOpen])
 
   return (
     <div className="relative">
@@ -648,6 +685,7 @@ export default function LiveBoardList({
               <path d="M10.4 10.4 L13.6 13.6" strokeLinecap="round" />
             </svg>
             <input
+              ref={searchRef}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={strings.searchPlaceholder}
@@ -713,7 +751,7 @@ export default function LiveBoardList({
       )}
 
       <ol className={`card list-none overflow-hidden ${compact ? '' : 'rounded-[22px]'}`}>
-        {view.map((item, index) => {
+        {view.slice(0, visibleCount).map((item, index) => {
           // 名次语义:默认视图 = 视图序(≡原榜);筛选态保留原榜名次;改序态按视图序重编号,
           // 且爬/降徽章在自定义视图一律休眠 —— 它们描述的是原榜坐标,重排后不算数。
           const rankShown = !custom || sortId === 'board' ? (rankOf.get(item.fullName) ?? index + 1) : index + 1
@@ -888,6 +926,13 @@ export default function LiveBoardList({
           )
         })}
       </ol>
+
+      {/* 渐进渲染:还有未挂载的行 → 哨兵(IntersectionObserver 见尾自动续批) */}
+      {view.length > visibleCount && <div ref={sentinelRef} aria-hidden="true" className="h-px" />}
+      {/* 档位/搜索过滤后为空:一句人话,不晾一个空卡(真·空榜仍走错误卡路径) */}
+      {custom && view.length === 0 && items.length > 0 && (
+        <p className="px-1 py-10 text-center text-[13px] text-sub">{strings.filterEmpty}</p>
+      )}
 
       <div className="pointer-events-none fixed inset-x-0 bottom-6 z-[80] flex flex-col items-center gap-2 px-4">
         {toasts.map((toast) => (

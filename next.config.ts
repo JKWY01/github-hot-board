@@ -5,12 +5,13 @@ import type { NextConfig } from "next";
 // lib/jsonld.ts 的出口转义 —— 这里是纵深防御:限制外联脚本/对象/嵌框/嗅探。
 // 资源口径:
 //   script: 'self' + va.vercel-scripts.com(@vercel/analytics 调试态)+ 'unsafe-inline'(Next 引导)
+//           开发态额外 'unsafe-eval'(React dev 的调试栈重建需要;生产不带)
 //   img:    https: data:(README 里的图片可来自任意图床/CDN,不能收窄)
 //   style:  'self' + 'unsafe-inline'(GitHub README 的对齐样式)
 //   connect:'self' + va.vercel-scripts.com(analytics beacon)
 const CSP = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' https://va.vercel-scripts.com",
+  `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === 'development' ? " 'unsafe-eval'" : ''} https://va.vercel-scripts.com`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' https: data:",
   "media-src 'self' https:",

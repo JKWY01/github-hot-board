@@ -172,6 +172,7 @@ export const itDict: Dict = {
     pushOff: 'disattivi',
     pushBlocked: 'Il browser ha bloccato le notifiche',
     etaDays: '~{n} g',
+    filterEmpty: 'Nessun repo in questa fascia',
     filterAll: 'Tutti',
     filterOrder: 'Classifica',
     filterNet: 'Guadagni',

@@ -172,6 +172,7 @@ export const ukDict: Dict = {
     pushOff: 'вимк.',
     pushBlocked: 'Браузер заблокував сповіщення',
     etaDays: '~{n} дн.',
+    filterEmpty: 'У цьому діапазоні немає репозиторіїв',
     filterAll: 'Усі',
     filterOrder: 'Рейтинг',
     filterNet: 'Приріст',

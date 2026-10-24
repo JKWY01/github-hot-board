@@ -172,6 +172,7 @@ export const ptDict: Dict = {
     pushOff: 'inativas',
     pushBlocked: 'O navegador bloqueou as notificações',
     etaDays: '~{n} d',
+    filterEmpty: 'Sem repositórios nesta faixa',
     filterAll: 'Todos',
     filterOrder: 'Ordem',
     filterNet: 'Ganhos',
