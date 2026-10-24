@@ -4,7 +4,7 @@ import type { Dict } from '../dictionaries'
 const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
   overall: {
     name: 'Campeones del Star',
-    tagline: 'Los 100 proyectos con más Star de la historia de GitHub.',
+    tagline: 'Los 300 proyectos con más Star de la historia de GitHub.',
     metricLabel: 'Star acumuladas',
     metricHint: 'acumulado',
     desc: 'Ordenados por Star acumuladas desde siempre, con datos del GitHub Search API (stars:>1000, se excluyen los Fork), refrescados cada 5–15 minutos.',
@@ -51,7 +51,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: 'Star por día en los últimos 90 días — la bolsa más grande de talento nuevo.',
     metricLabel: 'Star / día',
     metricHint: 'curva',
-    desc: 'Repos creados en los últimos 90 días, ordenados por Star ganadas de media por día (Star acumuladas ÷ antigüedad). La pendiente neutraliza la fecha de lanzamiento y refleja el impulso de ahora.',
+    desc: 'Repos creados en los últimos 90 días, ordenados por Star ganadas de media por día (Star acumuladas ÷ antigüedad). La pendiente neutraliza la fecha de lanzamiento y refleja el impulso de ahora. Los candidatos se limitan primero a los 300 repos de 90 días con más Star (el conjunto de trabajo de la Search API) y luego se reordenan por pendiente.',
     faqs: [
       { q: '¿Se puede hinchar la pendiente con picos cortos?', a: 'Se puede, y en dos días de pico la media se dispara. Cruza la lectura con el ranking de caballos oscuros, donde se exige un número absoluto de Star bajo.' },
       { q: '¿En qué se diferencia del ranking de los nuevos del año?', a: 'El anual corta la creación dentro de este año y ordena por total; este corta en 90 días y ordena por pendiente diaria.' },
@@ -62,7 +62,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: 'Pocas Star absolutas × pendiente pronunciada × todavía se mantiene. Aquí empiezan los despegues.',
     metricLabel: 'Star / día',
     metricHint: 'curva',
-    desc: 'Repos creados en los últimos 90 días, con 30–1500 Star en total y pendiente positiva, ordenados por Star por día — top 80. Suelen ser proyectos que casi nadie ha descubierto todavía: candidatos al despegue “enterrados”.',
+    desc: 'Repos creados en los últimos 90 días, con 30–1500 Star en total y pendiente positiva, ordenados por Star por día — top 100. Suelen ser proyectos que casi nadie ha descubierto todavía: candidatos al despegue “enterrados”.',
     faqs: [
       { q: '¿Por qué una consulta aparte en vez de filtrar el ranking de pendientes?', a: 'Otra metodología: filtra primero por banda de Star (30–1500) y luego ordena por pendiente. Si reciclara el top-100 del ranking de pendientes antes de filtrar, la cabeza del ranking se llenaría de repos recién nacidos y diminutos que esconderían a los verdaderos candidatos.' },
       { q: '¿Por qué justo 30 y 1500?', a: 'Por debajo de 30 Star la pendiente es casi puro ruido (un puñado de amigos te regala 10 Star/día al arrancar); por encima de 1500, todo el mundo ya los ha visto. En medio está el punto dulce: tracción real, poca exposición.' },
@@ -84,7 +84,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: 'Fork para arriba, Issue para arriba, Star flojos — proyectos que dividen a la gente.',
     metricLabel: 'Índice de polémica',
     metricHint: 'heurístico',
-    desc: 'Índice = (Fork × 2 + Issues abiertos) ÷ Star, con los extremos entre repos de más de 3000 Star. Mide la tensión estructural de “mucha atención, poco respaldo”. Es una heurística, no análisis de sentimientos.',
+    desc: 'Índice = (Fork × 2 + Issues abiertos) ÷ Star, con los extremos entre repos de más de 3000 Star. Mide la tensión estructural de “mucha atención, poco respaldo”. Es una heurística, no análisis de sentimientos. El conjunto de candidatos es la tabla histórica del top 300 filtrada a ≥3000 Star: una comparación dentro del salón de la fama, no un escaneo de toda la plataforma.',
     faqs: [
       { q: '¿Es científico este índice?', a: 'No, y no pretende serlo. Es una proxy estructural: los repos que todo el mundo copia (Fork) o donde las preguntas no cesan (Issue) pero que ganan pocas Star suelen vivir en un foco de doble filo.' },
       { q: '¿Por qué los Issue incluyen PR?', a: 'El campo open_issues de GitHub ya incluye los Pull Request por definición. No los descontamos, y lo decimos claro en pantalla.' },

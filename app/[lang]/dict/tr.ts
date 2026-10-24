@@ -4,7 +4,7 @@ import type { Dict } from '../dictionaries'
 const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
   overall: {
     name: 'Tüm Zamanların Şampiyonları',
-    tagline: 'GitHub tarihinin en çok Star alan 100 projesi.',
+    tagline: 'GitHub tarihinin en çok Star alan 300 projesi.',
     metricLabel: 'Toplam Star',
     metricHint: 'yaşam boyu',
     desc: 'Yaşam boyu Star sayısına göre sıralanır; veri GitHub Search API’den gelir (stars:>1000, fork’lar hariç) ve 5–15 dakikada bir yenilenir.',
@@ -51,7 +51,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: 'Son 90 günde günde kaç Star — yeni yeteneklerin en geniş havuzu.',
     metricLabel: 'Star / gün',
     metricHint: 'eğim',
-    desc: 'Son 90 gün içinde oluşturulan depolar, ortalama günde kazanılan Star sayısına göre sıralanır (yaşam boyu Star ÷ repo yaşı). Eğim, çıkış tarihini normalleştirir; güncel momentumu yansıtır.',
+    desc: 'Son 90 gün içinde oluşturulan depolar, ortalama günde kazanılan Star sayısına göre sıralanır (yaşam boyu Star ÷ repo yaşı). Eğim, çıkış tarihini normalleştirir; güncel momentumu yansıtır. Adaylar önce yıldız sayısına göre en çok yıldızlı 300 adet 90 günlük depoya (Search API çalışma kümesi) sınırlandırılır, sonra eğime göre yeniden sıralanır.',
     faqs: [
       { q: 'Eğim kısa vadeli patlamalarla şişebilir mi?', a: 'Evet. Kısa vadeli sıçramalar ortalamayı bozabilir; bu nedenle düşük mutlak Star şartı koyan Kara Atlar listesiyle birlikte okuyun.' },
       { q: 'Yılın Yenileri’nden farkı ne?', a: 'Yıllık liste, bu yıl oluşturulanları toplam Star’a göre dizer; bu liste 90 günle sınırlar ve günlük eğime bakar — pencere daha kısa, ivme daha belirleyici.' },
@@ -62,7 +62,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: 'Düşük mutlak Star × dik eğim × hâlâ bakımda. Patlamalar buradan başlar.',
     metricLabel: 'Star / gün',
     metricHint: 'eğim',
-    desc: 'Son 90 gün içinde oluşturulan, toplam Star sayısı 30–1500 arasında ve eğimi pozitif olan depolar, Star/gün eğimine göre sıralanır — ilk 80. Bu projeler çoğunlukla henüz fark edilmemiştir: “gömülü” patlama adayları.',
+    desc: 'Son 90 gün içinde oluşturulan, toplam Star sayısı 30–1500 arasında ve eğimi pozitif olan depolar, Star/gün eğimine göre sıralanır — ilk 100. Bu projeler çoğunlukla henüz fark edilmemiştir: “gömülü” patlama adayları.',
     faqs: [
       { q: 'Neden Yükselen listesinden süzmek yerine ayrı bir sorgu?', a: 'Yöntem farklı: önce Star kuşağına (30–1500) göre süzülür, sonra eğime göre sıralanır. Yükselen listesinin ilk 100’ünü alıp sonra süzseydik, üst sıralar küçük ve yepyeni repolarla dolar, gerçek patlama adayları görünmez olurdu.' },
       { q: '30 ve 1500 eşikleri neden?', a: '30’un altında eğim çoğunlukla gürültüdür (birkaç arkadaş Star’larsa 10 Star/gün başlangıç etmek mümkün); 1500’ün üstünde olanlar zaten geniş ölçekte fark edilmişlerdir. Aradaki bant tatlı noktadır: gerçek çekiş, henüz keşfedilmemiş.' },
@@ -84,7 +84,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: 'Çok Fork, çok Issue, az Star — kalabalığı ikiye bölen projeler.',
     metricLabel: 'Tartışma endeksi',
     metricHint: 'sezgisel',
-    desc: 'Endeks = (Fork × 2 + açık Issue) ÷ Star; 3000 üzeri Star’lı repolar arasında uç değerleri yakalar. “İlgi, onayın çok ötesinde” anlamındaki yapısal gerilimi ölçer. Bu bir sezgisel ölçüttür, duygu analizi değildir.',
+    desc: 'Endeks = (Fork × 2 + açık Issue) ÷ Star; 3000 üzeri Star’lı repolar arasında uç değerleri yakalar. “İlgi, onayın çok ötesinde” anlamındaki yapısal gerilimi ölçer. Bu bir sezgisel ölçüttür, duygu analizi değildir. Aday havuzu, ≥3000 Star’a filtrelenmiş tüm zamanların ilk 300 tablosudur — bir şöhret salonu içi karşılaştırma, tüm platformu tarama değil.',
     faqs: [
       { q: 'Bu endeks bilimsel mi?', a: 'Hayır ve öyle olduğunu da iddia etmiyoruz. Yapısal bir vekil: yaygın biçimde kopyalanan (yüksek Fork) ya da durmaksızın sorgulanan (yüksek Issue) ama az Star toplayan repolar, çoğunlukla kutuplaşmış bir spot ışığında yaşarlar.' },
       { q: 'Issue sayısı neden PR’leri de kapsıyor?', a: 'GitHub’ın open_issues alanının sayımı zaten Pull Request’leri de kapsar. Biz bunları çıkarmıyoruz ve bunu açıkça belirtiyoruz.' },

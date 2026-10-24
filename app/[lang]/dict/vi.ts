@@ -4,7 +4,7 @@ import type { Dict } from '../dictionaries'
 const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
   overall: {
     name: 'Nhà Vô Địch Mọi Thời Đại',
-    tagline: '100 dự án có nhiều Star nhất trong lịch sử GitHub.',
+    tagline: '300 dự án có nhiều Star nhất trong lịch sử GitHub.',
     metricLabel: 'Tổng Star',
     metricHint: 'trọn đời',
     desc: 'Xếp theo tổng số Star trọn đời, dữ liệu lấy từ GitHub Search API (stars:>1000, loại trừ repo fork), làm mới mỗi 5–15 phút.',
@@ -51,7 +51,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: '90 ngày qua, trung bình Star mỗi ngày — vườn ươm lớn nhất cho gương mặt mới.',
     metricLabel: 'Star / ngày',
     metricHint: 'độ dốc',
-    desc: 'Repo tạo trong 90 ngày, xếp theo số Star trung bình mỗi ngày (tổng Star ÷ tuổi repo). Độ dốc chuẩn hóa thời điểm ra mắt, phản ánh đà tăng hiện tại rõ hơn số tổng.',
+    desc: 'Repo tạo trong 90 ngày, xếp theo số Star trung bình mỗi ngày (tổng Star ÷ tuổi repo). Độ dốc chuẩn hóa thời điểm ra mắt, phản ánh đà tăng hiện tại rõ hơn số tổng. Ứng viên trước tiên bị giới hạn trong 300 repo 90 ngày nhiều Star nhất (tập làm việc của Search API), rồi xếp lại theo độ dốc.',
     faqs: [
       { q: 'Độ dốc có bị lợi dụng không?', a: 'Có — cơn sốt ngắn hạn làm méo trung bình; một repo mới tung ra vài ngày rồi ầm ầm vác ngàn Star là độ dốc rất cao. Nên đọc chéo với bảng Ngựa Ô, nơi bắt buộc tổng Star thấp.' },
       { q: 'Khác gì với Gương Mặt Mới Của Năm?', a: 'Bảng năm giới hạn ngày tạo trong năm nay và xếp theo tổng số; bảng này giới hạn 90 ngày và xếp theo độ dốc mỗi ngày.' },
@@ -62,7 +62,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: 'Số Star thấp × độ dốc cao × vẫn được bảo trì. Cơn bùng nổ thường bắt đầu từ đây.',
     metricLabel: 'Star / ngày',
     metricHint: 'độ dốc',
-    desc: 'Repo tạo trong 90 ngày qua, tổng Star 30–1500 và độ dốc dương, xếp theo Star mỗi ngày — top 80. Những dự án này thường chưa được ai để mắt tới: ứng cử viên bùng nổ bị “vùi”.',
+    desc: 'Repo tạo trong 90 ngày qua, tổng Star 30–1500 và độ dốc dương, xếp theo Star mỗi ngày — top 100. Những dự án này thường chưa được ai để mắt tới: ứng cử viên bùng nổ bị “vùi”.',
     faqs: [
       { q: 'Tại sao truy vấn riêng thay vì lọc từ bảng Độ Dốc?', a: 'Phương pháp khác nhau: lọc theo dải Star (30–1500) trước, rồi mới xếp theo độ dốc. Nếu lấy top-100 của bảng Độ Dốc rồi lọc lại, đỉnh bảng sẽ thành chỗ của các repo siêu nhỏ mới ra mắt và chôn vùi những ứng viên bùng nổ thật.' },
       { q: 'Vì sao là mốc 30 và 1500?', a: 'Dưới 30 Star độ dốc chủ yếu là nhiễu (vài bạn bè điểm Star là được 10 Star/ngày); trên 1500 đã được đông người chú ý. Ở giữa là vùng ngọt: có lực hút thật nhưng chưa bị phát hiện.' },
@@ -84,7 +84,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: 'Fork nhiều, Issue nhiều, Star ít — những dự án chia đôi công luận.',
     metricLabel: 'Chỉ số gây tranh cãi',
     metricHint: 'heuristic',
-    desc: 'Chỉ số = (số Fork × 2 + Issue mở) ÷ Star, lấy các mức cực đoan trong nhóm repo trên 3000 Star. Nó đo căng thẳng cấu trúc kiểu “được để ý nhiều nhưng được công nhận ít”. Đây là heuristic, không phải phân tích cảm xúc.',
+    desc: 'Chỉ số = (số Fork × 2 + Issue mở) ÷ Star, lấy các mức cực đoan trong nhóm repo trên 3000 Star. Nó đo căng thẳng cấu trúc kiểu “được để ý nhiều nhưng được công nhận ít”. Đây là heuristic, không phải phân tích cảm xúc. Nhóm ứng viên là bảng top 300 lịch sử lọc còn ≥3000 Star — so sánh bên trong đại sảnh danh vọng, không phải quét toàn nền tảng.',
     faqs: [
       { q: 'Chỉ số này có khoa học không?', a: 'Không, và nó cũng chẳng tự nhận là khoa học. Đây là đại diện cấu trúc: repo bị sao chép rộng (Fork nhiều) hoặc bị chất vấn không ngừng (Issue nhiều) mà Star lại ít thường nằm trong vùng tranh cãi dữ dội.' },
       { q: 'Vì sao số Issue bao gồm cả PR?', a: 'Trường open_issues trên GitHub tự nó đã tính cả pull request. Chúng tôi không trừ phần đó đi và cũng nói thẳng như vậy.' },

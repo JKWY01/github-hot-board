@@ -4,7 +4,7 @@ import type { Dict } from '../dictionaries'
 const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
   overall: {
     name: 'Campioni di sempre',
-    tagline: 'I 100 progetti con più star nella storia di GitHub.',
+    tagline: 'I 300 progetti con più star nella storia di GitHub.',
     metricLabel: 'Star totali',
     metricHint: 'storico',
     desc: 'Ordinati per star totali dall’inizio, con dati del GitHub Search API (stars:>1000, fork esclusi), aggiornati ogni 5–15 minuti.',
@@ -51,7 +51,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: 'Star al giorno negli ultimi 90 giorni — il bacino più fitto di nuovi talenti.',
     metricLabel: 'Star / giorno',
     metricHint: 'curva',
-    desc: 'Repository creati negli ultimi 90 giorni, ordinati per star guadagnate in media al giorno (star totali ÷ età). La curva normalizza la data di lancio e riflette la spinta attuale.',
+    desc: 'Repository creati negli ultimi 90 giorni, ordinati per star guadagnate in media al giorno (star totali ÷ età). La curva normalizza la data di lancio e riflette la spinta attuale. I candidati sono prima ristretti ai 300 repo a 90 giorni più stellati (il working set della Search API), poi riordinati per curva.',
     faqs: [
       { q: 'Si può gonfiare la curva con picchi brevi?', a: 'Si può. A media aiuta i picchi: due giorni di botto e il numero lievita. Incrocia con la classifica degli outsider, dove servono pochi star assoluti.' },
       { q: 'Che differenza coi Debuttanti dell’anno?', a: 'La classifica annuale ferma la creazione a quest’anno e ordina per totale; questa ferma a 90 giorni e ordina per curva giornaliera.' },
@@ -62,7 +62,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: 'Pochi star assoluti × curva ripida × ancora in manutenzione. Gli scatti veri partono da qui.',
     metricLabel: 'Star / giorno',
     metricHint: 'curva',
-    desc: 'Repository creati negli ultimi 90 giorni, con 30–1500 star in totale e curva positiva, ordinati per star al giorno — top 80. Progetti che quasi nessuno ha ancora scoperto: candidati allo scatto ancora “sepolti”.',
+    desc: 'Repository creati negli ultimi 90 giorni, con 30–1500 star in totale e curva positiva, ordinati per star al giorno — top 100. Progetti che quasi nessuno ha ancora scoperto: candidati allo scatto ancora “sepolti”.',
     faqs: [
       { q: 'Perché una query a parte invece di filtrare la classifica della curva?', a: 'Metodologia diversa: prima si filtra per banda di star (30–1500), poi si ordina per curva. Riciclare il top-100 della classifica della curva prima del filtro riempirebbe la testa di repo minuscoli appena nati, nascondendo i veri candidati.' },
       { q: 'Perché proprio 30 e 1500?', a: 'Sotto i 30 star la curva è quasi solo rumore (un pugno di amici ti regalano 10 star/giorno alla partenza); sopra i 1500 ormai li ha visti tutti. In mezzo sta la zona giusta: trazione vera, visibilità quasi zero.' },
@@ -84,7 +84,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: 'Fork in abbondanza, Issue in abbondanza, star in scarsità — progetti che dividono la platea.',
     metricLabel: 'Indice di polemica',
     metricHint: 'euristica',
-    desc: 'Indice = (fork × 2 + Issue aperti) ÷ star, ai punti estremi tra i repo oltre i 3000 star. Misura la tensione strutturale di “tanta attenzione, poco consenso”. È un’euristica, non analisi dei sentimenti.',
+    desc: 'Indice = (fork × 2 + Issue aperti) ÷ star, ai punti estremi tra i repo oltre i 3000 star. Misura la tensione strutturale di “tanta attenzione, poco consenso”. È un’euristica, non analisi dei sentimenti. Il bacino di candidati è la classifica storica del top 300 filtrata a ≥3000 stelle: un confronto dentro il pantheon, non una scansione dell’intera piattaforma.',
     faqs: [
       { q: 'È scientifico questo indice?', a: 'No, e non finge di esserlo. È una proxy strutturale: i repo che tutti copiano (fork) o dove le domande non finiscono mai (Issue) ma che guadagnano poche star, di solito vivono in una zona di opinione divisa.' },
       { q: 'Perché gli Issue includono le PR?', a: 'Il campo open_issues di GitHub include già i Pull Request per definizione. Non li sottraiamo, e lo dichiariamo chiaramente.' },

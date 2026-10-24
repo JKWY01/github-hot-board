@@ -4,7 +4,7 @@ import type { Dict } from '../dictionaries'
 const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
   overall: {
     name: 'Campeões de todos os tempos',
-    tagline: 'Os 100 projetos com mais Star da história do GitHub.',
+    tagline: 'Os 300 projetos com mais Star da história do GitHub.',
     metricLabel: 'Star acumuladas',
     metricHint: 'acumulado',
     desc: 'Ordenados pelo número de Star acumuladas desde sempre, dados do GitHub Search API (stars:>1000, sem Fork), atualizados a cada 5–15 minutos.',
@@ -51,7 +51,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: 'Star por dia nos últimos 90 dias — o maior viveiro de talentos novos.',
     metricLabel: 'Star / dia',
     metricHint: 'curva',
-    desc: 'Repositórios criados nos últimos 90 dias, ordenados pelas Star médias ganadas por dia (Star acumuladas ÷ idade). A curva normaliza a data de lançamento e mostra o fôlego de agora.',
+    desc: 'Repositórios criados nos últimos 90 dias, ordenados pelas Star médias ganadas por dia (Star acumuladas ÷ idade). A curva normaliza a data de lançamento e mostra o fôlego de agora. Os candidatos são primeiro limitados aos 300 repositórios de 90 dias com mais Star (o conjunto de trabalho da Search API) e depois reordenados por inclinação.',
     faqs: [
       { q: 'Dá para empurrar a curva com picos curtos?', a: 'Dá. A curva é uma média, e dois dias de pico deixam o número lá em cima. Cruza a leitura com o ranking de dark horses, que exige um número absoluto de Star baixo.' },
       { q: 'Qual a diferença do ranking de estreantes do ano?', a: 'O anual limita a criação a este ano e ordena pelo total; este limita a 90 dias e ordena pela curva diária.' },
@@ -62,7 +62,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: 'Poucas Star absolutas × curva íngreme × ainda em manutenção. As explosões começam aqui.',
     metricLabel: 'Star / dia',
     metricHint: 'curva',
-    desc: 'Repositórios criados nos últimos 90 dias, entre 30–1500 Star no total e curva positiva, ordenados por Star por dia — top 80. Projetos que quase ninguém descobriu ainda: candidatos à explosão que continuam “enterrados”.',
+    desc: 'Repositórios criados nos últimos 90 dias, entre 30–1500 Star no total e curva positiva, ordenados por Star por dia — top 100. Projetos que quase ninguém descobriu ainda: candidatos à explosão que continuam “enterrados”.',
     faqs: [
       { q: 'Por que uma query separada, em vez de filtrar o ranking de curvas?', a: 'Metodologia diferente: filtra primeiro pela faixa de Star (30–1500), depois ordena pela curva. Aproveitar o top-100 do ranking de curvas antes de filtrar encheria o topo de repos recém-nascidos e diminutos, escondendo os verdadeiros candidatos.' },
       { q: 'Por que os cortes de 30 e 1500?', a: 'Abaixo de 30 Star a curva é praticamente ruído (alguns amigos te entregam 10 Star/dia na largada); acima de 1500 o projeto já caiu no radar geral. Entre os dois está o ponto doce: tração real, pouca visibilidade.' },
@@ -84,7 +84,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: 'Fork demais, Issue demais, Star de menos — projetos que dividem a comunidade.',
     metricLabel: 'Índice de polêmica',
     metricHint: 'heurística',
-    desc: 'Índice = (Fork × 2 + Issues abertos) ÷ Star, procurando os extremos entre repos com mais de 3000 Star. Mede a tensão estrutural de “muita atenção, pouco endosso”. É uma heurística, não análise de sentimento.',
+    desc: 'Índice = (Fork × 2 + Issues abertos) ÷ Star, procurando os extremos entre repos com mais de 3000 Star. Mede a tensão estrutural de “muita atenção, pouco endosso”. É uma heurística, não análise de sentimento. O conjunto de candidatos é o quadro histórico do top 300 filtrado para ≥3000 Star — uma comparação dentro do panteão, não uma varredura de toda a plataforma.',
     faqs: [
       { q: 'Esse índice é científico?', a: 'Não — e nem pretende ser. É uma proxy estrutural: repos copiados à vontade (Fork) ou bombardeados de perguntas (Issue) que ganham poucas Star costumam viver um foco dividido.' },
       { q: 'Por que os Issues contam PR?', a: 'O campo open_issues do GitHub já inclui os Pull Requests por definição. Não separamos, e avisamos direto na página.' },

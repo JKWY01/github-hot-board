@@ -4,7 +4,7 @@ import type { Dict } from '../dictionaries'
 const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
   overall: {
     name: 'Champions de tous les temps',
-    tagline: 'Les 100 projets les plus étoilés de l’histoire de GitHub.',
+    tagline: 'Les 300 projets les plus étoilés de l’histoire de GitHub.',
     metricLabel: 'Stars totales',
     metricHint: 'à vie',
     desc: 'Classement par nombre de stars cumulées, données issues de la GitHub Search API (stars:>1000, forks exclus), rafraîchies toutes les 5 à 15 minutes.',
@@ -51,7 +51,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: 'Stars par jour sur les 90 derniers jours — le plus grand vivier de nouveaux talents.',
     metricLabel: 'Stars / jour',
     metricHint: 'pente',
-    desc: 'Dépôts créés au cours des 90 derniers jours, triés selon les stars moyennes gagnées par jour (stars cumulées ÷ ancienneté). La pente neutralise la date de lancement et reflète la dynamique actuelle.',
+    desc: 'Dépôts créés au cours des 90 derniers jours, triés selon les stars moyennes gagnées par jour (stars cumulées ÷ ancienneté). La pente neutralise la date de lancement et reflète la dynamique actuelle. Les candidats sont limités en premier lieu aux 300 dépôts de 90 jours les plus étoilés (jeu de travail de la Search API), puis reclassés par pente.',
     faqs: [
       { q: 'La pente peut-elle être gonflée artificiellement ?', a: 'Oui, un pic à court terme biaise la moyenne. Lisez-le en parallèle du tableau Outsiders, qui exige un nombre de stars absolu plus faible.' },
       { q: 'Différence avec les « Révélations de l’année » ?', a: 'Le classement annuel plafonne la création à l’année en cours et trie au cumul ; celui-ci plafonne à 90 jours et trie selon la pente journalière — fenêtre plus courte, regard sur l’élan.' },
@@ -62,7 +62,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: 'Peu de stars × pente raide × encore maintenu. Les percées commencent ici.',
     metricLabel: 'Stars / jour',
     metricHint: 'pente',
-    desc: 'Dépôts créés au cours des 90 derniers jours, totalisant 30 à 1500 stars avec une pente positive, triés par stars par jour — le top 80. Ces projets sont le plus souvent à peine découverts : des candidats à la percée encore « enterrés ».',
+    desc: 'Dépôts créés au cours des 90 derniers jours, totalisant 30 à 1500 stars avec une pente positive, triés par stars par jour — le top 100. Ces projets sont le plus souvent à peine découverts : des candidats à la percée encore « enterrés ».',
     faqs: [
       { q: 'Pourquoi une requête dédiée au lieu de tailler dans la Pente ascendante ?', a: 'Autre méthodologie : on filtre d’abord par tranche de stars (30–1500), puis on trie selon la pente. Réutiliser le top 100 de la Pente ascendante avant filtrage noierait le haut du classement sous des dépôts minuscules tout juste créés, et masquerait les vraies percées.' },
       { q: 'Pourquoi les seuils 30 et 1500 ?', a: 'Sous 30 stars, la pente relève surtout du bruit (quelques amis qui filent 10 stars/jour et voilà) ; au-dessus de 1500, les dépôts sont déjà largement repérés. Entre les deux se trouve la zone idéale : une vraie traction, à peine découverte.' },
@@ -84,7 +84,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: 'Gourmands en forks, gorgés d’issues, avares en stars — des projets qui clivent les foules.',
     metricLabel: 'Indice de controverse',
     metricHint: 'heuristique',
-    desc: 'Indice = (forks × 2 + issues ouvertes) ÷ stars, extrêmes parmi les dépôts de plus de 3000 stars. Il mesure la tension structurelle d’une « attention qui dépasse largement l’adhésion ». Une heuristique, pas une analyse de sentiment.',
+    desc: 'Indice = (forks × 2 + issues ouvertes) ÷ stars, extrêmes parmi les dépôts de plus de 3000 stars. Il mesure la tension structurelle d’une « attention qui dépasse largement l’adhésion ». Une heuristique, pas une analyse de sentiment. Le vivier de candidats est le classement historique du top 300 filtré à ≥3000 stars — une comparaison à l’intérieur du panthéon, pas un scan de toute la plateforme.',
     faqs: [
       { q: 'Cet indice est-il scientifique ?', a: 'Non, et il ne prétend pas l’être. C’est un indicateur de structure : les dépôts massivement copiés (forks) ou inlassablement questionnés (issues) tout en récoltant peu de stars vivent en général sous des projecteurs qui clivent les opinions.' },
       { q: 'Pourquoi les issues incluent-elles les PR ?', a: 'Le champ open_issues de GitHub inclut par lui-même les pull requests. Nous ne les soustrayons pas, et nous le disons.' },

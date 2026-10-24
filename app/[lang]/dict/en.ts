@@ -4,7 +4,7 @@ import type { Dict } from '../dictionaries'
 const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
   overall: {
     name: 'All-Time Champions',
-    tagline: 'The 100 most starred projects in GitHub history.',
+    tagline: 'The 300 most starred projects in GitHub history.',
     metricLabel: 'Total stars',
     metricHint: 'lifetime',
     desc: 'Ranked by lifetime star count, sourced from the GitHub Search API (stars:>1000, forks excluded), refreshed every 5–15 minutes.',
@@ -51,7 +51,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: 'Stars per day within the last 90 days — the biggest new talent pool.',
     metricLabel: 'Stars / day',
     metricHint: 'slope',
-    desc: 'Repositories created within 90 days, ranked by average stars gained per day (lifetime stars ÷ age). The slope normalizes launch date, reflecting current momentum.',
+    desc: 'Repositories created within 90 days, ranked by average stars gained per day (lifetime stars ÷ age). The slope normalizes launch date, reflecting current momentum. Candidates are first limited to the top 300 ninety-day repos by stars (the Search API working set), then re-ranked by slope.',
     faqs: [
       { q: 'Can the slope be gamed?', a: 'Short-term spikes can distort the average. Cross-read with the Dark Horses board, which requires low absolute star counts.' },
       { q: 'Different from Fresh of the Year?', a: 'The annual board caps creation at this year and ranks by total; this board caps at 90 days and ranks by daily slope.' },
@@ -62,7 +62,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: 'Low absolute stars × steep slope × still maintained. Breakouts start here.',
     metricLabel: 'Stars / day',
     metricHint: 'slope',
-    desc: 'Repositories created within the last 90 days, totalling 30–1500 stars with a positive slope, ranked by stars per day — top 80. These projects are usually barely discovered yet: “buried” breakout candidates.',
+    desc: 'Repositories created within the last 90 days, totalling 30–1500 stars with a positive slope, ranked by stars per day — top 100. These projects are usually barely discovered yet: “buried” breakout candidates.',
     faqs: [
       { q: 'Why a dedicated query instead of slicing Rising?', a: 'Different methodology: filter by the star band (30–1500) first, then rank by slope. Reusing Rising’s top-100 before filtering would flood the top with tiny, brand-new repos and hide real breakout candidates.' },
       { q: 'Why the 30 and 1500 thresholds?', a: 'Under 30 stars the slope is mostly noise (a handful of friends off to a 10 stars/day start); above 1500 they are already widely noticed. In between is the sweet spot: real pull, barely discovered.' },
@@ -84,7 +84,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: 'Fork-heavy, issue-heavy, star-light — projects that polarize the crowd.',
     metricLabel: 'Controversy index',
     metricHint: 'heuristic',
-    desc: 'Index = (forks × 2 + open issues) ÷ stars, extremes among repos with over 3000 stars. It measures the structural tension of “attention far exceeding endorsement”. A heuristic, not a sentiment analysis.',
+    desc: 'Index = (forks × 2 + open issues) ÷ stars, extremes among repos with over 3000 stars. It measures the structural tension of “attention far exceeding endorsement”. A heuristic, not a sentiment analysis. The candidate pool is the all-time top-300 board filtered to ≥3000 stars — a comparison inside the hall of fame, not a platform-wide scan.',
     faqs: [
       { q: 'Is this index scientific?', a: 'No, and it does not pretend to be. It is a structural proxy: repos that get widely copied (forks) or endlessly questioned (issues) while earning few stars usually live in a polarized spotlight.' },
       { q: 'Why do issues include PRs?', a: 'GitHub’s open_issues field itself includes pull requests. We do not subtract them and we say so.' },

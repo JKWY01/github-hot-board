@@ -117,12 +117,13 @@ function toItems(repos: PoolRepo[], decorate?: (item: BoardItem, repo: PoolRepo)
 
 export async function getOverallData(language?: string): Promise<BoardData> {
   const q = `stars:>1000 fork:false${language ? ` language:${language}` : ''}`
-  // 星数排序第 2 页到 Top200(每页多 1 次 Search 调用,池子节奏下很便宜)
-  const repos = await ghSearch(q, { pages: 2 })
+  // 3 页 × 100 = Top 300:与全站文案/README 承诺的"总榜 300"口径一致
+  // (此前只取 2 页 200 条,文案说 300 —— 数字对不上,现在对齐)。
+  const repos = await ghSearch(q, { pages: 3 })
   repos.sort((a, b) => b.stars - a.stars)
   return {
     slug: 'overall',
-    items: toItems(repos).slice(0, 200),
+    items: toItems(repos).slice(0, 300),
     language,
     source: 'github-search',
     generatedAt: new Date().toISOString(),
@@ -211,6 +212,8 @@ export async function getAnnualData(): Promise<BoardData> {
 }
 
 export async function getRisingData(): Promise<BoardData> {
+  // 候选池先按星数取 90 天新仓的前 300(Search 3 页、1000 条上限下的实际工作集),
+  // 再按斜率重排 —— 这是 Search API 口径的固有前置筛选,页面口径文案里已如实披露。
   const repos = await ghSearch(`created:>${isoDaysAgo(90)} stars:>10 fork:false`, { pages: 3 })
   repos.sort((a, b) => (slopeStarsPerDay(b as PoolRepo) ?? 0) - (slopeStarsPerDay(a as PoolRepo) ?? 0))
   return {
@@ -259,6 +262,8 @@ export async function getOverlookedData(): Promise<BoardData> {
 }
 
 export async function getControversialData(): Promise<BoardData> {
+  // 候选池 = 总榜(史上星数前 300)中 ≥3000 星者 —— "争议指数"是头部明星仓内部的
+  // 结构性对比,不是全平台扫描;池子口径页面文案已披露。
   const pool = await getOverallData()
   const repos = pool.items
     .filter((item) => item.stars >= 3000)

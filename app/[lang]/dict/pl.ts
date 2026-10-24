@@ -4,7 +4,7 @@ import type { Dict } from '../dictionaries'
 const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
   overall: {
     name: 'Mistrzowie wszech czasów',
-    tagline: 'Sto najbardziej gwiazdkowych projektów w historii GitHuba.',
+    tagline: 'Trzysta najbardziej gwiazdkowych projektów w historii GitHuba.',
     metricLabel: 'Gwiazdki ogółem',
     metricHint: 'łącznie',
     desc: 'Pozycje według łącznej liczby gwiazdek za cały czas; przychodzi to z GitHub Search API (stars:>1000, forków brak), odświeżane co 5–15 minut.',
@@ -51,7 +51,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: 'Gwiazdek na dobę w ostatnich 90 dniach — największy basen świeżych talentów.',
     metricLabel: 'Gwiazdek na dobę',
     metricHint: 'nachylenie',
-    desc: 'Repozytoria utworzone w ciągu 90 dni, po średniej liczbie gwiazdek na dobę (wszystkie gwiazdki ÷ wiek repo). To tempo wygładza datę premiery i pokazuje dzisiejszy rozpęd.',
+    desc: 'Repozytoria utworzone w ciągu 90 dni, po średniej liczbie gwiazdek na dobę (wszystkie gwiazdki ÷ wiek repo). To tempo wygładza datę premiery i pokazuje dzisiejszy rozpęd. Kandydatami są najpierw tylko 300 najczęściej gwiazdkowanych repozytoriów z ostatnich 90 dni (zbiór roboczy Search API), potem sortowane ponownie po nachyleniu.',
     faqs: [
       { q: 'Da się nagiąć nachylenie?', a: 'Da się — krótkie piky zaburzają średnią: dwa dni agresywnej promocji i wznoszenie prawie pionowe. Sprawdzaj krzyżowo z „Ciemnymi końmi”: tam wymagana jest mała liczba gwiazdek.' },
       { q: 'Czym różni się od „Świeżaków roku”?', a: 'Lista roczna przycina do tegoż roku i sortuje po łącznej liczbie; tutaj okno 90 dni, a kolejność wyznacza tempie na dobę — krótszy horyzont, czystszy rozpęd.' },
@@ -62,7 +62,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: 'Niewiele gwiazdek × ukośne nachylenie × projekt wciąż żyje. Wybicia zaczynają się tutaj.',
     metricLabel: 'Gwiazdek na dobę',
     metricHint: 'nachylenie',
-    desc: 'Repozytoria utworzone w ciągu ostatnich 90 dni: 30–1500 gwiazdek, nachylenie dodatnie; po gwiazdkach na dobę malejąco — top 80. Takie projekty zwykle jeszcze nie są na radarach: „zakopane” kandydaci na wybicie.',
+    desc: 'Repozytoria utworzone w ciągu ostatnich 90 dni: 30–1500 gwiazdek, nachylenie dodatnie; po gwiazdkach na dobę malejąco — top 100. Takie projekty zwykle jeszcze nie są na radarach: „zakopane” kandydaci na wybicie.',
     faqs: [
       { q: 'Dlaczego osobne zapytanie, a nie wycięcie z listy wznoszenia?', a: 'Inna metodologia: najpierw filtr na przedział gwiazdek (30–1500), dopiero potem sortowanie po nachyleniu. Wzięcie top-100 z listy wznoszenia i wtórne cięcie zatkałoby szczyt mikro-repo, a faktyczni kandydaci na wybicie utonęliby w tłumie.' },
       { q: 'Dlaczego progi 30 i 1500?', a: 'Poniżej 30 gwiazdek nachylenie to niemal czysty szum (kilku znajomych kliknie — i już 10 na dobę); powyżej 1500 projekt zwykle wszyscy już widzieli. Między nimi jest pas złotego środka: realne przyciąganie, jeszcze niezauważone.' },
@@ -84,7 +84,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: 'Forków i issues co niemiara, gwiazdek jak na lekarstwo — projekty, które dzielą tłum na dwa obozy.',
     metricLabel: 'Indeks tarcia',
     metricHint: 'heurystyka',
-    desc: 'Indeks = (forki × 2 + otwarte issues) ÷ gwiazdki; bierzemy skrajne wartości spośród repozytoriów z ponad 3000 gwiazdek. Wskaźnik mierzy strukturalne napięcie „uwagi wyraźnie więcej niż uznania”. To heurystyka, nie analiza nastrojów.',
+    desc: 'Indeks = (forki × 2 + otwarte issues) ÷ gwiazdki; bierzemy skrajne wartości spośród repozytoriów z ponad 3000 gwiazdek. Wskaźnik mierzy strukturalne napięcie „uwagi wyraźnie więcej niż uznania”. To heurystyka, nie analiza nastrojów. Pula kandydatów to historyczna top-300 przefiltrowana do ≥3000 gwiazdek — porównanie wewnątrz panteonu, nie skan całej platformy.',
     faqs: [
       { q: 'Czy ten indeks jest naukowy?', a: 'Nie — i nie udaje, że jest. To strukturalny przybliżacz: repozytoria masowo kopiowane (forki) albo bez końca przesłuchiwane w issues przy trochę gwiazdek zwykle żyją w spolaryzowanym reflektorze.' },
       { q: 'Dlaczego w issues liczą się PR-y?', a: 'Pole GitHuba open_issues już wlicza pull requesty. Niczego nie odejmujemy i otwarcie to mówimy.' },

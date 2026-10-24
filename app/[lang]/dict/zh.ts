@@ -4,7 +4,7 @@ import type { Dict } from '../dictionaries'
 const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
   overall: {
     name: '总榜 · 史上最强',
-    tagline: 'GitHub 开源历史上，累计 Star 数最多的一百个项目。',
+    tagline: 'GitHub 开源历史上，累计 Star 数最多的三百个项目。',
     metricLabel: '累计 Star',
     metricHint: '总数',
     desc: '按仓库历史累计 Star 数降序排列，数据来自 GitHub Search API（stars:>1000、排除 fork 仓库），缓存约 5～15 分钟刷新一次。',
@@ -51,7 +51,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: '按“星/天”增长斜率排序，90 天内新项目的最大黑马池。',
     metricLabel: '星 / 天',
     metricHint: '斜率',
-    desc: '统计近 90 天内创建的仓库，按 平均每天获得的 Star 数（累计 Star ÷ 站龄）降序。斜率 normalize 了上线时间，理论上比“累计数”更能反映当下势能。',
+    desc: '统计近 90 天内创建的仓库，按 平均每天获得的 Star 数（累计 Star ÷ 站龄）降序。斜率 normalize 了上线时间，理论上比“累计数”更能反映当下势能。候选池先按累计 Star 取 90 天新仓的前 300 名(Search API 的实际工作集),再按斜率排序。',
     faqs: [
       { q: '斜率会不会被短期冲量扭曲？', a: '会。斜率是平均数，上线两三天冲到几千星的项目斜率会很高；建议与“黑马榜”（要求低绝对星数）交叉阅读。' },
       { q: '与“年度新星榜”有何不同？', a: '年度榜限制创建于今年并按累计数排序；本榜限制 90 天内创建并按日均增速排序，时间窗更短、更看势头。' },
@@ -62,7 +62,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: '低绝对星数 × 高斜率 × 近期仍在维护，爆发通常从这里开始。',
     metricLabel: '星 / 天',
     metricHint: '斜率',
-    desc: '在过去 90 天内新建、累计 Star 在 30–1500 之间、且斜率仍为正的仓库中，按“星/天”斜率从高到低取前 80。这类项目往往还没进入大众视野，属于“被雪藏”的爆发候选。',
+    desc: '在过去 90 天内新建、累计 Star 在 30–1500 之间、且斜率仍为正的仓库中，按“星/天”斜率从高到低取前 100。这类项目往往还没进入大众视野，属于“被雪藏”的爆发候选。',
     faqs: [
       { q: '为什么是独立查询，而不直接从潜力榜里筛？', a: '口径不同：黑马是“先按星数区间（30–1500）过滤、再按斜率排序”；若复用潜力榜（按斜率排序后取前 100）再过滤，榜头会被星数更少、出现更晚的小仓库挤满，反而漏掉真正的黑马。' },
       { q: '为什么设置 30 和 1500 两个门槛？', a: '低于 30 星时斜率的噪音太大（几个朋友点星就是 10 星/天）；高于 1500 星的仓库大多已进入大众视野。两者之间是“有一定拉力、尚未被发现”的甜区。' },
@@ -84,7 +84,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: 'Fork 与 Issue 异常高、Star 平平 —— 流量与风评两极分化的项目。',
     metricLabel: '争议指数',
     metricHint: '启发式',
-    desc: '争议指数 = (Fork 数 × 2 + Issue 数) ÷ Star 数，在累计 Star 超 3000 的仓库中取极值。它衡量的是“关注远大于认可”的结构性矛盾；这是启发式指标，不代表社区真实情感。',
+    desc: '争议指数 = (Fork 数 × 2 + Issue 数) ÷ Star 数，在累计 Star 超 3000 的仓库中取极值。它衡量的是“关注远大于认可”的结构性矛盾；这是启发式指标，不代表社区真实情感。候选池为总榜(史上 Star 前三百)中 ≥3000 星的仓库,即明星仓内部的争议对比,不是全平台扫描。',
     faqs: [
       { q: '这个指数科学吗？', a: '不科学，也不假装科学。它是结构性代理指标：一个被广泛复制改造（高 Fork）或让人疯狂提问题（高 Issue）却收获很少 Star 的项目，通常都处于“黑红”的舆论场。' },
       { q: '为什么 Issue 数会包含 PR？', a: 'GitHub 的 open_issues 字段口径本身包含 Pull Request，本榜不做剔除，页面如实标注。' },

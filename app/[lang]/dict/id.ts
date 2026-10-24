@@ -4,7 +4,7 @@ import type { Dict } from '../dictionaries'
 const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
   overall: {
     name: 'Juara Sepanjang Masa',
-    tagline: '100 proyek dengan Star terbanyak dalam sejarah GitHub.',
+    tagline: '300 proyek dengan Star terbanyak dalam sejarah GitHub.',
     metricLabel: 'Total Star',
     metricHint: 'sepanjang masa',
     desc: 'Diperingkat berdasarkan jumlah Star sepanjang masa, data dari GitHub Search API (stars:>1000, repo fork dikecualikan), diperbarui tiap 5–15 menit.',
@@ -51,7 +51,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: 'Star per hari dalam 90 hari terakhir — kolam bakat baru terbesar.',
     metricLabel: 'Star / hari',
     metricHint: 'kemiringan',
-    desc: 'Repo yang dibuat dalam 90 hari, diperingkat berdasarkan rata-rata Star per hari (total Star ÷ umur repo). Kemiringan menormalkan tanggal rilis, sehingga momentum saat ini lebih jelas terbaca daripada angka total.',
+    desc: 'Repo yang dibuat dalam 90 hari, diperingkat berdasarkan rata-rata Star per hari (total Star ÷ umur repo). Kemiringan menormalkan tanggal rilis, sehingga momentum saat ini lebih jelas terbaca daripada angka total. Kandidat pertama dibatasi ke 300 repo 90 hari dengan Star terbanyak (himpunan kerja Search API), lalu diurutkan ulang berdasarkan kemiringan.',
     faqs: [
       { q: 'Bisakah kemiringan ini “dimainkan”?', a: 'Bisa — lonjakan jangka pendek mendistorsi rata-rata; repo yang baru lahir dua-tiga hari lalu langsung mengejar ribuan Star bisa punya kemiringan tinggi sekali. Baca silang dengan papan Kuda Hitam, yang mensyaratkan jumlah Star absolut rendah.' },
       { q: 'Bedanya dengan Baru Tahun Ini?', a: 'Papan tahunan membatasi pembuatan pada tahun ini dan memeringkat berdasarkan total; papan ini membatasi 90 hari dan memperingkat berdasarkan kemiringan harian — jendela lebih pendek, fokus pada momentum.' },
@@ -62,7 +62,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: 'Star absolut rendah × kemiringan curam × masih dirawat. Ledakan mulai dari sini.',
     metricLabel: 'Star / hari',
     metricHint: 'kemiringan',
-    desc: 'Repo yang dibuat dalam 90 hari terakhir, totalnya 30–1500 Star dengan kemiringan positif, diperingkat berdasarkan Star per hari — top 80. Proyek-proyek ini biasanya belum banyak diketahui: kandidat meledak yang “terkubur”.',
+    desc: 'Repo yang dibuat dalam 90 hari terakhir, totalnya 30–1500 Star dengan kemiringan positif, diperingkat berdasarkan Star per hari — top 100. Proyek-proyek ini biasanya belum banyak diketahui: kandidat meledak yang “terkubur”.',
     faqs: [
       { q: 'Kenapa query khusus, bukan irisan dari papan Kemiringan Naik?', a: 'Metodologinya beda: filter dulu berdasarkan pita Star (30–1500), baru diperingkat berdasarkan kemiringan. Kalau pakai top-100 papan Kemiringan Naik lalu difilter, puncak papan akan penuh oleh repo mini yang baru lahir, dan kandidat meledak yang sebenarnya malah tersembunyi.' },
       { q: 'Kenapa ambang 30 dan 1500?', a: 'Di bawah 30 Star, kemiringan mayoritas adalah derau (segelintir teman bisa membuat 10 Star/hari); di atas 1500, repo biasanya sudah banyak diketahui. Di antaranya adalah zona manisnya: ada tarikan nyata, belum terjamah.' },
@@ -84,7 +84,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: 'Fork banyak, Issue banyak, Star sedikit — proyek yang memecah kerumunan.',
     metricLabel: 'Indeks kontroversial',
     metricHint: 'heuristik',
-    desc: 'Indeks = (Fork × 2 + Issue terbuka) ÷ Star, mengambil nilai ekstrem di antara repo dengan lebih dari 3000 Star. Mengukur ketegangan struktural “perhatian jauh melebihi dukungan”. Ini heuristik, bukan analisis sentimen.',
+    desc: 'Indeks = (Fork × 2 + Issue terbuka) ÷ Star, mengambil nilai ekstrem di antara repo dengan lebih dari 3000 Star. Mengukur ketegangan struktural “perhatian jauh melebihi dukungan”. Ini heuristik, bukan analisis sentimen. Kumpulan kandidat adalah papan top 300 sepanjang masa yang difilter ≥3000 Star — perbandingan di dalam balai legenda, bukan pemindaian seluruh platform.',
     faqs: [
       { q: 'Apakah indeks ini ilmiah?', a: 'Tidak, dan tidak mengaku pun. Ini proksi struktural: repo yang banyak disalin (Fork) atau terus dipertanyakan (Issue) namun Star-nya sedikit biasanya berada di bawah sorotan yang membelah.' },
       { q: 'Kenapa jumlah issue termasuk PR?', a: 'Field open_issues milik GitHub memang sudah mencakup pull request. Kami tidak menguranginya dan mengatakannya apa adanya.' },

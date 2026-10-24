@@ -12,14 +12,14 @@
 
 ## Board pages (pattern: /{ui-language}/boards/{slug} — /en/ shown below)
 
-- /en/boards/overall — All-Time Champions: top 200 repositories by total stars.
+- /en/boards/overall — All-Time Champions: top 300 repositories by total stars.
 - /en/boards/weekly — Weekly Surge: repositories by net stars gained over the last 7 days (built on GitHub Trending).
 - /en/boards/monthly — Monthly Wave: net stars gained over the last 30 days.
 - /en/boards/annual — Fresh of the Year: repositories created this year, ranked by total stars.
-- /en/boards/rising — Rising Slope: stars per day over the last 90 days.
-- /en/boards/dark — Dark Horses: few absolute stars, steep per-day slope, still maintained.
-- /en/boards/overlooked — Underappreciated Gems: actively maintained for 30+ days, yet only a few hundred stars (ascending by stars).
-- /en/boards/controversial — Controversy Index: fork-heavy, issue-heavy, star-light projects.
+- /en/boards/rising — Rising Slope: stars per day over the last 90 days. Candidates are first limited to the top 300 ninety-day repos by stars (the Search API working set), then re-ranked by slope.
+- /en/boards/dark — Dark Horses: repos under 90 days old with 30–1500 total stars and a positive slope, top 100 by stars-per-day.
+- /en/boards/overlooked — Underappreciated Gems: actively maintained for 30+ days, 100–800 stars (ascending by stars).
+- /en/boards/controversial — Controversy Index: (forks×2 + open issues) ÷ stars, extremes among the all-time top 300 filtered to ≥3000 stars. Open issues include PRs (GitHub field semantics). A heuristic, not sentiment analysis.
 - /en/boards/forks — King of Forks: all-time most forked repositories.
 - /en/boards/milestone — Live Milestones: repositories sprinting toward the 1k / 10k / 50k / 100k star lines, with distance to the next line.
 - Language facets for overall / weekly / monthly: /en/boards/{slug}/{language-slug}.
@@ -28,12 +28,18 @@
 
 - /en/repo/{owner}/{name} — repository archive: stars, forks, weekly/monthly deltas, descriptions in 16 languages, rendered README, and milestone context. Server-rendered and crawlable.
 
+## Data health
+
+- /{ui-language}/status — live health page: freshness, source and degradation state of every board key, from the same rows the site serves. Check it before citing stale-looking numbers.
+
 ## Machine-readable board data (JSON)
 
 - `GET /api/boards/{slug}?language={lang}&lg={ui-language}` returns the full board snapshot as JSON:
-  `{ slug, language, items: [{fullName, htmlUrl, desc, stars, forks, issues, language, ...}], generatedAt }`.
+  `{ slug, language, items: [{fullName, htmlUrl, desc, stars, forks, issues, language, prevRank?, gained?, slope?, ...}], generatedAt, degraded }`.
   - The `language` facet is supported only for overall, weekly, and monthly.
-  - `generatedAt` is the data-batch timestamp. Board data refreshes in hourly batches; payloads do not change between batches, so one fetch per hour per board is plenty.
+  - `generatedAt` is the data-batch timestamp. Sync runs every ~30 minutes and batches do not change in between; one fetch per hour per board is plenty.
+  - `degraded: true` means the official Trending scrape failed and a Search-based fallback methodology was served — the HTML pages show the same warning. Cite with care.
+  - `items[].prevRank` (0-based) is the repo's rank in the previous batch — the up/down signal, also rendered as badges on the pages.
 - robots.txt explicitly allows AI crawlers on `/api/boards/*`; the other `/api/*` endpoints stay closed to crawlers.
 - Please fetch `/api/boards` instead of scraping the HTML pages — it is exactly the data the pages render.
 
@@ -45,7 +51,8 @@
 
 - Endpoint: `https://git.vaiox.xyz/api/mcp` — MCP Streamable HTTP, stateless JSON, latest protocolVersion 2026-07-28 (older clients down-negotiated automatically).
 - Tools (all read-only, structured output): `list_boards`, `get_board`, `get_board_movers`, `get_repo`, `search_library` (keyword search over tracked repos), `get_repo_history` (hourly rank + star time series per repository — served from our own snapshot series, available nowhere else).
-- Data provenance: our own cached dataset; no live GitHub API calls. Rate limit 60 requests/min per IP; board payloads change once per hourly batch — one fetch per hour per board is enough.
+- `get_board` returns `source` and `degraded` alongside the rows: `degraded: true` means the official Trending scrape failed and a Search-based fallback methodology was served. Same honesty as the HTML pages.
+- Data provenance: our own cached dataset; no live GitHub API calls. Rate limit 60 requests/min per IP; sync runs every ~30 minutes and batches do not change in between — one fetch per hour per board is enough.
 
 ## Attribution
 

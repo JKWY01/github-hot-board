@@ -4,7 +4,7 @@ import type { Dict } from '../dictionaries'
 const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
   overall: {
     name: 'Allzeit-Champions',
-    tagline: 'Die 100 Projekte mit den meisten Stars in der Geschichte von GitHub.',
+    tagline: 'Die 300 Projekte mit den meisten Stars in der Geschichte von GitHub.',
     metricLabel: 'Stars insgesamt',
     metricHint: 'seit Erstellung',
     desc: 'Absteigend sortiert nach der Gesamtzahl aller jemals vergebenen Stars, Quelle ist die GitHub Search API (stars:>1000, Forks ausgenommen), Aktualisierung alle 5–15 Minuten.',
@@ -51,7 +51,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: 'Sterne pro Tag innerhalb der letzten 90 Tage – das größte Talentreservoir der Neuen.',
     metricLabel: 'Sterne pro Tag',
     metricHint: 'Steigung',
-    desc: 'Repositories aus den letzten 90 Tagen, sortiert nach durchschnittlich pro Tag gewonnenen Sternen (Sterne gesamt ÷ Alter). Die Steigung neutralisiert das Startdatum und zeigt die Dynamik von jetzt.',
+    desc: 'Repositories aus den letzten 90 Tagen, sortiert nach durchschnittlich pro Tag gewonnenen Sternen (Sterne gesamt ÷ Alter). Die Steigung neutralisiert das Startdatum und zeigt die Dynamik von jetzt. Kandidaten werden zunächst auf die 300 sternstärksten 90-Tage-Repos begrenzt (der Arbeitsbestand der Search API) und dann nach Steigung neu geordnet.',
     faqs: [
       { q: 'Lässt sich die Steigung manipulieren?', a: 'Ja, kurzfristige Schübe verzerren den Mittelwert. Lies parallel das Geheimtipps-Board, das niedrige absolute Star-Zahlen verlangt.' },
       { q: 'Unterschied zu „Rookies des Jahres“?', a: 'Das Jahresboard begrenzt auf dieses Jahr und sortiert nach Gesamtzahl; dieses Board begrenzt auf 90 Tage und sortiert nach täglicher Steigung – kürzeres Zeitfenster, mehr Blick auf den Schwung.' },
@@ -62,7 +62,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: 'Wenig Sterne absolut × steile Steigung × wird noch gepflegt. Ausreißer fangen hier an.',
     metricLabel: 'Sterne pro Tag',
     metricHint: 'Steigung',
-    desc: 'Repositories der letzten 90 Tage mit 30–1500 Sternen und positiver Steigung, sortiert nach Sternen pro Tag – Top 80. Solche Projekte sind meist noch kaum entdeckt: „vergrabene“ Ausreißer-Kandidaten.',
+    desc: 'Repositories der letzten 90 Tage mit 30–1500 Sternen und positiver Steigung, sortiert nach Sternen pro Tag – Top 100. Solche Projekte sind meist noch kaum entdeckt: „vergrabene“ Ausreißer-Kandidaten.',
     faqs: [
       { q: 'Warum eine eigene Abfrage statt eines Slices aus der Steilen Kurve?', a: 'Andere Methodik: erst das Starband (30–1500) filtern, dann nach Steigung sortieren. Würde man stattdessen die Top 100 der Steilen Kurve wiederverwenden und danach filtern, wäre der Listenkopf mit winzigen, brandneuen Repos vollgestopft – echte Ausreißer-Kandidaten gehen dabei unter.' },
       { q: 'Warum gerade 30 und 1500?', a: 'Unter 30 Stars ist die Steigung zum großen Teil Rauschen (ein paar Freunde drücken flugs einen Kurs von 10 Sternen/Tag); über 1500 sind die Repos längst breit wahrgenommen. Dazwischen liegt der Sweet Spot: echter Sog, kaum entdeckt.' },
@@ -84,7 +84,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: 'Fork-reich, Issue-reich, Star-arm – Projekte, die die Community spalten.',
     metricLabel: 'Kontroversindex',
     metricHint: 'Heuristik',
-    desc: 'Index = (Forks × 2 + offene Issues) ÷ Sterne, Extremwerte unter Repos mit mehr als 3000 Stars. Er misst die strukturelle Spannung von „Aufmerksamkeit weit vor Zustimmung“. Eine Heuristik, keine Stimmungsanalyse.',
+    desc: 'Index = (Forks × 2 + offene Issues) ÷ Sterne, Extremwerte unter Repos mit mehr als 3000 Stars. Er misst die strukturelle Spannung von „Aufmerksamkeit weit vor Zustimmung“. Eine Heuristik, keine Stimmungsanalyse. Der Kandidatenpool ist das All-Time-Top-300-Board, gefiltert auf ≥3000 Sterne — ein Vergleich innerhalb der Hall of Fame, kein plattformweiter Scan.',
     faqs: [
       { q: 'Ist dieser Index wissenschaftlich?', a: 'Nein, und er tut auch nicht so. Ein struktureller Proxy: Repos, die überall kopiert werden (viele Forks) oder endlos hinterfragt werden (viele Issues), aber kaum Sterne einsammeln, stehen meist im polarisierten Rampenlicht.' },
       { q: 'Warum zählen die Issues PRs mit?', a: 'Das Feld open_issues von GitHub schließt Pull Requests von Haus aus ein. Wir ziehen sie nicht ab – und sagen es dazu.' },
