@@ -10,6 +10,7 @@ import BoardStream from '@/components/BoardStream'
 import Reveal from '@/components/Reveal'
 import { fmtNum } from '@/lib/format'
 import { guideFor } from '@/lib/guide'
+import { jsonLdScript } from '@/lib/jsonld'
 
 /** 页内 BoardStream 用 after() 挂描述补齐,给它留出执行时间(Vercel 按平台上限取小)。 */
 export const maxDuration = 60
@@ -251,7 +252,7 @@ export default async function HomePage({
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
+          __html: jsonLdScript({
             '@context': 'https://schema.org',
             '@type': 'WebSite',
             name: dict.meta.siteName,

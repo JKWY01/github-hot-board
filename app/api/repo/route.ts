@@ -1,5 +1,7 @@
 import { fetchRepoDoc, fetchRepoReadme } from '@/lib/github'
 import { isLocale } from '@/lib/locales'
+import { clientIpOf, slidingWindow } from '@/lib/ratelimit'
+import { isRepoFullName } from '@/lib/reposhape'
 import { borrowRepoDocFetch, readRepoDoc } from '@/lib/repodocs'
 
 /** 站内仓库页面接口:返回 GitHub 官方渲染好的 README HTML,给行点击抽屉用。
@@ -8,13 +10,27 @@ import { borrowRepoDocFetch, readRepoDoc } from '@/lib/repodocs'
  *
  * 首屏路径走 repo_docs 持久缓存(与档案页共用):命中零上游直出;
  * 未命中单飞实弹取一次并写后路入库 —— 并发同仓的后来者共享同一发,不重复打 GitHub。
- * 翻页路径(任意 .md)是文档级长尾,维持直连 + Next 服务端缓存语义。 */
+ * 翻页路径(任意 .md)是文档级长尾,维持直连 + Next 服务端缓存语义。
+ *
+ * 守门:仓库名形状校验 + 每 IP 滑窗限流。未命中缓存的每个唯一仓名都会触发上游
+ * GitHub 调用(默认分支 + README + 语言候选),不设限就是公开的配额放大器。 */
+const WINDOW_MS = 60_000
+const PER_WINDOW = 20
+const rate = slidingWindow()
+
 export async function GET(request: Request) {
   const url = new URL(request.url)
   const full = url.searchParams.get('full') ?? ''
   const lgRaw = url.searchParams.get('lg') ?? 'en'
   const locale = isLocale(lgRaw) ? lgRaw : 'en'
   const path = url.searchParams.get('path')
+
+  if (!isRepoFullName(full)) {
+    return Response.json({ ok: false }, { status: 400, headers: { 'Cache-Control': 'no-store' } })
+  }
+  if (!rate.allow(clientIpOf(request), PER_WINDOW, WINDOW_MS)) {
+    return Response.json({ ok: false }, { status: 429, headers: { 'Cache-Control': 'no-store' } })
+  }
 
   if (path) {
     const readme = await fetchRepoDoc(full, path)

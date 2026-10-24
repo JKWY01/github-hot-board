@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { getBoardDataCached, type BoardSlug } from '@/lib/boards'
 import { hydrateBoardDescs } from '@/lib/descfill'
 import { RateLimitError } from '@/lib/github'
+import { jsonLdScript } from '@/lib/jsonld'
 import { getDict, isLocale, liveStrings, type BoardCopy } from '@/app/[lang]/dictionaries'
 import type { Locale } from '@/lib/types'
 import LiveBoardList from '@/components/LiveBoardList'
@@ -67,7 +68,7 @@ export default async function BoardStream({
     <div>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: itemListJsonLd(data.items, locale, slug, language) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdScript(itemListJsonLd(data.items, locale, slug, language)) }}
       />
       <div className="mb-3 flex flex-wrap items-center gap-2 px-1 text-[11.5px] text-sub">
         <span className="rounded-full border-[0.5px] border-black/10 bg-white px-2.5 py-1 font-medium text-ink/75">

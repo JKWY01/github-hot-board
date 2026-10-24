@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { withDb } from '@/lib/snapshot'
 import { MILESTONE_THRESHOLDS } from '@/lib/boards'
 import { ghRepo, searchReposByName } from '@/lib/ghrepo'
+import { clientIpOf, slidingWindow } from '@/lib/ratelimit'
+import { isRepoFullName } from '@/lib/reposhape'
 import type { BoardItem } from '@/lib/types'
 
 /** 站内搜索(方案 A+B+C):
@@ -22,21 +24,10 @@ interface Hit {
   cutoff?: number
 }
 
-// 简易每 IP 滑窗限流:搜索是人手速,不是爬虫节奏
+// 简易每 IP 滑窗限流:搜索是人手速,不是爬虫节奏(共享实现,带条目修剪)
 const WINDOW_MS = 60_000
 const PER_WINDOW = 15
-const windowHits = new Map<string, { n: number; t: number }>()
-function throttled(ip: string): boolean {
-  const now = Date.now()
-  const e = windowHits.get(ip)
-  if (!e || now - e.t > WINDOW_MS) {
-    windowHits.set(ip, { n: 1, t: now })
-    return false
-  }
-  if (e.n >= PER_WINDOW) return true
-  e.n += 1
-  return false
-}
+const rate = slidingWindow()
 
 const escLike = (s: string) => s.replace(/[\\%_]/g, (m) => `\\${m}`)
 
@@ -47,12 +38,12 @@ export async function GET(req: NextRequest) {
   const language = (url.searchParams.get('language') ?? '').slice(0, 48)
   // deep=1 仅在用户确认"搜全站"后由前端带上;默认只查自家库
   const deep = url.searchParams.get('deep') === '1'
-  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'local'
+  const ip = clientIpOf(req)
 
   if (!q) return NextResponse.json({ ok: false, reason: 'empty' }, { status: 400 })
-  if (throttled(ip)) return NextResponse.json({ ok: false, reason: 'rate' }, { status: 429 })
+  if (!rate.allow(ip, PER_WINDOW, WINDOW_MS)) return NextResponse.json({ ok: false, reason: 'rate' }, { status: 429 })
 
-  const isExact = /^[A-Za-z0-9._-]{1,100}\/[A-Za-z0-9._-]{1,120}$/.test(q)
+  const isExact = isRepoFullName(q)
 
   const data = await withDb(async (sql) => {
     // 名次语义底座:本榜(优先语言分榜,退主榜)的名次图与榜尾门槛

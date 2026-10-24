@@ -4,6 +4,7 @@ import type { Metadata } from 'next'
 
 import { BOARD_META, BOARD_ORDER, FACET_LANGUAGES, facetDisplay, isBoardSlug, facetLangSlug, type BoardSlug } from '@/lib/boards'
 import { getDict, isLocale, type BoardCopy } from '@/app/[lang]/dictionaries'
+import { jsonLdScript } from '@/lib/jsonld'
 import { altLangs } from '@/lib/locales'
 import type { Locale } from '@/lib/types'
 import BoardStream from '@/components/BoardStream'
@@ -115,7 +116,7 @@ export default async function BoardPageView({
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(faqJsonLd(lang, slug, language, copy)),
+          __html: jsonLdScript(faqJsonLd(lang, slug, language, copy)),
         }}
       />
     </div>

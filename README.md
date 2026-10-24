@@ -68,10 +68,10 @@
 | 2 | 周榜 · 本周点火 | 官方 Trending 周页 | 官方顺序 + 官方标注的本周新增星数 |
 | 3 | 月榜 · 本月风潮 | 官方 Trending 月页 | 同上,月窗口 |
 | 4 | 年度新星榜 | Search API | 今年创建,按累计 Star 排 |
-| 5 | 潜力榜 · 90 天斜率 | Search API | 近 90 天创建,按 星/天 均速 |
-| 6 | 黑马榜 · 被雪藏候选 | Search API | 潜力池里 Star 还没过 1500 的切片 |
+| 5 | 潜力榜 · 90 天斜率 | Search API | 近 90 天创建、星数前 300 的工作集内,按 星/天 均速 |
+| 6 | 黑马榜 · 被雪藏候选 | Search API | 90 天新仓 Star 30–1500 区间,按斜率取前 100 |
 | 7 | 被忽视榜 · 活跃冷清 | Search API | 近 30 天持续 push、Star 100–800,升序 |
-| 8 | 黑红榜 · 争议指数 | Search API 衍生 | (Fork×2 + Issue) ÷ Star,取极值。结构化启发式,不是情感分析 |
+| 8 | 黑红榜 · 争议指数 | Search API 衍生 | (Fork×2 + Issue)÷Star,候选池 = 总榜前 300 中 ≥3000 星者。结构化启发式,不是情感分析 |
 | 9 | Fork 之王 | Search API | 累计 Fork 降序 |
 | 10 | 实时里程碑 · 破星直播 | Search API × 4 | 1k / 10k / 50k / 100k 阈值 ±80 星的冲刺者,前端 60 秒轮询,跨线撒彩带 |
 
@@ -91,7 +91,7 @@
 一句话:**卖货的通道不进货。**
 
 ```
-GitHub ──(只有同步任务碰)──> Neon Postgres ──(站点只 SELECT)──> 访客
+GitHub ──(只有同步任务碰)──> Postgres(Neon 或自托管)──(站点只 SELECT)──> 访客
 ```
 
 - 同步任务(`lib/sync.ts`)顺序抓全部 34 个键(10 榜 + 语言分面),写两张表:
@@ -127,7 +127,7 @@ npm run dev
 | `GITHUB_TOKEN` | 建议填 | classic PAT(不勾任何权限)或多枚时令其作为单枚兜底。Search API 从 60 次/时升到 5000 次/时 |
 | `NEXT_PUBLIC_SITE_URL` | 部署时填 | canonical / sitemap / OG 用的最终域名 |
 | `DATABASE_URL` | 部署时填 | Neon Postgres 连接串。表首次写入时自动建 |
-| `CRON_SECRET` | 可选 | /api/sync /api/refresh 的门锁;`?only=榜名` 单榜重灌、`?boards=0` 只跑描述收割 |
+| `CRON_SECRET` | 部署必填 | `/api/sync` `/api/snapshot` `/api/refresh` `/api/dbcheck` 的门锁,只认 `Authorization: Bearer <secret>` 头(常数时间比较;**不再支持 `?secret=` query**,密钥不该进访问日志)。不配置时这些端点仅本地回环可用——公网部署务必配上;`?only=榜名` 单榜重灌、`?boards=0` 只跑描述收割照旧 |
 
 本地调试开关:`GHB_FILL_DEBUG=1` 看读路(数据库命中还是水合),`GHB_SQL_DEBUG=1` 看发往库的 SQL。
 
@@ -138,17 +138,23 @@ npm run dev
 3. 仓库 Actions secrets 配 `SYNC_URL`(你的域名 `/api/sync`)和 `CRON_SECRET`,30 分钟一次的同步就转起来了。
 4. `https://域名/robots.txt` 里已有 sitemap 指向;搜索引擎控制台提交一次即可。
 
-自托管也成立:`npm run build && npm run start`,数据面只要求能连上 Postgres,对Host/Vercel 无偏好。
+自托管也成立(本项目生产即此形态):`npm run build && npm run start`,数据面只要求能连上 Postgres——Neon 托管或自建实例(Docker/1Panel 等)均可,对 Host/Vercel 无偏好。自建库建议配每日 `pg_dump` 滚动备份,参考 `scripts/ghb-backup.sh`(每日一备、保留最近 7 份,cron 挂机即可)。
 
 ## 诊断与运维
 
 ```bash
 npm run sync                       # 本地手动拉一轮(30 榜,~4 分钟,一次重试)
-curl https://域名/api/dbcheck      # 库状态:head 键数、明细行数
+curl -H "Authorization: Bearer $CRON_SECRET" https://域名/api/dbcheck   # 库状态:head 键数、明细行数
 gh run watch                       # 看 Actions 同步跑完没有
 ```
 
 同步是顺序慢跑(为控边界与限流),一轮约 4 分钟;30 分钟一次绰绰有余。明细行过 60 天自动清,`board_head` 只留最新,不需要人手干预。
+
+## 徽章 · 状态页 · 跨线提醒
+
+- **上榜徽章**:`https://域名/api/badge/{owner}/{repo}.svg` —— shields 风格三态(现役名次 / 曾上榜 / 未上榜),档案页有现成的 Markdown 嵌入代码,作者贴进 README 即回链档案页。
+- **数据健康页**:`/{lang}/status`(footer 入口)—— 34 个键各自的来源、新鲜度、降级状态,与站点读路径同一张表,不涂脂抹粉。
+- **跨线提醒(可选)**:配置 `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` 后,关注页出现"跨线提醒"开关 —— 无账号 Web Push,关注的仓库向上跨过 1k/10k/50k/100k 时推送;未配置则整条链路静默不存在。订阅只存推送端点与关注列表,退订即刻删除。
 
 ## 市场分析(可选,与站点无关)
 
@@ -182,7 +188,9 @@ node scripts/market.mjs risers --days 30 --limit 15      # 涨星火箭榜
 
 - Trending 数字在缓存期内(同步后 ≤30 分钟)可能与官方页面存在偏差。
 - Search API 单查询 1000 条上限;总榜展示 Top 300,头部故事全覆盖。
-- 黑红榜是结构化启发式(Fork/Issue 比例),页面已明示,请勿读成"情感评分"。
+- **潜力榜(90 天斜率)的候选池先按星数取 90 天新仓的前 300 名,再按斜率重排**——Search API 工作集内的排序,不是全量扫描;斜率本身也天然偏爱更年轻的仓库。
+- **黑红榜的候选池是总榜(前 300)中 ≥3000 星的仓库**,即"明星仓内部"的争议对比;`open_issues` 口径含 PR(GitHub 字段如此,页面已明示)。请勿读成"情感评分"。
+- 黑马榜按斜率取前 100(页面口径文案同此)。
 - 里程碑跨线检测发生在页面停留期间,服务器不留历史状态;想看"历史上谁跨过 1k",等往日榜攒几天再回看。
 - 往日榜当前只存基准口径(全语言),语言分面的历史拍在库里,页面上还没有入口。
 - 本项目与 GitHub 无官方关系,榜单仅为研究参考。

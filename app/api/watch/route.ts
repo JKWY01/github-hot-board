@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { withDb } from '@/lib/snapshot'
 import { ghRepo } from '@/lib/ghrepo'
+import { clientIpOf, slidingWindow } from '@/lib/ratelimit'
+import { isRepoFullName } from '@/lib/reposhape'
 import type { BoardItem } from '@/lib/types'
 
 /** 关注状态批量查询:关注页每行一个"现查的新鲜快照"。
@@ -19,23 +21,10 @@ export interface WatchStatus {
   missing?: boolean
 }
 
-const FULL_RE = /^[A-Za-z0-9._-]{1,100}\/[A-Za-z0-9._-]{1,120}$/
-
-// 每 IP 滑窗限流:20 只一次请求,窗口放宽到 30/min
+// 每 IP 滑窗限流:20 只一次请求,窗口放宽到 30/min(共享实现,带条目修剪)
 const WINDOW_MS = 60_000
 const PER_WINDOW = 30
-const windowHits = new Map<string, { n: number; t: number }>()
-function throttled(ip: string): boolean {
-  const now = Date.now()
-  const e = windowHits.get(ip)
-  if (!e || now - e.t > WINDOW_MS) {
-    windowHits.set(ip, { n: 1, t: now })
-    return false
-  }
-  if (e.n >= PER_WINDOW) return true
-  e.n += 1
-  return false
-}
+const rate = slidingWindow()
 
 export async function GET(req: NextRequest) {
   const url = new URL(req.url)
@@ -45,12 +34,12 @@ export async function GET(req: NextRequest) {
       raw
         .split(',')
         .map((s) => s.trim())
-        .filter((s) => FULL_RE.test(s)),
+        .filter(isRepoFullName),
     ),
   ).slice(0, 20)
-  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'local'
+  const ip = clientIpOf(req)
   if (fulls.length === 0) return NextResponse.json({ ok: false, reason: 'empty' }, { status: 400 })
-  if (throttled(ip)) return NextResponse.json({ ok: false, reason: 'rate' }, { status: 429 })
+  if (!rate.allow(ip, PER_WINDOW, WINDOW_MS)) return NextResponse.json({ ok: false, reason: 'rate' }, { status: 429 })
 
   const data = await withDb(async (sql): Promise<{ ok: boolean; items: WatchStatus[] }> => {
     // 总榜名次图与门槛(一次查询,全列表共用)

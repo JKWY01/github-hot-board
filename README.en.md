@@ -32,7 +32,7 @@ The big three (overall / weekly / monthly) have language facets (javascript / ty
 One sentence: **the selling path and the sourcing path never touch.**
 
 ```
-GitHub ──(only the sync job)──> Neon Postgres ──(site SELECTs only)──> visitors
+GitHub ──(only the sync job)──> Postgres (Neon or self-hosted) ──(site SELECTs only)──> visitors
 ```
 
 - A scheduled sync (`lib/sync.ts`) walks all 34 keys (10 boards + language facets) and writes two tables:
@@ -66,7 +66,7 @@ npm run dev
 | `GITHUB_TOKEN` | recommended | Classic PAT, no scopes checked. Search goes from 60 req/h to 5,000 |
 | `NEXT_PUBLIC_SITE_URL` | on deploy | Final domain for canonical / sitemap / OG |
 | `DATABASE_URL` | on deploy | Neon Postgres connection string; schema is created on first write |
-| `CRON_SECRET` | optional | Gate for /api/sync and /api/refresh |
+| `CRON_SECRET` | required on deploy | Gate for `/api/sync` `/api/snapshot` `/api/refresh` `/api/dbcheck` — `Authorization: Bearer <secret>` header only (constant-time compare; **`?secret=` query is no longer accepted**, secrets must not end up in access logs). Unset = loopback-only access; set it on any public deploy |
 
 Debug switches: `GHB_FILL_DEBUG=1` logs the read path (DB hit vs hydration), `GHB_SQL_DEBUG=1` logs actual SQL.
 
@@ -77,13 +77,13 @@ Debug switches: `GHB_FILL_DEBUG=1` logs the read path (DB hit vs hydration), `GH
 3. Add repo Actions secrets `SYNC_URL` (`https://<domain>/api/sync`) and `CRON_SECRET`; the 30-minute sync starts turning.
 4. Submit the sitemap once in your search console — `/robots.txt` already points the way.
 
-Self-hosting works the same: `npm run build && npm run start`. The data plane only needs a reachable Postgres.
+Self-hosting works the same (this project's own production runs this way): `npm run build && npm run start`. The data plane only needs a reachable Postgres — managed Neon or your own instance (Docker/1Panel etc.). For self-hosted databases, run a daily rolling `pg_dump` — see `scripts/ghb-backup.sh` (one backup per day, keeps the last 7).
 
 ## Operations
 
 ```bash
 npm run sync                       # one manual round (~4 min, single retry)
-curl https://<domain>/api/dbcheck  # DB health: head keys, snapshot rows
+curl -H "Authorization: Bearer $CRON_SECRET" https://<domain>/api/dbcheck  # DB health: head keys, snapshot rows
 gh run watch                       # watch the Actions sync
 ```
 
@@ -112,7 +112,9 @@ One platform fact worth keeping (established 2026-10): GitHub has removed the RE
 
 - Trending numbers can lag the official page by up to one sync cycle (≤30 min).
 - Search caps at 1,000 results per query; the all-time board shows the top 300 pool, which covers the entire front page story.
-- The controversy board is a structural heuristic (fork/issue ratios), clearly labeled as such.
+- The controversy board is a structural heuristic (fork/issue ratios), clearly labeled as such. Its candidate pool is the all-time top-300 board filtered to ≥3000 stars — a comparison inside the hall of fame, not a platform-wide scan. `open_issues` includes PRs (that is the GitHub field's semantics, stated on the page).
+- The rising board (90-day slope) first narrows to the top 300 ninety-day repos by stars (the Search API working set), then re-ranks by slope; the slope itself favors younger repos.
+- The dark-horse board keeps the top 100 by slope (page copy says the same).
 - Milestone crossings are detected while a page is open; the server keeps no state. For "who crossed 1k historically", give Time Machine a few days to accumulate.
 - Time Machine stores the base-language pool only. Facet taps exist in the database but have no page entrance yet.
 - Not affiliated with GitHub. Boards are research reference, not judgment.

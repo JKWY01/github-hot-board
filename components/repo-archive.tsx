@@ -5,6 +5,7 @@ import ArchiveCharts, { type ChartSeries } from '@/components/archive-charts'
 import { BOARD_ORDER, facetDisplay, facetLangSlug } from '@/lib/boards'
 import { getDict } from '@/app/[lang]/dictionaries'
 import { fmtDay, fmtNum } from '@/lib/format'
+import { jsonLdScript } from '@/lib/jsonld'
 import { altLangs } from '@/lib/locales'
 import type { RepoArchive } from '@/lib/repoarchive'
 import type { Locale } from '@/lib/types'
@@ -103,11 +104,11 @@ export default function RepoArchiveView({
     <div className="mx-auto max-w-4xl px-5 pb-20 pt-12 sm:px-6">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: softwareJsonLd(archive, locale, descText) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdScript(softwareJsonLd(archive, locale, descText)) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: breadcrumbJsonLd(archive, locale) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdScript(breadcrumbJsonLd(archive, locale)) }}
       />
 
       {/* —— 英雄区:左名头右名牌 —— */}

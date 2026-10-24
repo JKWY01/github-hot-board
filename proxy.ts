@@ -1,11 +1,14 @@
 import { NextResponse, type NextRequest } from 'next/server'
 
-import postgres from 'postgres'
-
 import { BOARD_SLUGS, FACET_BOARDS, facetLangFromSlug, facetLangSlug } from '@/lib/facet'
-import { LOCALES, isLocale, matchLocaleFromTag, type Locale } from '@/lib/locales'
+import { isLocale, matchLocaleFromTag, type Locale } from '@/lib/locales'
+import { isRepoFullName } from '@/lib/reposhape'
+import { readRepoSeenRepos } from '@/lib/snapshot'
 
 /** repo 存在名单:TTL 内存缓存,5 分钟一刷(与 sync 节奏无关,多刷无意义)。
+ * 数据源是 repo_seen 小表(随拍 upsert、与明细同窗清理),不再对千万行级的
+ * board_snapshots 做 DISTINCT 全表扫;连接也统一走 snapshot.ts 的模块级单例,
+ * 不再每次刷新自建短命连接池。
  * 查库失败 → 放行给页面(页面自己也会 notFound,软 404 是可接受的降级,不拖垮站点)。 */
 let repoSet: Set<string> | null = null
 let repoSetAt = 0
@@ -32,17 +35,11 @@ async function refreshRepoSet(): Promise<void> {
   if (refreshing) return
   refreshing = true
   try {
-    const url = process.env.DATABASE_URL
-    if (!url) throw new Error('no DATABASE_URL')
-    const sql = postgres(url, { max: 2, idle_timeout: 20, connect_timeout: 8 })
-    try {
-      const rows = await sql`SELECT DISTINCT repo FROM board_snapshots`
-      repoSet = new Set(rows.map((r) => r.repo as string))
+    const repos = await readRepoSeenRepos()
+    if (repos) {
+      repoSet = new Set(repos)
       repoSetAt = Date.now()
-    } finally {
-      await sql.end()
     }
-  } catch {
     // 拿不到就保持旧名单;真的没有名单时让页内 notFound 兜底
   } finally {
     refreshing = false
@@ -156,7 +153,7 @@ export async function proxy(request: NextRequest) {
   // (与 sitemap 同源),没上过榜的 URL 不存在,这正是产品的诚实 404 规则。
   if (langIsLocale && seg[2] === 'repo') {
     if (seg.length !== 5) return notFound404(seg[1], request.nextUrl.pathname)
-    if (!/^[A-Za-z0-9_.-]{1,64}\/[A-Za-z0-9_.-]{1,64}$/.test(`${seg[3]}/${seg[4]}`)) {
+    if (!isRepoFullName(`${seg[3]}/${seg[4]}`)) {
       return notFound404(seg[1], request.nextUrl.pathname)
     }
     const known = await repoWasOnBoard(seg[3], seg[4])

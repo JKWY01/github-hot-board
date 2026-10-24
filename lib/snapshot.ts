@@ -1,6 +1,7 @@
 import { cacheLife } from 'next/cache'
 
 import { facetLangSlug } from './facet'
+import { isRepoFullName } from './reposhape'
 import type { BoardData } from './types'
 
 /** 数据底座(可选,零侵入):DATABASE_URL 配置后成为全站唯一数据源。
@@ -84,6 +85,23 @@ async function migrate(sql: Sql): Promise<void> {
       updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
       PRIMARY KEY (full_name, locale)
     )`
+  // 过榜仓库名单(仓库粒度一行):proxy 的"存在名单"与 sitemap 的全量仓库源。
+  // 之前两处都对 board_snapshots 做 DISTINCT 全表扫 —— 明细表按 60 天保留能涨到千万行级,
+  // 每 5 分钟扫一次是真实的算力地雷;这里用小表(几万行、主键索引)承载同一语义,
+  // 由 writeHeadAndRows 随拍 upsert、pruneOld 与明细同窗清理。
+  await sql`
+    CREATE TABLE IF NOT EXISTS repo_seen (
+      repo      TEXT PRIMARY KEY,
+      last_seen TIMESTAMPTZ NOT NULL
+    )`
+  // 一次性回填:只在 repo_seen 为空时跑(老库升级);GROUP BY 走 repo 索引,跑完即免。
+  const seeded = await sql`SELECT 1 FROM repo_seen LIMIT 1`
+  if (seeded.length === 0) {
+    await sql`
+      INSERT INTO repo_seen (repo, last_seen)
+      SELECT repo, max(taken_at) FROM board_snapshots GROUP BY repo
+      ON CONFLICT (repo) DO NOTHING`
+  }
   tableReady = true
 }
 
@@ -136,23 +154,30 @@ export function dbKey(slug: string, language?: string): string {
 
 /** 每 key 最新一拍:head 行 upsert(站点读的唯一入口)+ 明细追加。降级/失败快照也入冢,
  * 带好 source 与 degraded 标,历史连贯并让口径诚实。 */
+/** 上一拍名次嵌进本拍载荷(board_head 只留最新,payload 里带 prevRank,
+ * 任何访客打开页面都能直接看到相对上一轮同步的爬/掉榜,而不必恰好守在换拍一刻)。
+ * 纯函数:同名次/新入榜不写字段,保持载荷干净。 */
+export function withPrevRanks<T extends { fullName: string }>(
+  items: T[],
+  prevItems: Array<{ fullName: string }>,
+): Array<T & { prevRank?: number }> {
+  const prevOrder = new Map<string, number>()
+  prevItems.forEach((it, i) => prevOrder.set(it.fullName, i))
+  return items.map((item, index) => {
+    const prev = prevOrder.get(item.fullName)
+    if (prev === undefined || prev === index) return item
+    return { ...item, prevRank: prev }
+  })
+}
+
 export async function writeHeadAndRows(slug: string, language: string | undefined, data: BoardData): Promise<boolean> {
   if (!DATABASE_URL) return false
   const takenAt = data.generatedAt ? new Date(data.generatedAt) : new Date()
   const key = dbKey(slug, language)
   return (await withDb(async (sql) => {
-    // 上一拍名次先读出来,嵌进本拍载荷(board_head 只留最新,payload 里带 prevRank,
-    // 任何访客打开页面都能直接看到相对上一轮同步的爬/掉榜,而不必恰好守在换拍一刻)
     const rows = await sql`SELECT payload FROM board_head WHERE key = ${key} LIMIT 1`
     const prevItems = (rows[0] as { payload?: BoardData } | undefined)?.payload?.items ?? []
-    const prevOrder = new Map<string, number>()
-    prevItems.forEach((it, i) => prevOrder.set(it.fullName, i))
-    const items = data.items.map((item, index) => {
-      const prev = prevOrder.get(item.fullName)
-      if (prev === undefined || prev === index) return item
-      return { ...item, prevRank: prev }
-    })
-    const written: BoardData = { ...data, items }
+    const written: BoardData = { ...data, items: withPrevRanks(data.items, prevItems) }
 
     await sql`
       INSERT INTO board_head (key, board, language, source, degraded, item_count, generated_at, taken_at, payload)
@@ -188,6 +213,13 @@ export async function writeHeadAndRows(slug: string, language: string | undefine
           values,
           'taken_at', 'board', 'language', 'source', 'degraded', 'rank', 'repo', 'stars', 'forks', 'metric', 'repo_created_at',
         )}`
+      // 过榜名单随拍更新(主键 upsert,几万行小表,毫秒级)
+      await sql`
+        INSERT INTO repo_seen ${sql(
+          values.map((v) => ({ repo: v.repo, last_seen: v.taken_at })),
+          'repo', 'last_seen',
+        )}
+        ON CONFLICT (repo) DO UPDATE SET last_seen = EXCLUDED.last_seen`
     }
     return true
   })) === true
@@ -208,11 +240,14 @@ export async function readBoardHead(key: string): Promise<{ data: BoardData; age
   })) ?? null
 }
 
-/** 保留期治理:明细行超龄即清理(head 表只留最新,天然自洁)。 */
+/** 保留期治理:明细行超龄即清理(head 表只留最新,天然自洁);
+ * repo_seen 与明细同窗清理 —— 名单语义 = "保留期内上过榜的仓库"。 */
 export async function pruneOld(): Promise<number> {
   return (await withDb(async (sql) => {
     const result = await sql`
       DELETE FROM board_snapshots WHERE taken_at < now() - (${RETENTION_DAYS} || ' days')::interval`
+    await sql`
+      DELETE FROM repo_seen WHERE last_seen < now() - (${RETENTION_DAYS} || ' days')::interval`
     return Number(result.count)
   })) ?? 0
 }
@@ -249,6 +284,39 @@ export async function dbStats(): Promise<{ headKeys: number; rows: number } | nu
     const head = await sql`SELECT count(*)::int AS n FROM board_head`
     const rows = await sql`SELECT count(*)::bigint AS n FROM board_snapshots`
     return { headKeys: Number((head[0] as { n: number }).n), rows: Number((rows[0] as { n: number }).n) }
+  })) ?? null
+}
+
+/** 状态页用:全部榜头键的健康面(键/榜/语言/来源/是否降级/拍时刻/行数)。
+ *  读的是 board_head 主键表(≤34 行),与站点读路径同源 —— 状态页所见即访客所得。 */
+export interface HeadHealthRow {
+  key: string
+  board: string
+  language: string
+  source: string
+  degraded: boolean
+  itemCount: number
+  takenAt: string
+}
+
+export async function readHeadHealth(): Promise<HeadHealthRow[] | null> {
+  return (await withDb(async (sql) => {
+    const rows = await sql`
+      SELECT key, board, language, source, degraded, item_count, taken_at
+      FROM board_head
+      ORDER BY board, language`
+    return (rows as unknown as Array<{
+      key: string; board: string; language: string; source: string
+      degraded: boolean; item_count: number; taken_at: Date
+    }>).map((r) => ({
+      key: r.key,
+      board: r.board,
+      language: r.language,
+      source: r.source,
+      degraded: Boolean(r.degraded),
+      itemCount: Number(r.item_count),
+      takenAt: new Date(r.taken_at).toISOString(),
+    }))
   })) ?? null
 }
 
@@ -331,12 +399,21 @@ export async function readHistorySnapshot(board: string, day: string): Promise<H
   })) ?? null
 }
 
-/** sitemap 用:所有"曾经上榜过"的仓库(全量时间窗,不限现役)。 */
+/** sitemap 用:所有"曾经上榜过"的仓库(语义与明细保留期同窗)。读 repo_seen 小表,
+ * 不再对 board_snapshots 做全表 DISTINCT(千万行级,每次都是数秒扫描)。 */
 export async function readDistinctRepos(): Promise<string[]> {
   return (await withDb(async (sql) => {
-    const rows = await sql`SELECT DISTINCT repo FROM board_snapshots`
+    const rows = await sql`SELECT repo FROM repo_seen`
     return (rows as unknown as Array<{ repo: string }>).map((r) => r.repo).sort()
   })) ?? []
+}
+
+/** 过榜仓库名单(proxy 的"存在性"判定源):几万行小表,索引全扫,毫秒级。 */
+export async function readRepoSeenRepos(): Promise<string[] | null> {
+  return (await withDb(async (sql) => {
+    const rows = await sql`SELECT repo FROM repo_seen`
+    return (rows as unknown as Array<{ repo: string }>).map((r) => r.repo)
+  })) ?? null
 }
 
 /** 仓库档案页读取:(repo) → 最近一拍的全部上榜记录 + 近 30 天基准口径每日名次。
@@ -369,7 +446,7 @@ export async function readRepoArchiveRows(fullName: string): Promise<{
   daily: RepoDayRank[]
   lastSeenAt: string | null
 }> {
-  if (!/^[A-Za-z0-9_.-]{1,64}\/[A-Za-z0-9_.-]{1,64}$/.test(fullName)) {
+  if (!isRepoFullName(fullName)) {
     return { appearances: [], daily: [], lastSeenAt: null }
   }
   const base: { appearances: RepoAppearance[]; daily: RepoDayRank[]; lastSeenAt: string | null } = { appearances: [], daily: [], lastSeenAt: null }

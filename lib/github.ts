@@ -5,6 +5,7 @@ import { join } from 'node:path'
 
 import { cleanDesc } from './parse'
 import { LOCALES, LANG_LINK_TEXT, type Locale } from './locales'
+import { isRepoFullName } from './reposhape'
 
 /** 多账号池:GITHUB_TOKENS(逗号/空白分隔,一枚或一万枚)或 GITHUB_TOKEN(单枚,向后兼容)。
  * 每枚独立冷却;一枚烧完(主配额尽)自动换下一枚,进程内全局节奏随池子规模放宽。 */
@@ -205,8 +206,6 @@ export async function resolveAvatarUrl(owner: string): Promise<string> {
  *   外部链接 → 一律新标签;页内锚点保持原文,交给客户端就地滚动。
  *
  * 语言协商:站点语言(16 语)优先取仓库对应语言的 README(切换器解析+命名候选)。 */
-const REPO_FULL_RE = /^[^/\s\\]{1,100}\/[^/\s\\]{1,120}$/
-
 /** 各语言的 README 常见命名候选:切换器没给路径时按惯例兜底。
  * 只登记站点语言;组合覆盖 _/-/. 分隔与语言子标签,目录只收 docs/、docs/readme/、doc/ 三个高发位。 */
 const LANG_README_PATHS: Partial<Record<Locale, string[]>> = {
@@ -342,7 +341,7 @@ async function renderMarkdownFile(full: string, path: string, branch: string): P
  * 返回 localized:是否真的读到了该语言的版本 —— 行描述只认本地化版,
  * 默认英文版只给抽屉兜底,冒充 "某种语言的描述" 会把英文原句错标进语言槽。 */
 async function fetchLocalizedReadme(full: string, locale: Locale): Promise<{ html: string | null; localized: boolean }> {
-  if (!REPO_FULL_RE.test(full)) return { html: null, localized: false }
+  if (!isRepoFullName(full)) return { html: null, localized: false }
   const branch = await defaultBranch(full)
   const baseHtml = await githubHtml(`https://api.github.com/repos/${full}/readme`)
   if (!baseHtml) return { html: null, localized: false }
@@ -371,7 +370,7 @@ export async function fetchRepoReadme(full: string, locale: Locale = 'en'): Prom
 
 /** 抽屉内就地翻页:渲染同仓库任意 md 文档(语言切换/文档链接点进来走这里)。 */
 export async function fetchRepoDoc(full: string, fromHref: string): Promise<string | null> {
-  if (!REPO_FULL_RE.test(full)) return null
+  if (!isRepoFullName(full)) return null
   // 相对链上的 ./ 与 ../ 段归一化为仓库根路径(与浏览器对 blob 页的解析一致)
   const parts: string[] = []
   for (const seg of fromHref.replace(/\\/g, '/').split('/')) {
@@ -427,7 +426,7 @@ export interface RepoHarvest {
 
 export async function harvestRepoDescs(full: string): Promise<RepoHarvest> {
   const out: RepoHarvest = { descs: {}, resolved: [] }
-  if (!REPO_FULL_RE.test(full)) return out
+  if (!isRepoFullName(full)) return out
   const branch = await defaultBranch(full)
   const base = await githubHtml(`https://api.github.com/repos/${full}/readme`)
   if (!base) return out

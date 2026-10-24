@@ -5,6 +5,7 @@ import type { Metadata } from 'next'
 import { getDict, isLocale } from '../dictionaries'
 import { LOCALES, altLangs } from '@/lib/locales'
 import { guideFor } from '@/lib/guide'
+import { jsonLdScript } from '@/lib/jsonld'
 
 /** 纯静态内容页(无动态 IO):16 语各自 bake,SEO 长尾主战场。 */
 export async function generateStaticParams() {
@@ -121,7 +122,7 @@ export default async function GuidePage({
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
+          __html: jsonLdScript({
             '@context': 'https://schema.org',
             '@type': 'FAQPage',
             inLanguage: lang,

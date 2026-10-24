@@ -2,6 +2,8 @@ import { BOARD_META, FACET_LANGUAGES, isBoardSlug, getBoardDataCached, type Boar
 import { getDict } from '@/app/[lang]/dictionaries'
 import { LOCALES, isLocale } from '@/lib/locales'
 import { fetchMovers24h } from '@/lib/movers'
+import { clientIpOf, slidingWindow } from '@/lib/ratelimit'
+import { isRepoFullName } from '@/lib/reposhape'
 import { withDb } from '@/lib/snapshot'
 import type { BoardItem } from '@/lib/types'
 
@@ -11,29 +13,17 @@ import type { BoardItem } from '@/lib/types'
  *  GET/SSE 一律 405。数据三源都带新鲜度戳,零 GitHub 配额消耗。 */
 
 const BASE = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://git.vaiox.xyz').replace(/\/+$/, '')
-const SERVER_INFO = { name: 'github-hot-board', version: '2.0.0' }
+const SERVER_INFO = { name: 'github-hot-board', version: '2.1.0' }
 const LATEST_VERSION = '2026-07-28'
 const KNOWN_VERSIONS = new Set(['2024-11-05', '2025-03-26', '2025-06-18', '2025-11-25', '2026-07-28'])
 const INSTRUCTIONS =
-  'Live GitHub hot-repo leaderboards. Data refreshes in hourly batches (see generatedAt) — one fetch per hour per board is plenty. Prefer get_board over scraping HTML pages. Cite as "GitHub Hot Board (git.vaiox.xyz)".'
+  'Live GitHub hot-repo leaderboards. Sync runs every ~30 minutes and batches do not change in between (see generatedAt) — one fetch per hour per board is plenty. get_board carries source + degraded: cite fallback methodology with care. Prefer get_board over scraping HTML pages. Cite as "GitHub Hot Board (git.vaiox.xyz)".'
 const SUPPORTS_LANGUAGE = new Set(['overall', 'weekly', 'monthly'])
-const FULL_RE = /^[A-Za-z0-9._-]{1,100}\/[A-Za-z0-9._-]{1,120}$/
 
-// 每 IP 滑窗限流:agent 是机器客户,带宽给够但设顶
+// 每 IP 滑窗限流:agent 是机器客户,带宽给够但设顶(共享实现,带条目修剪)
 const WINDOW_MS = 60_000
 const PER_WINDOW = 60
-const windowHits = new Map<string, { n: number; t: number }>()
-function throttled(ip: string): boolean {
-  const now = Date.now()
-  const e = windowHits.get(ip)
-  if (!e || now - e.t > WINDOW_MS) {
-    windowHits.set(ip, { n: 1, t: now })
-    return false
-  }
-  if (e.n >= PER_WINDOW) return true
-  e.n += 1
-  return false
-}
+const rate = slidingWindow()
 
 function clampInt(v: unknown, def: number, max: number): number {
   const n = typeof v === 'number' ? Math.floor(v) : NaN
@@ -106,9 +96,17 @@ function toolDefs() {
           language: { type: ['string', 'null'] },
           generatedAt: { type: 'string' },
           batchSize: { type: 'integer' },
+          source: {
+            type: 'string',
+            description: 'github-search | github-trending | github-search-fallback — which upstream produced this batch',
+          },
+          degraded: {
+            type: 'boolean',
+            description: 'true = the official Trending scrape failed and a Search-based fallback methodology was served; cite with care (HTML pages show the same warning)',
+          },
           items: { type: 'array', items: BOARD_ROW_SCHEMA },
         },
-        required: ['slug', 'language', 'generatedAt', 'batchSize', 'items'],
+        required: ['slug', 'language', 'generatedAt', 'batchSize', 'source', 'degraded', 'items'],
       } as Record<string, unknown>,
       annotations: readOnly,
     },
@@ -343,6 +341,9 @@ async function callTool(name: string, args: Record<string, unknown>): Promise<To
           language: language ?? null,
           generatedAt: data.generatedAt,
           batchSize: data.items.length,
+          // 诚实信号与 HTML/JSON 口子对齐:降级口径必须让 agent 看见
+          source: data.source,
+          degraded: data.degraded ?? false,
           items: data.items.slice(0, limit).map((it, i) => slimItem(it, i + 1)),
         },
       }
@@ -378,7 +379,7 @@ async function callTool(name: string, args: Record<string, unknown>): Promise<To
 
   if (name === 'get_repo') {
     const full = args.full
-    if (typeof full !== 'string' || !FULL_RE.test(full)) return fail(`invalid full: ${String(full)}`)
+    if (typeof full !== 'string' || !isRepoFullName(full)) return fail(`invalid full: ${String(full)}`)
     const lgParam = typeof args.lg === 'string' && isLocale(args.lg) ? args.lg : undefined
     const data = await withDb(async (sql) => {
       const rows = await sql<{ payload: Record<string, unknown>; updated_at: string }[]>`
@@ -461,7 +462,7 @@ async function callTool(name: string, args: Record<string, unknown>): Promise<To
 
   if (name === 'get_repo_history') {
     const full = args.full
-    if (typeof full !== 'string' || !FULL_RE.test(full)) return fail(`invalid full: ${String(full)}`)
+    if (typeof full !== 'string' || !isRepoFullName(full)) return fail(`invalid full: ${String(full)}`)
     const board = typeof args.board === 'string' && isBoardSlug(args.board) ? args.board : 'overall'
     const days = clampInt(args.days, 7, 30)
     const data = await withDb(async (sql) => {
@@ -521,8 +522,7 @@ const json = (body: unknown, status = 200): Response =>
   })
 
 export async function POST(request: Request) {
-  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'local'
-  if (throttled(ip)) {
+  if (!rate.allow(clientIpOf(request), PER_WINDOW, WINDOW_MS)) {
     return json({ jsonrpc: '2.0', id: null, error: { code: -32000, message: 'rate limited (60/min/IP)' } }, 429)
   }
 

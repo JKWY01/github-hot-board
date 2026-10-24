@@ -3,6 +3,7 @@ import type { BoardSlug } from './boards'
 import { prefillRepoDescs } from './descfill'
 import { FACET_LANGUAGES } from './facet'
 import { savePersistedBoard } from './persist'
+import { isRepoFullName } from './reposhape'
 import { dbKey, pruneOld, upsertRepoDesc, writeHeadAndRows } from './snapshot'
 import type { BoardData } from './types'
 
@@ -156,7 +157,7 @@ async function pingIndexNow(): Promise<void> {
   const base = (process.env.NEXT_PUBLIC_SITE_URL ?? '').replace(/\/+$/, '')
   if (!key || !base) return
   const { readRecentRepos } = await import('./snapshot')
-  const repos = (await readRecentRepos(35, 90)).filter(isRepoNameShape)
+  const repos = (await readRecentRepos(35, 90)).filter(isRepoFullName)
   const urlList: string[] = []
   urlList.push(`${base}/en`, `${base}/zh`)
   for (const r of repos) urlList.push(`${base}/en/repo/${r}`)
@@ -168,10 +169,6 @@ async function pingIndexNow(): Promise<void> {
     signal: AbortSignal.timeout(12_000),
   })
   console.error(`[indexnow] submitted=${urlList.length} http=${res.status}`)
-}
-
-function isRepoNameShape(s: string): boolean {
-  return /^[A-Za-z0-9_.-]{1,64}\/[A-Za-z0-9_.-]{1,64}$/.test(s)
 }
 
 /** 百度推送去重:进程内 25h TTL(Vercel 实例的内存态,尽力而为;重复推送顶多浪费小配额)。 */
@@ -186,7 +183,7 @@ async function pingBaidu(): Promise<void> {
   const base = (process.env.NEXT_PUBLIC_SITE_URL ?? '').replace(/\/+$/, '')
   if (!endpoint || !base) return
   const { readRecentRepos } = await import('./snapshot')
-  const repos = (await readRecentRepos(35, 90)).filter(isRepoNameShape)
+  const repos = (await readRecentRepos(35, 90)).filter(isRepoFullName)
   const now = Date.now()
   for (const [url, at] of baiduPushed) {
     if (now - at > BAIDU_DEDUP_TTL) baiduPushed.delete(url)
