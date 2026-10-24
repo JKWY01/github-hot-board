@@ -1,0 +1,17 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.JKWY01/github-hot-board",
+  "title": "GitHub Hot Board",
+  "description": "GitHub hot-repo leaderboards: snapshots, movers, rank history. Read-only JSON, hourly batches.",
+  "repository": {
+    "url": "https://github.com/JKWY01/github-hot-board",
+    "source": "github"
+  },
+  "version": "2.0.0",
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://git.vaiox.xyz/api/mcp"
+    }
+  ]
+}
