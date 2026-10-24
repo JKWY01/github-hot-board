@@ -166,6 +166,7 @@ export const frDict: Dict = {
     milestone: 'Jalons',
   },
   ui: {
+    watchAsk: 'Votre projet, ou un projet à surveiller ?',
     pushTitle: 'Alertes jalons',
     pushOn: 'activées',
     pushOff: 'désactivées',

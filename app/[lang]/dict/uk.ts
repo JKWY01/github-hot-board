@@ -166,6 +166,7 @@ export const ukDict: Dict = {
     milestone: 'Рубежі',
   },
   ui: {
+    watchAsk: 'Ваш проєкт або той, за яким хочете стежити?',
     pushTitle: 'Сповіщення про рубежі',
     pushOn: 'увімк.',
     pushOff: 'вимк.',

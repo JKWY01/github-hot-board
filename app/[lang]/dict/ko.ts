@@ -166,6 +166,7 @@ export const koDict: Dict = {
     milestone: '마일스톤',
   },
   ui: {
+    watchAsk: '내 프로젝트인가요, 아니면 지켜보고 싶은 프로젝트인가요?',
     pushTitle: '마일스톤 알림',
     pushOn: '켜짐',
     pushOff: '꺼짐',

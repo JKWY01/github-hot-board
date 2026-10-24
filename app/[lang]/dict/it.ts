@@ -166,6 +166,7 @@ export const itDict: Dict = {
     milestone: 'Milestone',
   },
   ui: {
+    watchAsk: 'Il tuo progetto, o uno da tenere d’occhio?',
     pushTitle: 'Avvisi traguardi',
     pushOn: 'attivi',
     pushOff: 'disattivi',

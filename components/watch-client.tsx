@@ -340,7 +340,18 @@ export default function WatchClient({ locale, pushKey }: { locale: Locale; pushK
                           {delta !== undefined && (
                             <span className="hidden text-[10.5px] text-sub sm:inline">{strings.watchDelta}</span>
                           )}
-                          <WatchBell fullName={e.f} states={{ cap: strings.watchCap, on: strings.watchTitle }} />
+                          <WatchBell
+                            fullName={e.f}
+                            locale={locale}
+                            strings={{
+                              ask: strings.watchAsk,
+                              own: strings.watchOwn,
+                              see: strings.watchSee,
+                              cap: strings.watchCap,
+                              on: strings.watchTitle,
+                              list: strings.watchTitle,
+                            }}
+                          />
                           <button
                             type="button"
                             onClick={() =>

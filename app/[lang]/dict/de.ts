@@ -166,6 +166,7 @@ export const deDict: Dict = {
     milestone: 'Meilensteine',
   },
   ui: {
+    watchAsk: 'Dein eigenes Projekt oder eines zum Beobachten?',
     pushTitle: 'Meilenstein-Alerts',
     pushOn: 'an',
     pushOff: 'aus',

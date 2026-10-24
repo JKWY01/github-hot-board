@@ -77,6 +77,7 @@ export interface Dict {
   boards: Record<BoardSlug, BoardCopy>
   shortBoards: Record<BoardSlug, string>
   ui: {
+    watchAsk: string
     /** Web Push 跨线提醒(关注页开关;VAPID 未配置时客户端不渲染) */
     pushTitle: string
     pushOn: string
@@ -208,6 +209,7 @@ export function liveStrings(locale: Locale) {
     autoRefresh: d.ui.autoRefresh,
     rateLimited: d.ui.rateLimited,
     degraded: d.ui.degradedFallback,
+    watchAsk: d.ui.watchAsk,
     pushTitle: d.ui.pushTitle,
     pushOn: d.ui.pushOn,
     pushOff: d.ui.pushOff,

@@ -166,6 +166,7 @@ export const idDict: Dict = {
     milestone: 'Milestone',
   },
   ui: {
+    watchAsk: 'Proyekmu sendiri, atau yang ingin kamu pantau?',
     pushTitle: 'Peringatan milestone',
     pushOn: 'aktif',
     pushOff: 'nonaktif',

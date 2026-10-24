@@ -166,6 +166,7 @@ export const jaDict: Dict = {
     milestone: '節目',
   },
   ui: {
+    watchAsk: '自分のプロジェクト?それとも監視したい?',
     pushTitle: 'マイルストーン通知',
     pushOn: 'オン',
     pushOff: 'オフ',

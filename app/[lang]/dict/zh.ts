@@ -167,6 +167,7 @@ export const zhDict: Dict = {
     milestone: '里程碑',
   },
   ui: {
+    watchAsk: '你的项目,还是想关注监控?',
     pushTitle: '跨线提醒',
     pushOn: '已开启',
     pushOff: '已关闭',

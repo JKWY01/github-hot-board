@@ -166,6 +166,7 @@ export const ptDict: Dict = {
     milestone: 'Milestones',
   },
   ui: {
+    watchAsk: 'Seu projeto, ou um que quer acompanhar?',
     pushTitle: 'Alertas de marcos',
     pushOn: 'ativas',
     pushOff: 'inativas',

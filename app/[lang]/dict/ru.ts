@@ -166,6 +166,7 @@ export const ruDict: Dict = {
     milestone: 'Рубежи',
   },
   ui: {
+    watchAsk: 'Ваш проект или тот, за которым хотите следить?',
     pushTitle: 'Уведомления о рубежах',
     pushOn: 'вкл.',
     pushOff: 'выкл.',

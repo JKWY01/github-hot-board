@@ -166,6 +166,7 @@ export const esDict: Dict = {
     milestone: 'Hitos',
   },
   ui: {
+    watchAsk: '¿Tu proyecto, o uno que quieres vigilar?',
     pushTitle: 'Alertas de hitos',
     pushOn: 'activadas',
     pushOff: 'desactivadas',

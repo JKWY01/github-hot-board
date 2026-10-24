@@ -166,6 +166,7 @@ export const plDict: Dict = {
     milestone: 'Przełomy',
   },
   ui: {
+    watchAsk: 'Twój projekt, czy taki, który chcesz obserwować?',
     pushTitle: 'Alerty kamieni milowych',
     pushOn: 'wł.',
     pushOff: 'wył.',

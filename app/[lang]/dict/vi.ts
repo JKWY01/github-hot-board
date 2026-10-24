@@ -166,6 +166,7 @@ export const viDict: Dict = {
     milestone: 'Cột mốc',
   },
   ui: {
+    watchAsk: 'Dự án của bạn, hay dự án bạn muốn theo dõi?',
     pushTitle: 'Cảnh báo cột mốc',
     pushOn: 'bật',
     pushOff: 'tắt',

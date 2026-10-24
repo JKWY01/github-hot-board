@@ -770,6 +770,21 @@ export default function LiveBoardList({
                     </span>
                     {/* 站内档案/出站 GitHub 的门都收进行右缘(见行尾动作组);名字行保持干净 */}
                     {flag && flagBadge(flag.kind, flag.delta, strings)}
+                    {/* 关注铃铛贴着仓库名:点击先问"你的项目还是想关注",选完就地给列表入口 */}
+                    {!compact && (
+                      <WatchBell
+                        fullName={item.fullName}
+                        locale={locale}
+                        strings={{
+                          ask: strings.watchAsk,
+                          own: strings.watchOwn,
+                          see: strings.watchSee,
+                          cap: strings.watchCap,
+                          on: strings.watchTitle,
+                          list: strings.watchTitle,
+                        }}
+                      />
+                    )}
                   </div>
 
                   {shown && (
@@ -842,9 +857,6 @@ export default function LiveBoardList({
                     >
                       <ArchiveIcon size={15} />
                     </Link>
-                    {!compact && (
-                      <WatchBell fullName={item.fullName} states={{ cap: strings.watchCap, on: strings.watchTitle }} />
-                    )}
                     <a
                       href={item.htmlUrl}
                       target="_blank"

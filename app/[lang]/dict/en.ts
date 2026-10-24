@@ -166,6 +166,7 @@ export const enDict: Dict = {
     milestone: 'Milestones',
   },
   ui: {
+    watchAsk: 'Your own project, or one you want to watch?',
     pushTitle: 'Milestone alerts',
     pushOn: 'on',
     pushOff: 'off',

@@ -166,6 +166,7 @@ export const trDict: Dict = {
     milestone: 'Kilometre',
   },
   ui: {
+    watchAsk: 'Projen mi, yoksa izlemek istediğin bir proje mi?',
     pushTitle: 'Kilometre taşı uyarıları',
     pushOn: 'açık',
     pushOff: 'kapalı',
