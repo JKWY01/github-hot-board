@@ -5,23 +5,23 @@
 
 | # | 项目 | 累计 Star | 本月新增 Star | 简介 |
 |---|---|---|---|---|
-| 1 | [debpalash/VoiceStudio](https://git.vaiox.xyz/zh/repo/debpalash/VoiceStudio) | 84.1k | 48.3k | VoiceStudio is the open-source, fully-local ElevenLabs alter… |
-| 2 | [heygen-com/hyperframes](https://git.vaiox.xyz/zh/repo/heygen-com/hyperframes) | 71.1k | 18.3k | Write HTML. Render video. Built for agents. |
-| 3 | [cloudflare/security-audit-skill](https://git.vaiox.xyz/zh/repo/cloudflare/security-audit-skill) | 43.0k | 20.6k | A coding-agent skill for multi-phase security audits with in… |
+| 1 | [debpalash/VoiceStudio](https://git.vaiox.xyz/zh/repo/debpalash/VoiceStudio) | 84.4k | 48.3k | VoiceStudio is the open-source, fully-local ElevenLabs alter… |
+| 2 | [heygen-com/hyperframes](https://git.vaiox.xyz/zh/repo/heygen-com/hyperframes) | 71.3k | 18.3k | Write HTML. Render video. Built for agents. |
+| 3 | [cloudflare/security-audit-skill](https://git.vaiox.xyz/zh/repo/cloudflare/security-audit-skill) | 43.5k | 20.6k | A coding-agent skill for multi-phase security audits with in… |
 | 4 | [paperclipai/paperclip](https://git.vaiox.xyz/zh/repo/paperclipai/paperclip) | 106.8k | 25.5k | The open-source app everyone uses to manage agents at work |
 | 5 | [anthropics/knowledge-work-plugins](https://git.vaiox.xyz/zh/repo/anthropics/knowledge-work-plugins) | 32.5k | 6.6k | Open source repository of plugins primarily intended for kno… |
-| 6 | [NVIDIA/OpenShell](https://git.vaiox.xyz/zh/repo/NVIDIA/OpenShell) | 19.1k | 9.7k | OpenShell is the safe, private runtime for autonomous AI age… |
-| 7 | [vectorize-io/hindsight](https://git.vaiox.xyz/zh/repo/vectorize-io/hindsight) | 53.3k | 28.1k | Hindsight: Agent Memory That Learns |
+| 6 | [NVIDIA/OpenShell](https://git.vaiox.xyz/zh/repo/NVIDIA/OpenShell) | 19.2k | 9.7k | OpenShell is the safe, private runtime for autonomous AI age… |
+| 7 | [vectorize-io/hindsight](https://git.vaiox.xyz/zh/repo/vectorize-io/hindsight) | 53.4k | 28.1k | Hindsight: Agent Memory That Learns |
 | 8 | [mksglu/context-mode](https://git.vaiox.xyz/zh/repo/mksglu/context-mode) | 32.1k | 8.1k | Context window optimization for AI coding agents. Sandboxes … |
 | 9 | [cursor/plugins](https://git.vaiox.xyz/zh/repo/cursor/plugins) | 13.9k | 5.3k | Cursor plugin specification and official plugins |
-| 10 | [NationalSecurityAgency/ghidra](https://git.vaiox.xyz/zh/repo/NationalSecurityAgency/ghidra) | 93.8k | 14.2k | Ghidra is a software reverse engineering (SRE) framework |
+| 10 | [NationalSecurityAgency/ghidra](https://git.vaiox.xyz/zh/repo/NationalSecurityAgency/ghidra) | 93.9k | 14.2k | Ghidra is a software reverse engineering (SRE) framework |
 | 11 | [anthropics/claude-plugins-official](https://git.vaiox.xyz/zh/repo/anthropics/claude-plugins-official) | 44.3k | 7.6k | Official, Anthropic-managed directory of high quality Claude… |
 | 12 | [earthtojake/text-to-cad](https://git.vaiox.xyz/zh/repo/earthtojake/text-to-cad) | 22.9k | 6.5k | Give your agent CAD superpowers. |
-| 13 | [tashfeenahmed/freellmapi](https://git.vaiox.xyz/zh/repo/tashfeenahmed/freellmapi) | 40.6k | 12.0k | 7.4 billion tokens per month. 34 free LLM providers. 635 fre… |
-| 14 | [pbakaus/impeccable](https://git.vaiox.xyz/zh/repo/pbakaus/impeccable) | 85.9k | 15.6k | The design language that makes your AI harness better at des… |
+| 13 | [tashfeenahmed/freellmapi](https://git.vaiox.xyz/zh/repo/tashfeenahmed/freellmapi) | 40.7k | 12.0k | 7.4 billion tokens per month. 34 free LLM providers. 635 fre… |
+| 14 | [pbakaus/impeccable](https://git.vaiox.xyz/zh/repo/pbakaus/impeccable) | 86.1k | 15.6k | The design language that makes your AI harness better at des… |
 | 15 | [pingdotgg/t3code](https://git.vaiox.xyz/zh/repo/pingdotgg/t3code) | 29.8k | 6.4k |  |
-| 16 | [affaan-m/ECC](https://git.vaiox.xyz/zh/repo/affaan-m/ECC) | 287.7k | 22.8k | The agent harness performance optimization system. Skills, i… |
-| 17 | [rohitg00/ai-engineering-from-scratch](https://git.vaiox.xyz/zh/repo/rohitg00/ai-engineering-from-scratch) | 73.0k | 17.5k | Learn AI Engineering! Learn it. Build it. Ship it for others… |
+| 16 | [affaan-m/ECC](https://git.vaiox.xyz/zh/repo/affaan-m/ECC) | 287.8k | 22.8k | The agent harness performance optimization system. Skills, i… |
+| 17 | [rohitg00/ai-engineering-from-scratch](https://git.vaiox.xyz/zh/repo/rohitg00/ai-engineering-from-scratch) | 73.1k | 17.5k | Learn AI Engineering! Learn it. Build it. Ship it for others… |
 | 18 | [TencentCloud/Octop](https://git.vaiox.xyz/zh/repo/TencentCloud/Octop) | 10.9k | 6.2k | A smarter, self-hosted AI assistant — multi-user, multi-agen… |
 | 19 | [thedotmack/claude-mem](https://git.vaiox.xyz/zh/repo/thedotmack/claude-mem) | 102.7k | 8.4k | Persistent Context Across Sessions for Every Agent – Capture… |
 | 20 | [VectifyAI/PageIndex](https://git.vaiox.xyz/zh/repo/VectifyAI/PageIndex) | 39.6k | 3.9k | PageIndex: Document Index for Vectorless, Reasoning-based RA… |

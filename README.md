@@ -11,43 +11,43 @@
 
 | # | 项目 | 累计 Star | 本周新增 Star |
 |---|---|---|---|
-| 1 | [cloudflare/security-audit-skill](https://git.vaiox.xyz/zh/repo/cloudflare/security-audit-skill) | 43.0k | 11.2k |
-| 2 | [morluto/rea](https://git.vaiox.xyz/zh/repo/morluto/rea) | 375.7k | 88.2k |
+| 1 | [cloudflare/security-audit-skill](https://git.vaiox.xyz/zh/repo/cloudflare/security-audit-skill) | 43.5k | 11.2k |
+| 2 | [morluto/rea](https://git.vaiox.xyz/zh/repo/morluto/rea) | 376.8k | 88.2k |
 | 3 | [anthropics/claude-plugins-official](https://git.vaiox.xyz/zh/repo/anthropics/claude-plugins-official) | 44.3k | 4.3k |
 | 4 | [ruvnet/ruflo](https://git.vaiox.xyz/zh/repo/ruvnet/ruflo) | 78.9k | 3.3k |
-| 5 | [stablyai/orca](https://git.vaiox.xyz/zh/repo/stablyai/orca) | 104.4k | 9.5k |
-| 6 | [anomalyco/opencode](https://git.vaiox.xyz/zh/repo/anomalyco/opencode) | 220.9k | 6.8k |
+| 5 | [stablyai/orca](https://git.vaiox.xyz/zh/repo/stablyai/orca) | 104.6k | 9.5k |
+| 6 | [anomalyco/opencode](https://git.vaiox.xyz/zh/repo/anomalyco/opencode) | 221.0k | 6.8k |
 | 7 | [cursor/plugins](https://git.vaiox.xyz/zh/repo/cursor/plugins) | 13.9k | 1.9k |
-| 8 | [android/skills](https://git.vaiox.xyz/zh/repo/android/skills) | 9.5k | 1.5k |
+| 8 | [android/skills](https://git.vaiox.xyz/zh/repo/android/skills) | 9.6k | 1.5k |
 | 9 | [anthropics/knowledge-work-plugins](https://git.vaiox.xyz/zh/repo/anthropics/knowledge-work-plugins) | 32.5k | 2.6k |
-| 10 | [heygen-com/hyperframes](https://git.vaiox.xyz/zh/repo/heygen-com/hyperframes) | 71.1k | 5.6k |
+| 10 | [heygen-com/hyperframes](https://git.vaiox.xyz/zh/repo/heygen-com/hyperframes) | 71.3k | 5.6k |
 
 **本月飙升 Top 10** · [打开完整榜单 →](https://git.vaiox.xyz/zh/boards/monthly)
 
 | # | 项目 | 累计 Star | 本月新增 Star |
 |---|---|---|---|
-| 1 | [debpalash/VoiceStudio](https://git.vaiox.xyz/zh/repo/debpalash/VoiceStudio) | 84.1k | 48.3k |
-| 2 | [heygen-com/hyperframes](https://git.vaiox.xyz/zh/repo/heygen-com/hyperframes) | 71.1k | 18.3k |
-| 3 | [cloudflare/security-audit-skill](https://git.vaiox.xyz/zh/repo/cloudflare/security-audit-skill) | 43.0k | 20.6k |
+| 1 | [debpalash/VoiceStudio](https://git.vaiox.xyz/zh/repo/debpalash/VoiceStudio) | 84.4k | 48.3k |
+| 2 | [heygen-com/hyperframes](https://git.vaiox.xyz/zh/repo/heygen-com/hyperframes) | 71.3k | 18.3k |
+| 3 | [cloudflare/security-audit-skill](https://git.vaiox.xyz/zh/repo/cloudflare/security-audit-skill) | 43.5k | 20.6k |
 | 4 | [paperclipai/paperclip](https://git.vaiox.xyz/zh/repo/paperclipai/paperclip) | 106.8k | 25.5k |
 | 5 | [anthropics/knowledge-work-plugins](https://git.vaiox.xyz/zh/repo/anthropics/knowledge-work-plugins) | 32.5k | 6.6k |
-| 6 | [NVIDIA/OpenShell](https://git.vaiox.xyz/zh/repo/NVIDIA/OpenShell) | 19.1k | 9.7k |
-| 7 | [vectorize-io/hindsight](https://git.vaiox.xyz/zh/repo/vectorize-io/hindsight) | 53.3k | 28.1k |
+| 6 | [NVIDIA/OpenShell](https://git.vaiox.xyz/zh/repo/NVIDIA/OpenShell) | 19.2k | 9.7k |
+| 7 | [vectorize-io/hindsight](https://git.vaiox.xyz/zh/repo/vectorize-io/hindsight) | 53.4k | 28.1k |
 | 8 | [mksglu/context-mode](https://git.vaiox.xyz/zh/repo/mksglu/context-mode) | 32.1k | 8.1k |
 | 9 | [cursor/plugins](https://git.vaiox.xyz/zh/repo/cursor/plugins) | 13.9k | 5.3k |
-| 10 | [NationalSecurityAgency/ghidra](https://git.vaiox.xyz/zh/repo/NationalSecurityAgency/ghidra) | 93.8k | 14.2k |
+| 10 | [NationalSecurityAgency/ghidra](https://git.vaiox.xyz/zh/repo/NationalSecurityAgency/ghidra) | 93.9k | 14.2k |
 
 **累计 Star Top 10** · [打开完整榜单 →](https://git.vaiox.xyz/zh/boards/overall)
 
 | # | 项目 | 累计 Star | 新增 |
 |---|---|---|---|
 | 1 | [codecrafters-io/build-your-own-x](https://git.vaiox.xyz/zh/repo/codecrafters-io/build-your-own-x) | 555.9k | — |
-| 2 | [sindresorhus/awesome](https://git.vaiox.xyz/zh/repo/sindresorhus/awesome) | 523.9k | — |
+| 2 | [sindresorhus/awesome](https://git.vaiox.xyz/zh/repo/sindresorhus/awesome) | 524.0k | — |
 | 3 | [public-apis/public-apis](https://git.vaiox.xyz/zh/repo/public-apis/public-apis) | 491.8k | — |
 | 4 | [freeCodeCamp/freeCodeCamp](https://git.vaiox.xyz/zh/repo/freeCodeCamp/freeCodeCamp) | 457.8k | — |
 | 5 | [EbookFoundation/free-programming-books](https://git.vaiox.xyz/zh/repo/EbookFoundation/free-programming-books) | 400.0k | — |
 | 6 | [openclaw/openclaw](https://git.vaiox.xyz/zh/repo/openclaw/openclaw) | 392.9k | — |
-| 7 | [morluto/rea](https://git.vaiox.xyz/zh/repo/morluto/rea) | 375.7k | — |
+| 7 | [morluto/rea](https://git.vaiox.xyz/zh/repo/morluto/rea) | 376.9k | — |
 | 8 | [donnemartin/system-design-primer](https://git.vaiox.xyz/zh/repo/donnemartin/system-design-primer) | 375.4k | — |
 | 9 | [nilbuild/developer-roadmap](https://git.vaiox.xyz/zh/repo/nilbuild/developer-roadmap) | 370.3k | — |
 | 10 | [jwasham/coding-interview-university](https://git.vaiox.xyz/zh/repo/jwasham/coding-interview-university) | 363.3k | — |
