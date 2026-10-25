@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 
+import { copyText } from '@/lib/clipboard'
+
 import type { BoardItem, Locale } from '@/lib/types'
 import { fmtNum } from '@/lib/format'
 import { LANG_LINK_TEXT } from '@/lib/locales'
@@ -46,6 +48,7 @@ export default function RepoDrawer({
   const closeBtnRef = useRef<HTMLButtonElement>(null)
   const scrollBoxRef = useRef<HTMLDivElement>(null)
   const mdBoxRef = useRef<HTMLDivElement>(null)
+  const codeWrapRef = useRef<HTMLDivElement>(null)
   const [entered, setEntered] = useState(false)
 
   useEffect(() => {
@@ -105,6 +108,54 @@ export default function RepoDrawer({
     const cleanup = loadDoc(null)
     return cleanup
   }, [loadDoc])
+
+  /* 30 天迷你走势线:与 README 同仓随开随取(按仓缓存);失败/无数据静默不渲染 */
+  const [spark, setSpark] = useState<{ best: number | null; points: Array<{ day: string; stars: number }> } | null>(null)
+  const sparkCache = useRef(new Map<string, { best: number | null; points: Array<{ day: string; stars: number }> }>())
+
+  useEffect(() => {
+    let stale = false
+    const hit = sparkCache.current.get(fullName)
+    if (hit) {
+      setSpark(hit)
+      return
+    }
+    fetch(`/api/repo-history?full=${encodeURIComponent(fullName)}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j: { ok?: boolean; best?: number | null; points?: Array<{ day: string; stars: number }> } | null) => {
+        if (stale || !j?.ok) return
+        const data = { best: j.best ?? null, points: j.points ?? [] }
+        sparkCache.current.set(fullName, data)
+        setSpark(data)
+      })
+      .catch(() => undefined)
+    return () => {
+      stale = true
+    }
+  }, [fullName])
+
+  /* 代码块 hover 复制:委托监听容器,悬停的 <pre> 右上角浮一枚小钮 */
+  const [codeHover, setCodeHover] = useState<{ top: number; left: number; text: string } | null>(null)
+  const [codeCopied, setCodeCopied] = useState(false)
+  const lastPreRef = useRef<Element | null>(null)
+  const onCodeOver = (e: React.MouseEvent<HTMLDivElement>) => {
+    const pre = (e.target as HTMLElement).closest('pre')
+    if (pre === lastPreRef.current) return
+    lastPreRef.current = pre
+    if (!pre || !codeWrapRef.current) {
+      setCodeHover(null)
+      return
+    }
+    setCodeHover({
+      top: (pre as HTMLElement).offsetTop + 4,
+      left: (pre as HTMLElement).offsetLeft + (pre as HTMLElement).offsetWidth - 36,
+      text: (pre as HTMLElement).innerText,
+    })
+  }
+  const clearCodeHover = () => {
+    lastPreRef.current = null
+    setCodeHover(null)
+  }
 
   useEffect(() => {
     // 开抽屉抢焦点,关抽屉把焦点还给触发行(键盘用户不会"丢"在页面顶端);
@@ -237,6 +288,12 @@ export default function RepoDrawer({
             <img
               src={item.avatarUrl}
               alt=""
+              onError={(e) => {
+                const im = e.currentTarget
+                if (im.dataset.fb) return
+                im.dataset.fb = '1'
+                im.src = `https://github.com/${fullName.split('/')[0] || 'github'}.png`
+              }}
               width={42}
               height={42}
               loading="lazy"
@@ -259,6 +316,14 @@ export default function RepoDrawer({
                 <Link href={`/${locale}/repo/${fullName}`} prefetch={false} className="text-accent transition-opacity hover:opacity-75">
                   {drawer.archive}
                 </Link>
+                {spark && spark.points.length >= 2 && (
+                  <span className="inline-flex items-center gap-1.5">
+                    <Sparkline points={spark.points.map((p) => p.stars)} />
+                    {spark.best !== null && (
+                      <span className="tabular-nums text-accent/90">{strings.sparkBest.replace('{n}', String(spark.best))}</span>
+                    )}
+                  </span>
+                )}
               </p>
             </div>
             <a
@@ -283,6 +348,30 @@ export default function RepoDrawer({
               {drawer.fail}
             </p>
           )}{state === 'ok' && html && (
+            <div
+              ref={codeWrapRef}
+              className="relative"
+              onMouseOver={onCodeOver}
+              onMouseLeave={clearCodeHover}
+            >
+            {codeHover && (
+              <button
+                type="button"
+                aria-label="copy code"
+                title="Copy"
+                onClick={() => {
+                  void copyText(codeHover.text).then((ok) => {
+                    if (!ok) return
+                    setCodeCopied(true)
+                    window.setTimeout(() => setCodeCopied(false), 1400)
+                  })
+                }}
+                className="absolute z-10 flex h-6 w-7 items-center justify-center rounded-md border-[0.5px] border-black/10 bg-white/90 text-[11px] text-ink/60 shadow-sm transition-colors hover:text-ink"
+                style={{ top: codeHover.top, left: Math.max(4, codeHover.left) }}
+              >
+                {codeCopied ? '✓' : '⧉'}
+              </button>
+            )}
             <div
               ref={mdBoxRef}
               className="md-body px-5 py-4"
@@ -315,11 +404,30 @@ export default function RepoDrawer({
               }}
               dangerouslySetInnerHTML={{ __html: html }}
             />
+            </div>
           )}
         </div>
 
         <div className="border-t-[0.5px] border-black/6 px-5 py-2.5 text-[11.5px] text-ink/40">{drawer.from}</div>
       </aside>
     </div>
+  )
+}
+
+/** 迷你走势线:纯 SVG 折线(96×22),min-max 归一;数据 <2 点时调用方不渲染 */
+function Sparkline({ points }: { points: number[] }) {
+  const w = 96
+  const h = 22
+  const min = Math.min(...points)
+  const max = Math.max(...points)
+  const span = max - min || 1
+  const step = points.length > 1 ? w / (points.length - 1) : w
+  const d = points
+    .map((v, i) => `${i === 0 ? 'M' : 'L'}${(i * step).toFixed(1)},${(h - 3 - ((v - min) / span) * (h - 6)).toFixed(1)}`)
+    .join(' ')
+  return (
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} aria-hidden="true" className="shrink-0">
+      <path d={d} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-accent/80" />
+    </svg>
   )
 }

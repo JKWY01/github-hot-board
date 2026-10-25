@@ -294,24 +294,27 @@ async function HeroStats({ locale }: { locale: Locale }) {
 
   const stats = [
     // 后缀不硬编码:榜面规模随口径走,字典文案里已含"300"语义,避免再出现 Top 100/300 分歧
-    { label: dict.home.heroStatStars, value: statA },
-    { label: dict.home.heroStatRepos, value: statB },
-    { label: dict.home.heroStatDaily, value: statC },
+    // 卡片可点:各自跳到口径来源榜(三张卡本来就是三张榜的读数)
+    { label: dict.home.heroStatStars, value: statA, href: `/${locale}/boards/overall` },
+    { label: dict.home.heroStatRepos, value: statB, href: `/${locale}/boards/overall` },
+    { label: dict.home.heroStatDaily, value: statC, href: `/${locale}/boards/milestone` },
   ]
 
   return (
     <dl className="grid grid-cols-1 gap-3 sm:grid-cols-3">
       {stats.map((stat) => (
-        <div
+        <Link
           key={stat.label}
-          className="flex flex-col-reverse rounded-[22px] border-[0.5px] border-black/10 bg-white px-6 py-5 text-center"
+          href={stat.href}
+          prefetch={false}
+          className="flex flex-col-reverse rounded-[22px] border-[0.5px] border-black/10 bg-white px-6 py-5 text-center transition-colors hover:border-accent/40"
         >
           {/* 语义顺序 dt→dd;flex-col-reverse 让视觉保持数值在上 */}
           <dt className="mt-1 text-[12.5px] text-sub">{stat.label}</dt>
           <dd className="text-[26px] font-semibold tracking-tight tabular-nums text-ink">
             {stat.value}
           </dd>
-        </div>
+        </Link>
       ))}
     </dl>
   )

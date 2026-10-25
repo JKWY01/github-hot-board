@@ -83,3 +83,13 @@ describe('findLocalizedReadmePath(语言切换器解析)', () => {
     expect(findLocalizedReadmePath(html, 'a/b', branch, 'zh')).toBeNull()
   })
 })
+
+describe('absolutizeMdHtml 图片懒加载', () => {
+  it('img 补 loading=lazy 与 decoding=async;已有 loading 的不动', () => {
+    const a = absolutizeMdHtml(`<img src="https://raw.githubusercontent.com/a/b/c/d.png">`, 'a/b', 'main', '')
+    expect(a).toContain('loading="lazy"')
+    expect(a).toContain('decoding="async"')
+    const b = absolutizeMdHtml(`<img loading="eager" src="https://x/y.png">`, 'a/b', 'main', '')
+    expect(b.match(/loading="/g)).toHaveLength(1)
+  })
+})

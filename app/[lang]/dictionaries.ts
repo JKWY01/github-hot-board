@@ -87,6 +87,8 @@ export interface Dict {
     etaDays: string
     /** 档位筛选结果为空时的提示 */
     filterEmpty: string
+    /** 抽屉迷你走势线的最好名次({n} 占位) */
+    sparkBest: string
     /** 榜单行上方的筛选/排序控件四词(原内嵌于 LiveBoardList 的 CTRL 表,已并入字典单一体系) */
     filterAll: string
     filterOrder: string
@@ -220,6 +222,7 @@ export function liveStrings(locale: Locale) {
     pushBlocked: d.ui.pushBlocked,
     etaDays: d.ui.etaDays,
     filterEmpty: d.ui.filterEmpty,
+    sparkBest: d.ui.sparkBest,
     filterAll: d.ui.filterAll,
     filterOrder: d.ui.filterOrder,
     filterNet: d.ui.filterNet,

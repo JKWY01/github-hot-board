@@ -173,6 +173,7 @@ export const jaDict: Dict = {
     pushBlocked: 'ブラウザが通知を拒否しました',
     etaDays: '約{n}日',
     filterEmpty: 'この帯のリポジトリは現在ありません',
+    sparkBest: '最高 #{n}',
     filterAll: '全て',
     filterOrder: '順位',
     filterNet: '増加',

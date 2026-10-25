@@ -48,14 +48,27 @@ export default function ArchiveCharts({
       echarts.use([LineChart, GridComponent, TooltipComponent, LegendComponent, CanvasRenderer])
       if (disposed) return
 
-      const baseTooltip = {
+      // 主题相关色:暗色下轴灰/图例文字/浮层都要翻转;html.dark 变化时重刷 option
+      const themeColors = () => {
+        const dark = document.documentElement.classList.contains('dark')
+        return {
+          axisText: dark ? '#98989d' : '#6e6e73',
+          axisLine: dark ? 'rgba(255,255,255,0.22)' : 'rgba(0,0,0,0.25)',
+          split: dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+          legend: dark ? '#f5f5f7' : '#1d1d1f',
+          tipBg: dark ? 'rgba(28,28,32,0.96)' : 'rgba(255,255,255,0.96)',
+          tipText: dark ? '#f5f5f7' : '#1d1d1f',
+        }
+      }
+
+      const baseTooltip = (t: ReturnType<typeof themeColors>) => ({
         trigger: 'axis' as const,
         axisPointer: { type: 'line' as const },
         borderWidth: 0,
-        backgroundColor: 'rgba(255,255,255,0.96)',
-        textStyle: { color: '#1d1d1f', fontSize: 12 },
+        backgroundColor: t.tipBg,
+        textStyle: { color: t.tipText, fontSize: 12 },
         extraCssText: 'box-shadow:0 4px 18px rgba(0,0,0,0.12); border-radius:10px;',
-      }
+      })
 
       const grid = { left: 10, right: 14, top: 30, bottom: 10, containLabel: true }
 
@@ -73,24 +86,24 @@ export default function ArchiveCharts({
 
       // --- Star 走势 ---
       const starChart = echarts.init(starRef.current!)
-      starChart.setOption({
+      const starOption = (t: ReturnType<typeof themeColors>) => ({
         grid,
         tooltip: {
-          ...baseTooltip,
+          ...baseTooltip(t),
           valueFormatter: (v: number) => `${fmtNum(v, locale)} ${starUnit}`,
         },
         xAxis: {
-          type: 'time',
-          axisLine: { lineStyle: { color: 'rgba(0,0,0,0.25)' } },
+          type: 'time' as const,
+          axisLine: { lineStyle: { color: t.axisLine } },
           axisTick: { show: false },
-          axisLabel: { color: '#6e6e73', fontSize: 11, formatter: dayLabels() },
+          axisLabel: { color: t.axisText, fontSize: 11, formatter: dayLabels() },
           splitLine: { show: false },
         },
         yAxis: {
-          type: 'value',
+          type: 'value' as const,
           scale: true,
-          axisLabel: { color: '#6e6e73', fontSize: 11, formatter: (v: number) => axisNum.format(v) },
-          splitLine: { lineStyle: { color: 'rgba(0,0,0,0.06)' } },
+          axisLabel: { color: t.axisText, fontSize: 11, formatter: (v: number) => axisNum.format(v) },
+          splitLine: { lineStyle: { color: t.split } },
         },
         series: [
           {
@@ -105,12 +118,13 @@ export default function ArchiveCharts({
           },
         ],
       })
+      starChart.setOption(starOption(themeColors()))
 
       // --- 名次走势(每榜一条线,rank 1 在上;整数刻度) ---
       const rankChart = echarts.init(rankRef.current!)
-      rankChart.setOption({
+      const rankOption = (t: ReturnType<typeof themeColors>) => ({
         grid,
-        tooltip: { ...baseTooltip, valueFormatter: (v: number) => `#${v}` },
+        tooltip: { ...baseTooltip(t), valueFormatter: (v: number) => `#${v}` },
         legend: {
           top: 0,
           left: 'center',
@@ -118,22 +132,22 @@ export default function ArchiveCharts({
           itemWidth: 7,
           itemHeight: 7,
           itemGap: 14,
-          textStyle: { color: '#1d1d1f', fontSize: 11 },
+          textStyle: { color: t.legend, fontSize: 11 },
         },
         xAxis: {
-          type: 'time',
-          axisLine: { lineStyle: { color: 'rgba(0,0,0,0.25)' } },
+          type: 'time' as const,
+          axisLine: { lineStyle: { color: t.axisLine } },
           axisTick: { show: false },
-          axisLabel: { color: '#6e6e73', fontSize: 11, formatter: dayLabels() },
+          axisLabel: { color: t.axisText, fontSize: 11, formatter: dayLabels() },
           splitLine: { show: false },
         },
         yAxis: {
-          type: 'value',
+          type: 'value' as const,
           inverse: true,
           scale: true,
           minInterval: 1,
-          axisLabel: { color: '#6e6e73', fontSize: 11, formatter: (v: number) => `#${v}` },
-          splitLine: { lineStyle: { color: 'rgba(0,0,0,0.06)' } },
+          axisLabel: { color: t.axisText, fontSize: 11, formatter: (v: number) => `#${v}` },
+          splitLine: { lineStyle: { color: t.split } },
         },
         series: rankGroups.map((g, i) => ({
           name: g.label,
@@ -147,6 +161,15 @@ export default function ArchiveCharts({
           smooth: false,
         })),
       })
+      rankChart.setOption(rankOption(themeColors()))
+
+      // 切主题即时重绘(监听 html.dark 增删,不用重挂图表)
+      const mo = new MutationObserver(() => {
+        const t = themeColors()
+        starChart.setOption(starOption(t))
+        rankChart.setOption(rankOption(t))
+      })
+      mo.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
 
       const ro = new ResizeObserver(() => {
         starChart.resize()
@@ -155,6 +178,7 @@ export default function ArchiveCharts({
       if (starRef.current) ro.observe(starRef.current)
       if (rankRef.current) ro.observe(rankRef.current)
       cleanup = () => {
+        mo.disconnect()
         ro.disconnect()
         starChart.dispose()
         rankChart.dispose()

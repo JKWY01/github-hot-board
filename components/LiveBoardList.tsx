@@ -163,6 +163,28 @@ export default function LiveBoardList({
   const [searchKind, setSearchKind] = useState<'exact' | 'keyword' | 'web' | 'empty'>('exact')
   const [webConfirmed, setWebConfirmed] = useState('')
   const searchRef = useRef<HTMLInputElement>(null)
+  /* 搜索历史(纯本地,最多 5 条):聚焦空输入时下拉,点选即重搜 */
+  const HIST_KEY = 'ghb.search.hist.v1'
+  const [hist, setHist] = useState<string[]>([])
+  const [histOpen, setHistOpen] = useState(false)
+  const readHist = (): string[] => {
+    try {
+      const raw = JSON.parse(localStorage.getItem(HIST_KEY) ?? '[]') as unknown
+      return Array.isArray(raw) ? raw.filter((x): x is string => typeof x === 'string').slice(0, 5) : []
+    } catch {
+      return []
+    }
+  }
+  const pushHist = (q: string) => {
+    if (q.length < 2) return
+    const next = [q, ...readHist().filter((x) => x !== q)].slice(0, 5)
+    try {
+      localStorage.setItem(HIST_KEY, JSON.stringify(next))
+    } catch {
+      /* 隐私模式:仅本次会话 */
+    }
+    setHist(next)
+  }
   /* 渐进渲染:总榜 500 行一次全渲染约 1.5 万 DOM 节点,移动端水合吃力。
    * SSR 首批 RENDER_CHUNK 行,滚动接近尾部自动续批;筛选/搜索照常作用于全集。
    * tradeoff(已拍板):HTML 里行数截到首批 —— JSON-LD 本就只标 150,档案页才是 SEO 主粮。 */
@@ -679,7 +701,7 @@ export default function LiveBoardList({
           >
             <BellIcon size={13} />
           </Link>
-          <label className="flex shrink-0 items-center gap-1 pl-2">
+          <label className="relative flex shrink-0 items-center gap-1 pl-2">
             <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" className="text-ink/40" aria-hidden="true">
               <circle cx="7" cy="7" r="4.6" />
               <path d="M10.4 10.4 L13.6 13.6" strokeLinecap="round" />
@@ -688,9 +710,38 @@ export default function LiveBoardList({
               ref={searchRef}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
+              onFocus={() => {
+                setHist(readHist())
+                setHistOpen(true)
+              }}
+              onBlur={() => window.setTimeout(() => setHistOpen(false), 160)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') pushHist(search.trim())
+              }}
               placeholder={strings.searchPlaceholder}
               className="w-[150px] rounded-full bg-black/6 px-3 py-1 text-[12px] text-ink outline-none placeholder:text-ink/35 focus:bg-black/10 sm:w-[220px]"
             />
+            {histOpen && hist.length > 0 && !search && (
+              <span className="absolute right-0 top-[calc(100%+6px)] z-40 block w-[220px] overflow-hidden rounded-2xl border-[0.5px] border-black/10 bg-white py-1 shadow-[0_12px_40px_rgba(0,0,0,0.14)]">
+                {hist.map((h) => (
+                  <button
+                    key={h}
+                    type="button"
+                    /* mousedown 抢在 input blur 之前,免下拉先消失 */
+                    onMouseDown={(e) => {
+                      e.preventDefault()
+                      setSearch(h)
+                      setHistOpen(false)
+                      searchRef.current?.focus()
+                    }}
+                    className="flex w-full items-center justify-between gap-2 px-3 py-1.5 text-left text-[12px] text-ink/80 transition-colors hover:bg-black/5"
+                  >
+                    <span className="truncate">{h}</span>
+                    <span className="shrink-0 text-ink/30" aria-hidden>↺</span>
+                  </button>
+                ))}
+              </span>
+            )}
             {search && (
               <button
                 type="button"
@@ -804,6 +855,13 @@ export default function LiveBoardList({
                 <img
                   src={item.avatarUrl}
                   alt=""
+                  onError={(e) => {
+                    // 头像死链(仓库改名/CDN 抖动)回退 owner 默认头像,只退一次
+                    const im = e.currentTarget
+                    if (im.dataset.fb) return
+                    im.dataset.fb = '1'
+                    im.src = `https://github.com/${item.owner || 'github'}.png`
+                  }}
                   width={compact ? 30 : 38}
                   height={compact ? 30 : 38}
                   loading="lazy"

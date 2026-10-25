@@ -173,6 +173,7 @@ export const koDict: Dict = {
     pushBlocked: '브라우저가 알림을 거부했습니다',
     etaDays: '약 {n}일',
     filterEmpty: '이 구간에 저장소가 없습니다',
+    sparkBest: '최고 #{n}',
     filterAll: '전체',
     filterOrder: '순위',
     filterNet: '증가',

@@ -173,6 +173,7 @@ export const plDict: Dict = {
     pushBlocked: 'Przeglądarka zablokowała powiadomienia',
     etaDays: '~{n} d',
     filterEmpty: 'Brak repozytoriów w tym przedziale',
+    sparkBest: 'Najlepsze #{n}',
     filterAll: 'Wszystkie',
     filterOrder: 'Pozycje',
     filterNet: 'Przyrost',

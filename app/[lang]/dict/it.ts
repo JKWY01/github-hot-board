@@ -173,6 +173,7 @@ export const itDict: Dict = {
     pushBlocked: 'Il browser ha bloccato le notifiche',
     etaDays: '~{n} g',
     filterEmpty: 'Nessun repo in questa fascia',
+    sparkBest: 'Migliore #{n}',
     filterAll: 'Tutti',
     filterOrder: 'Classifica',
     filterNet: 'Guadagni',

@@ -62,6 +62,8 @@ export function absolutizeMdHtml(html: string, full: string, branch: string, dir
   })
   // 外链新标签(页内锚点除外,交给客户端就地滚动)
   out = out.replace(/<a\b(?![^>]*\btarget=)(?![^>]*\bhref="#)/g, '<a target="_blank" rel="noopener noreferrer"')
+  // 图片懒加载:长 README 几十张图不该一次全请求;已有 loading 属性的不动
+  out = out.replace(/<img(?![^>]*\bloading=)/gi, '<img loading="lazy" decoding="async"')
   return out
 }
 

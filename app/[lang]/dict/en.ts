@@ -173,6 +173,7 @@ export const enDict: Dict = {
     pushBlocked: 'Browser blocked notifications',
     etaDays: '~{n}d',
     filterEmpty: 'No repos in this tier right now',
+    sparkBest: 'best #{n}',
     filterAll: 'All',
     filterOrder: 'Order',
     filterNet: 'Net gain',

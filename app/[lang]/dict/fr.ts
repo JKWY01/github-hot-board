@@ -173,6 +173,7 @@ export const frDict: Dict = {
     pushBlocked: 'Le navigateur a refusé les notifications',
     etaDays: '~{n} j',
     filterEmpty: 'Aucun dépôt dans cette tranche',
+    sparkBest: 'Meilleur #{n}',
     filterAll: 'Tout',
     filterOrder: 'Classement',
     filterNet: 'Gains',

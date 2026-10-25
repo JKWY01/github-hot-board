@@ -174,6 +174,7 @@ export const zhDict: Dict = {
     pushBlocked: '浏览器拒绝了通知权限',
     etaDays: '约{n}天',
     filterEmpty: '该档位暂无项目',
+    sparkBest: '最好 #第{n}',
     filterAll: '全部',
     filterOrder: '榜序',
     filterNet: '净增',

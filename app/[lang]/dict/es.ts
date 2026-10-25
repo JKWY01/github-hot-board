@@ -173,6 +173,7 @@ export const esDict: Dict = {
     pushBlocked: 'El navegador bloqueó las notificaciones',
     etaDays: '~{n} d',
     filterEmpty: 'Sin repos en este tramo',
+    sparkBest: 'Mejor #{n}',
     filterAll: 'Todos',
     filterOrder: 'Tabla',
     filterNet: 'Ganancia',

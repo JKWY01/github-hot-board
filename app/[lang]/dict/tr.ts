@@ -173,6 +173,7 @@ export const trDict: Dict = {
     pushBlocked: 'Tarayıcı bildirimleri engelledi',
     etaDays: '~{n} g',
     filterEmpty: 'Bu aralıkta depo yok',
+    sparkBest: 'En iyi #{n}',
     filterAll: 'Tümü',
     filterOrder: 'Sıra',
     filterNet: 'Kazanç',

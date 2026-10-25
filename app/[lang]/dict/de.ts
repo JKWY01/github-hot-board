@@ -173,6 +173,7 @@ export const deDict: Dict = {
     pushBlocked: 'Browser hat Benachrichtigungen blockiert',
     etaDays: '~{n} T.',
     filterEmpty: 'Keine Repos in dieser Spanne',
+    sparkBest: 'Bestes #{n}',
     filterAll: 'Alle',
     filterOrder: 'Rang',
     filterNet: 'Zuwachs',

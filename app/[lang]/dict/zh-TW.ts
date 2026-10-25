@@ -173,6 +173,7 @@ export const zhTWDict: Dict = {
     pushBlocked: '瀏覽器拒絕了通知權限',
     etaDays: '約{n}天',
     filterEmpty: '該檔位暫無專案',
+    sparkBest: '最好 #第{n}',
     filterAll: '全部',
     filterOrder: '榜序',
     filterNet: '淨增',

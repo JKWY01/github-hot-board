@@ -173,6 +173,7 @@ export const ptDict: Dict = {
     pushBlocked: 'O navegador bloqueou as notificações',
     etaDays: '~{n} d',
     filterEmpty: 'Sem repositórios nesta faixa',
+    sparkBest: 'Melhor #{n}',
     filterAll: 'Todos',
     filterOrder: 'Ordem',
     filterNet: 'Ganhos',

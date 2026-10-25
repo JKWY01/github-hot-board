@@ -173,6 +173,7 @@ export const ruDict: Dict = {
     pushBlocked: 'Браузер запретил уведомления',
     etaDays: '~{n} дн.',
     filterEmpty: 'В этом диапазоне нет репозиториев',
+    sparkBest: 'Лучшая #{n}',
     filterAll: 'Все',
     filterOrder: 'Рейтинг',
     filterNet: 'Прирост',

@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 
+import { copyText } from '@/lib/clipboard'
+
 /** 通用复制小钮:点击写入剪贴板,1.6s 内显示 ✓ 回执;失败静默(用户手动选择兜底)。 */
 export default function CopyCode({ text, label }: { text: string; label: string }) {
   const [done, setDone] = useState(false)
@@ -11,13 +13,11 @@ export default function CopyCode({ text, label }: { text: string; label: string 
       aria-label={label}
       title={label}
       onClick={() => {
-        void navigator.clipboard
-          ?.writeText(text)
-          .then(() => {
-            setDone(true)
-            window.setTimeout(() => setDone(false), 1600)
-          })
-          .catch(() => undefined)
+        void copyText(text).then((ok) => {
+          if (!ok) return
+          setDone(true)
+          window.setTimeout(() => setDone(false), 1600)
+        })
       }}
       className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-ink/45 transition-colors hover:bg-black/6 hover:text-ink"
     >

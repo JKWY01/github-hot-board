@@ -173,6 +173,7 @@ export const viDict: Dict = {
     pushBlocked: 'Trình duyệt đã chặn thông báo',
     etaDays: '~{n} ngày',
     filterEmpty: 'Không có repo trong khoảng này',
+    sparkBest: 'Tốt nhất #{n}',
     filterAll: 'Tất cả',
     filterOrder: 'Thứ hạng',
     filterNet: 'Tăng',
