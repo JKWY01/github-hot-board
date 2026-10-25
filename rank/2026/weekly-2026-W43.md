@@ -5,21 +5,21 @@
 
 | # | 项目 | 累计 Star | 本周新增 Star | 简介 |
 |---|---|---|---|---|
-| 1 | [cloudflare/security-audit-skill](https://git.vaiox.xyz/zh/repo/cloudflare/security-audit-skill) | 44.6k | 12.7k | A coding-agent skill for multi-phase security audits with in… |
-| 2 | [morluto/rea](https://git.vaiox.xyz/zh/repo/morluto/rea) | 378.9k | 78.6k | Reverse engineer anything with agents, from app behavior dow… |
+| 1 | [cloudflare/security-audit-skill](https://git.vaiox.xyz/zh/repo/cloudflare/security-audit-skill) | 45.7k | 12.7k | A coding-agent skill for multi-phase security audits with in… |
+| 2 | [morluto/rea](https://git.vaiox.xyz/zh/repo/morluto/rea) | 381.0k | 78.6k | Reverse engineer anything with agents, from app behavior dow… |
 | 3 | [anthropics/claude-plugins-official](https://git.vaiox.xyz/zh/repo/anthropics/claude-plugins-official) | 44.4k | 3.2k | Official, Anthropic-managed directory of high quality Claude… |
 | 4 | [ruvnet/ruflo](https://git.vaiox.xyz/zh/repo/ruvnet/ruflo) | 79.1k | 3.2k | The original agent harness. Deploy intelligent multi-player … |
-| 5 | [stablyai/orca](https://git.vaiox.xyz/zh/repo/stablyai/orca) | 105.0k | 9.8k | Orca is the place for working with a fleet of agents (e.g. G… |
-| 6 | [anomalyco/opencode](https://git.vaiox.xyz/zh/repo/anomalyco/opencode) | 221.1k | 6.9k | The open source coding agent. |
-| 7 | [cursor/plugins](https://git.vaiox.xyz/zh/repo/cursor/plugins) | 13.9k | 1.7k | Cursor plugin specification and official plugins |
+| 5 | [stablyai/orca](https://git.vaiox.xyz/zh/repo/stablyai/orca) | 105.3k | 9.8k | Orca is the place for working with a fleet of agents (e.g. G… |
+| 6 | [anomalyco/opencode](https://git.vaiox.xyz/zh/repo/anomalyco/opencode) | 221.3k | 6.9k | The open source coding agent. |
+| 7 | [cursor/plugins](https://git.vaiox.xyz/zh/repo/cursor/plugins) | 14.0k | 1.7k | Cursor plugin specification and official plugins |
 | 8 | [android/skills](https://git.vaiox.xyz/zh/repo/android/skills) | 9.6k | 1.3k |  |
-| 9 | [anthropics/knowledge-work-plugins](https://git.vaiox.xyz/zh/repo/anthropics/knowledge-work-plugins) | 32.6k | 2.6k | Open source repository of plugins primarily intended for kno… |
-| 10 | [heygen-com/hyperframes](https://git.vaiox.xyz/zh/repo/heygen-com/hyperframes) | 71.5k | 5.6k | Write HTML. Render video. Built for agents. |
-| 11 | [Comfy-Org/ComfyUI](https://git.vaiox.xyz/zh/repo/Comfy-Org/ComfyUI) | 142.6k | 4.6k | The most powerful and modular diffusion model GUI, api and b… |
-| 12 | [akitaonrails/ai-memory](https://git.vaiox.xyz/zh/repo/akitaonrails/ai-memory) | 13.3k | 3.5k | Solution for long term memory for agent coding CLIs and to f… |
-| 13 | [Graphify-Labs/graphify](https://git.vaiox.xyz/zh/repo/Graphify-Labs/graphify) | 134.5k | 6.9k | Turn any codebase, with its docs, SQL schemas, configs, and … |
+| 9 | [anthropics/knowledge-work-plugins](https://git.vaiox.xyz/zh/repo/anthropics/knowledge-work-plugins) | 32.8k | 2.6k | Open source repository of plugins primarily intended for kno… |
+| 10 | [heygen-com/hyperframes](https://git.vaiox.xyz/zh/repo/heygen-com/hyperframes) | 71.7k | 5.6k | Write HTML. Render video. Built for agents. |
+| 11 | [Comfy-Org/ComfyUI](https://git.vaiox.xyz/zh/repo/Comfy-Org/ComfyUI) | 142.8k | 4.6k | The most powerful and modular diffusion model GUI, api and b… |
+| 12 | [akitaonrails/ai-memory](https://git.vaiox.xyz/zh/repo/akitaonrails/ai-memory) | 13.4k | 3.5k | Solution for long term memory for agent coding CLIs and to f… |
+| 13 | [Graphify-Labs/graphify](https://git.vaiox.xyz/zh/repo/Graphify-Labs/graphify) | 134.7k | 6.9k | Turn any codebase, with its docs, SQL schemas, configs, and … |
 | 14 | [HKUDS/CLI-Anything](https://git.vaiox.xyz/zh/repo/HKUDS/CLI-Anything) | 56.9k | 3.1k | "CLI-Anything: Making ALL Software Agent-Native" -- CLI-Hub:… |
-| 15 | [vllm-project/vllm](https://git.vaiox.xyz/zh/repo/vllm-project/vllm) | 95.3k | 1.4k | A high-throughput and memory-efficient inference and serving… |
+| 15 | [vllm-project/vllm](https://git.vaiox.xyz/zh/repo/vllm-project/vllm) | 95.4k | 1.4k | A high-throughput and memory-efficient inference and serving… |
 
 ---
 
