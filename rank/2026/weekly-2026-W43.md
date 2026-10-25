@@ -16,8 +16,8 @@
 | 9 | [akitaonrails/ai-memory](https://git.vaiox.xyz/zh/repo/akitaonrails/ai-memory) | 13.4k | 3.5k | Solution for long term memory for agent coding CLIs and to f… |
 | 10 | [Comfy-Org/ComfyUI](https://git.vaiox.xyz/zh/repo/Comfy-Org/ComfyUI) | 142.8k | 4.6k | The most powerful and modular diffusion model GUI, api and b… |
 | 11 | [anthropics/claude-plugins-official](https://git.vaiox.xyz/zh/repo/anthropics/claude-plugins-official) | 44.5k | 3.2k | Official, Anthropic-managed directory of high quality Claude… |
-| 12 | [vllm-project/vllm](https://git.vaiox.xyz/zh/repo/vllm-project/vllm) | 95.4k | 1.4k | A high-throughput and memory-efficient inference and serving… |
-| 13 | [multica-ai/andrej-karpathy-skills](https://git.vaiox.xyz/zh/repo/multica-ai/andrej-karpathy-skills) | 223.6k | 3.0k | A single CLAUDE.md file to improve Claude Code behavior, der… |
+| 12 | [vllm-project/vllm](https://git.vaiox.xyz/zh/repo/vllm-project/vllm) | 95.5k | 1.4k | A high-throughput and memory-efficient inference and serving… |
+| 13 | [multica-ai/andrej-karpathy-skills](https://git.vaiox.xyz/zh/repo/multica-ai/andrej-karpathy-skills) | 223.7k | 3.0k | A single CLAUDE.md file to improve Claude Code behavior, der… |
 | 14 | [pingdotgg/t3code](https://git.vaiox.xyz/zh/repo/pingdotgg/t3code) | 30.0k | 1.8k |  |
 
 ---
