@@ -463,21 +463,33 @@ export async function readTopicPeers(fullName: string, topicsOf: string[], limit
   cacheLife({ stale: 300, revalidate: 1800, expire: 7200 })
   if (topicsOf.length === 0) return []
   const want = new Set(topicsOf.map((t) => t.toLowerCase()))
+  // 主题交集必须下推库端(jsonb_exists_any 只回命中行):把 board_head 全部 payload
+  // 拉到 JS 过滤曾是档案页断流真因 —— 几 MB 跨境一跑 2 分钟+,占满连接池拖死同页
+  // 其他查询(readDiscoverMeta 同款教训,5079868)。
+  const rows = (await withDb(async (sql) =>
+    sql`
+      SELECT it->>'fullName' AS full_name, (it->>'stars') AS stars, it->'topics' AS topics
+      FROM board_head, jsonb_array_elements(payload->'items') AS it
+      WHERE item_count > 0
+        AND it->>'fullName' IS NOT NULL
+        AND it->>'fullName' <> ${fullName}
+        AND jsonb_exists_any(it->'topics', ${topicsOf.map((t) => t.toLowerCase())})`
+  )) as unknown as Array<{ full_name: string; stars: string | number; topics: string[] | null }> | null
+  if (!rows) throw new Error('topic-peers unavailable (db unreachable/timeout)')
   const peers = new Map<string, { stars: number; shared: Set<string> }>()
-  await withDb(async (sql) => {
-    const rows = await sql`SELECT payload FROM board_head WHERE item_count > 0`
-    for (const row of rows as unknown as Array<{ payload?: { items?: Array<{ fullName?: string; stars?: number; topics?: string[] }> } }>) {
-      for (const it of row.payload?.items ?? []) {
-        if (!it.fullName || it.fullName === fullName) continue
-        for (const t of it.topics ?? []) {
-          if (!want.has(String(t).toLowerCase())) continue
-          const cur = peers.get(it.fullName)
-          if (cur) { cur.shared.add(t); if ((it.stars ?? 0) > cur.stars) cur.stars = it.stars ?? 0 }
-          else peers.set(it.fullName, { stars: it.stars ?? 0, shared: new Set([t]) })
-        }
-      }
+  for (const row of rows) {
+    // 大小写在 JS 端复核(GitHub topics 惯例全小写,库里 jsonb_exists_any 已精确命中)
+    const shared = (row.topics ?? []).filter((t) => want.has(String(t).toLowerCase()))
+    if (shared.length === 0) continue
+    const stars = Number(row.stars ?? 0)
+    const cur = peers.get(row.full_name)
+    if (cur) {
+      for (const t of shared) cur.shared.add(t)
+      if (stars > cur.stars) cur.stars = stars
+    } else {
+      peers.set(row.full_name, { stars, shared: new Set(shared) })
     }
-  })
+  }
   return [...peers.entries()]
     .map(([name, v]) => ({ fullName: name, stars: v.stars, sharedTopics: [...v.shared] }))
     .sort((a, b) => b.sharedTopics.length - a.sharedTopics.length || b.stars - a.stars)

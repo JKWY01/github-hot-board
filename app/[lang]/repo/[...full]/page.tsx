@@ -72,27 +72,32 @@ export default async function RepoPage({
   const fullName = fullNameOf(full)
   if (!fullName) notFound()
 
-  // 档案与描述两读无依赖,并行省一次 Neon 往返串行(冷访 1.7s→约减半)
+  // 档案与描述两读无依赖,并行省一次跨境往返串行(冷访 1.7s→约减半)。
+  // 所有库读一律限时(catch 只接 reject 接不住"挂住"):主链 9s,挂住就降级,
+  // 绝不拖到 maxDuration 被掐成 200 空体(504 案的形态)。
   const [archive, descsMap] = await Promise.all([
-    // 9 秒上限:库被挤爆时宁可诚实 404,绝不挂到 maxDuration 被掐成 200 空体
     withTimeout(getRepoArchiveCached(fullName), 9000),
-    readRepoDescs([fullName]),
+    withTimeout(readRepoDescs([fullName]), 9000),
   ])
   if (!archive) notFound()
 
   // 状态三件套(license/push/issues,2026-10-25 起随拍采集)+ 同类项目(主题邻居)
   const [statusFacts, topicPeers] = await Promise.all([
-    readRepoStatusFacts(fullName).catch(() => ({ license: null, pushedAt: null, issues: null })),
-    readDiscoverMeta()
-      .then((meta) => {
-        const mine = meta.get(fullName)
-        return mine && mine.topics.length > 0 ? readTopicPeers(fullName, mine.topics) : []
-      })
-      .catch(() => []),
+    withTimeout(readRepoStatusFacts(fullName), 9000)
+      .catch(() => ({ license: null, pushedAt: null, issues: null })),
+    // 同类邻居是锦上添花:3.5s 上限,慢就整段放弃(空数组),不许拖死档案页
+    withTimeout(
+      readDiscoverMeta()
+        .then((meta) => {
+          const mine = meta.get(fullName)
+          return mine && mine.topics.length > 0 ? readTopicPeers(fullName, mine.topics) : []
+        }),
+      3500,
+    ).catch(() => []),
   ])
 
   // 视角语言描述合并在缓存外(与榜单洞同一纪律):zh 页面用 zh 描述,缺翻译回落 en 原文。
-  const descs = descsMap.get(fullName)
+  const descs = descsMap?.get(fullName)
   const descText = descs?.[lang] ?? descs?.en ?? null
 
   // 同榜近邻(内链网):读现成 board_head payload,零新查询;失败静默,别拖档案页。
@@ -103,12 +108,12 @@ export default async function RepoPage({
     archive.appearances.find((a) => a.language === '') ??
     archive.appearances[0]
   const related = primary
-    ? await readBoardNeighbors(primary.board, fullName).catch(() => [])
+    ? await withTimeout(readBoardNeighbors(primary.board, fullName), 9000).catch(() => [])
     : []
 
   // README 正文(repo_docs 快照,抽屉与档案页共用一份):命中零上游;
   // 未命中单飞实弹取一次(≤4s),入库后爬虫与访客下访直接吃到正文。服务端夜批还会预填。
-  const cachedDoc = await readRepoDoc(fullName, lang)
+  const cachedDoc = await withTimeout(readRepoDoc(fullName, lang), 9000)
   const readmeHtml = cachedDoc ?? (await withTimeout(
     borrowRepoDocFetch(fullName, lang, () => fetchRepoReadme(fullName, lang)),
     4000,
@@ -119,10 +124,10 @@ export default async function RepoPage({
       archive={archive}
       locale={lang}
       descText={descText}
-      related={related}
+      related={related ?? undefined}
       relatedBoard={primary?.board}
-      statusFacts={statusFacts}
-      topicPeers={topicPeers}
+      statusFacts={statusFacts ?? undefined}
+      topicPeers={topicPeers ?? undefined}
       readmeHtml={readmeHtml}
     />
   )
