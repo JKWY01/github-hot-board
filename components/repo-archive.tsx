@@ -193,15 +193,17 @@ export default function RepoArchiveView({
         const gain = starPoints[starPoints.length - 1]!.value - starPoints[0]!.value
         const currentBoards = archive.appearances.filter((a) => a.current).length
         if (gain <= 0 || currentBoards <= 0) return null
-        // 连续在榜天数:从最近有拍的日子往回数连续日(近 30 天窗口,满 30 显示 30+)
+        // 连续在榜天数:从最近有拍的日子往回数连续日(近 30 天窗口,满 30 显示 30+)。
+        // "现在"用数据侧锚点(最新一拍时刻),不读墙钟 —— cacheComponents 生产契约
+        // 禁止渲染期 Date.now()(实测:读钟会让档案页在生产断流成 200 空体)。
         const daySet = new Set(starPoints.map((p) => p.day))
         const utcDay = (t: number) => new Date(t).toISOString().slice(0, 10)
         let streak = 0
         {
           const latest = starPoints[starPoints.length - 1]!.day
           const latestMs = Date.parse(`${latest}T00:00:00Z`)
-          // eslint-disable-next-line react-hooks/purity -- 本页 instant=false 请求时态渲染,此刻读钟即"现在"
-          if (Date.now() - latestMs < 2 * 86_400_000) {
+          const nowMs = Date.parse(archive.updatedAt)
+          if (nowMs - latestMs < 2 * 86_400_000) {
             for (let i = 0; ; i += 1) {
               const day = utcDay(latestMs - i * 86_400_000)
               if (!daySet.has(day)) break
