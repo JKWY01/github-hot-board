@@ -174,7 +174,8 @@ export function dbKey(slug: string, language?: string): string {
  * 带好 source 与 degraded 标,历史连贯并让口径诚实。 */
 /** 上一拍名次嵌进本拍载荷(board_head 只留最新,payload 里带 prevRank,
  * 任何访客打开页面都能直接看到相对上一轮同步的爬/掉榜,而不必恰好守在换拍一刻)。
- * 纯函数:同名次/新入榜不写字段,保持载荷干净。 */
+ * 纯函数:上一拍存在就写(同名次也写)—— 前端"prevRank 缺省 = 真新进"的判定依赖此约定;
+ * 上一拍没有的行不写字段。 */
 export function withPrevRanks<T extends { fullName: string }>(
   items: T[],
   prevItems: Array<{ fullName: string }>,
@@ -183,7 +184,7 @@ export function withPrevRanks<T extends { fullName: string }>(
   prevItems.forEach((it, i) => prevOrder.set(it.fullName, i))
   return items.map((item, index) => {
     const prev = prevOrder.get(item.fullName)
-    if (prev === undefined || prev === index) return item
+    if (prev === undefined) return item
     return { ...item, prevRank: prev }
   })
 }

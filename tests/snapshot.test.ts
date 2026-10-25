@@ -15,14 +15,14 @@ describe('dbKey', () => {
 
 describe('withPrevRanks(上一拍名次嵌入)', () => {
   const prev = [{ fullName: 'a/a' }, { fullName: 'b/b' }, { fullName: 'c/c' }]
-  it('爬榜记 0 基 prevRank,名次不变不写字段', () => {
+  it('爬榜记 0 基 prevRank;名次不变也写(缺省字段 = 真新进,语义必须唯一)', () => {
     const next = withPrevRanks(
       [{ fullName: 'b/b' }, { fullName: 'a/a' }, { fullName: 'c/c' }],
       prev,
     )
     expect(next[0]).toMatchObject({ fullName: 'b/b', prevRank: 1 })
-    expect(next[1]).toMatchObject({ fullName: 'a/a' }) // prevRank 不出现
-    expect(next[2]).toMatchObject({ fullName: 'c/c' })
+    expect(next[1]).toMatchObject({ fullName: 'a/a', prevRank: 0 })
+    expect(next[2]).toMatchObject({ fullName: 'c/c', prevRank: 2 })
   })
   it('新入榜不写字段;掉榜记原位', () => {
     const next = withPrevRanks(
