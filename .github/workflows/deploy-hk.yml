@@ -1,0 +1,52 @@
+# HK 自托管部署线(2026-10-25,Vercel 分流方案):push main → GitHub 构建 standalone
+# → 传 HK → 切软链 → 重启 ghb-web 容器 → 健康检查。快照自动提交带 [skip ci] 不触发。
+# 与 Vercel 双线并存:两边读同一个库;反代决定谁接客(nginx: 爬虫→HK,真人→Vercel)。
+# 回滚 = 服务器上 ln -sfn 指回上一个 releases/<sha> 再 docker restart。
+name: deploy-hk
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+concurrency:
+  group: deploy-hk
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: 安装依赖
+        run: npm ci
+
+      - name: 构建(standalone)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          GITHUB_TOKENS: ${{ secrets.GH_TOKENS }}
+          NEXT_PUBLIC_SITE_URL: 'https://git.vaiox.xyz'
+        run: npm run build
+
+      - name: 打包
+        run: |
+          cp -r public .next/standalone/public
+          cp -r .next/static .next/standalone/.next/static
+          tar -czf /tmp/release.tgz -C .next/standalone .
+
+      - name: 上传 HK 并切换重启
+        env:
+          HK_DEPLOY_KEY: ${{ secrets.HK_DEPLOY_KEY }}
+        run: |
+          printf '%s\n' "$HK_DEPLOY_KEY" > /tmp/dk
+          chmod 600 /tmp/dk
+          SHA=${GITHUB_SHA::12}
+          scp -P 4492 -o StrictHostKeyChecking=accept-new -o BatchMode=yes -i /tmp/dk /tmp/release.tgz root@45.197.146.227:/opt/ghb/app/incoming.tgz
+          ssh -p 4492 -o StrictHostKeyChecking=accept-new -o BatchMode=yes -i /tmp/dk root@45.197.146.227 "set -e; mkdir -p /opt/ghb/app/releases/$SHA; tar xzf /opt/ghb/app/incoming.tgz -C /opt/ghb/app/releases/$SHA; ln -sfn /opt/ghb/app/releases/$SHA /opt/ghb/app/current; rm -f /opt/ghb/app/incoming.tgz; docker restart ghb-web; sleep 6; curl -sf -o /dev/null http://127.0.0.1:3000/api/boards/overall && echo DEPLOY_OK; ls -1dt /opt/ghb/app/releases/* | tail -n +4 | xargs -r rm -rf"

@@ -26,6 +26,9 @@ const CSP = [
 const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
+  // 自托管(HK 容器)与 Vercel 两用:standalone 产物 = server.js + 精选依赖,
+  // Vercel 构建器会忽略此选项,行为不变(HK 搬家 2026-10-25)。
+  output: 'standalone',
   // Postgres 驱动不打进 bundle:动态引入的驱动被打包器改写后 tagged-template 会损坏
   // (实测 prod 发出空 SQL 报 "syntax error at or near :"),外部化后裸 Node 加载一切正常。
   serverExternalPackages: ['postgres'],
