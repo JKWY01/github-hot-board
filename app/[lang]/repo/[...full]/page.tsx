@@ -85,14 +85,15 @@ export default async function RepoPage({
   const [statusFacts, topicPeers] = await Promise.all([
     withTimeout(readRepoStatusFacts(fullName), 9000)
       .catch(() => ({ license: null, pushedAt: null, issues: null })),
-    // 同类邻居是锦上添花:3.5s 上限,慢就整段放弃(空数组),不许拖死档案页
+    // 同类邻居是锦上添花:4.5s 上限(部署后首渲染=函数冷启动+洞冷,3.5s 实测常输一拍),
+    // 慢就整段放弃(空数组),不许拖死档案页
     withTimeout(
       readDiscoverMeta()
         .then((meta) => {
           const mine = meta.get(fullName)
           return mine && mine.topics.length > 0 ? readTopicPeers(fullName, mine.topics) : []
         }),
-      3500,
+      4500,
     ).catch(() => []),
   ])
 
