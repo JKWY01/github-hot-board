@@ -53,10 +53,21 @@ async function discoverFiltered(f: DiscoverFilters): Promise<DiscoverRow[]> {
   cacheLife({ stale: 60, revalidate: 300, expire: 3600 })
   const bandCond = f.band ? ` AND stars BETWEEN ${BAND_SQL[f.band]}` : ''
   const ageCond = f.age ? ` AND created_at IS NOT NULL AND created_at > ${AGE_SQL[f.age]}` : ''
-  const langCond = f.lang ? ` AND lower(lang) = lower(${JSON.stringify(f.lang)})` : ''
-  const topicCond = f.topic ? ` AND topics @> jsonb_build_array(${JSON.stringify(f.topic)})` : ''
+  // lang/topic 是用户输入:必须参数化($1/$2),此前字符串拼接既是注入面,
+  // 也让双引号被当标识符解析报 column does not exist(实测 python 组合全空)
+  const params: string[] = []
+  let langCond = ''
+  if (f.lang) {
+    params.push(f.lang)
+    langCond = ` AND lower(lang) = lower($${params.length})`
+  }
+  let topicCond = ''
+  if (f.topic) {
+    params.push(f.topic)
+    topicCond = ` AND topics @> jsonb_build_array($${params.length}::text)`
+  }
   const order = f.sort === 'gain' ? 'COALESCE(gain7, -1) DESC, stars DESC' : 'stars DESC'
-  // 条件段全部来自白名单常量/JSON.stringify 字面量,无用户可注入面
+  // 条件段来自白名单常量 + 参数化占位,无注入面
   const rows = await withDb(async (sql) =>
     sql.unsafe(`
       WITH meta AS (
@@ -90,7 +101,7 @@ async function discoverFiltered(f: DiscoverFilters): Promise<DiscoverRow[]> {
         ${bandCond ? `AND stars BETWEEN ${BAND_SQL[f.band!]}` : ''}
         ${ageCond ? `AND created_at IS NOT NULL AND created_at > ${AGE_SQL[f.age!]}` : ''}
       ORDER BY ${order}
-      LIMIT 60`),
+      LIMIT 60`, params),
   )
   if (!rows) throw new Error('discover unavailable (db unreachable/timeout)')
   return (rows as unknown as Array<{ full_name: string; stars: string | number; gain7: string | number | null; lang: string | null; topics: string[] | null; created_at: string | null }>).map((r) => ({

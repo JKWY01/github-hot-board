@@ -595,6 +595,9 @@ export async function readRepoArchiveRows(fullName: string): Promise<{
       Array<{ board: string; language: string; rank: number; stars: number | string; forks: number; metric: number | string; source: string; degraded: boolean; taken_at: Date }>,
       Array<{ day: string; board: string; rank: number; metric: number | string; stars: number | string }>,
     ]
+    // current 判定锚点 = 查询内最新一拍(数据侧"现在"),不读墙钟 ——
+    // 本函数被 'use cache' 的档案页调用,cache 域禁动态 API(实测生产预渲染 throw 断流)。
+    const maxTakenMs = rows.reduce((m, r) => Math.max(m, new Date(r.taken_at).getTime()), 0)
     const appearances = rows.map((r) => {
       const takenAt = new Date(r.taken_at)
       return {
@@ -607,7 +610,7 @@ export async function readRepoArchiveRows(fullName: string): Promise<{
         source: r.source,
         degraded: r.degraded,
         takenAt: takenAt.toISOString(),
-        current: Date.now() - takenAt.getTime() < 3 * 24 * 3600_000,
+        current: maxTakenMs - takenAt.getTime() < 3 * 24 * 3600_000,
       }
     })
 
