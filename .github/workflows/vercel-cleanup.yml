@@ -4,7 +4,8 @@
 # 触发两层:
 #   1) deployment_status=success(Vercel GitHub App 回报生产部署完成)→ 即时清;
 #   2) 每日一次兜底调度(防事件丢发)。
-# 保险丝:只删"非最新"的 READY 生产部署;当前(带别名)必是最新,永远不会自删。
+# 保险丝:以"最新 READY 生产部署"(=当前带别名服务流量的那发)为界,
+# 只删比它更旧的一切(含 CANCELED/ERROR 残留);没有 READY 时一个都不删。
 name: vercel-cleanup
 
 on:
@@ -32,14 +33,16 @@ jobs:
           python3 - <<'PY'
           import json, subprocess, os
           info = json.load(open('/tmp/deps.json'))
-          ds = [d for d in info['deployments']
-                if d.get('target') == 'production' and d.get('state') == 'READY']
+          ds = [d for d in info['deployments'] if d.get('target') == 'production']
           ds.sort(key=lambda d: d['createdAt'], reverse=True)
-          keep = ds[0] if ds else None
-          go = ['--token', os.environ['VERCEL_TOKEN'], '--scope', 'jkwy01s-projects']
-          for d in ds[1:]:
-              url = d['url']
-              r = subprocess.run(['vercel', 'rm', url, '--yes', *go], capture_output=True, text=True)
-              print('rm', url, '->', 'ok' if r.returncode == 0 else r.stderr.strip()[:120])
-          print('kept:', keep['url'] if keep else '(none)')
+          live_i = next((i for i, d in enumerate(ds) if d.get('state') == 'READY'), None)
+          if live_i is None:
+              print('kept: (no READY production deployment, delete nothing)')
+          else:
+              go = ['--token', os.environ['VERCEL_TOKEN'], '--scope', 'jkwy01s-projects']
+              for d in ds[live_i + 1:]:
+                  url = d['url']
+                  r = subprocess.run(['vercel', 'rm', url, '--yes', *go], capture_output=True, text=True)
+                  print('rm', url, f"({d.get('state')}) ->", 'ok' if r.returncode == 0 else r.stderr.strip()[:120])
+              print('kept:', ds[live_i]['url'])
           PY
