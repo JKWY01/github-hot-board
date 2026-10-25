@@ -76,7 +76,15 @@ export default async function DiscoverPage({
   const sortF = pick(sp, 'sort') === 'gain' ? 'gain' : 'stars'
   const filters: DiscoverFilters = { lang: langF, topic: topicF, band: bandF, age: ageF, sort: sortF }
 
-  const [rows, facets] = await Promise.all([discoverQuery(filters), discoverFacets()])
+  // 库不可达/超时时 fill 会 throw(discover-meta unavailable)——给降级卡,不裸 500
+  let rows: Awaited<ReturnType<typeof discoverQuery>> = []
+  let facets: Awaited<ReturnType<typeof discoverFacets>> = { languages: [], topics: [] }
+  let degraded = false
+  try {
+    ;[rows, facets] = await Promise.all([discoverQuery(filters), discoverFacets()])
+  } catch {
+    degraded = true
+  }
 
   const href = (patch: Record<string, string | undefined>) => {
     const q = new URLSearchParams()
@@ -124,7 +132,9 @@ export default async function DiscoverPage({
       </div>
 
       <div className="mt-8">
-        {rows.length === 0 ? (
+        {degraded ? (
+          <p className="py-14 text-center text-[13.5px] text-sub">{t.empty} ({lang === 'zh' ? '数据源暂不可用,稍后自愈' : 'data source briefly unavailable — it heals itself'})</p>
+        ) : rows.length === 0 ? (
           <p className="card px-6 py-10 text-center text-[14px] text-sub">{t.empty}</p>
         ) : (
           <ul className="card divide-y-[0.5px] divide-black/6">

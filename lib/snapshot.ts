@@ -117,8 +117,9 @@ export async function withDb<T>(fn: (sql: Sql) => Promise<T>): Promise<T | undef
   try {
     if (!sqlSingleton) {
       const postgres = (await import('postgres')).default
+      // max 5:库角色连接上限被多实例×并发爬取打爆过(too many connections);读路径双查并行 5 足够
       sqlSingleton = postgres(DATABASE_URL, {
-        max: 8,
+        max: 5,
         idle_timeout: 30,
         connect_timeout: 10,
         // 诊断开关:GHB_SQL_DEBUG=1 时打印实际发送的 SQL 与参数个数
@@ -132,13 +133,15 @@ export async function withDb<T>(fn: (sql: Sql) => Promise<T>): Promise<T | undef
     }
     const sql = sqlSingleton
     try {
-      // 查询级竞速超时(10s):连接池被同步/并发爬取挤爆时,postgres 驱动会无界排队,
+      // 查询级竞速超时(20s):连接池被同步/并发爬取挤爆时,postgres 驱动会无界排队,
       // Lambda 到 maxDuration 被掐 → 200 空流被边缘缓存成毒对象(实测事故)。
       // 超时走下方 catch → 返回 undefined → 调用方走各自的兜底路径。
+      // 20s 而非 10s:board_head 全量 payload 的 meta 扫描在国内线路 >10s,10s 会把
+      // 冷 fill 掐成空 Map 被 'use cache' 固化(实测:discover 页空结果 2 小时)。
       return await Promise.race([
         fn(sql),
         new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('db-query-timeout(10s)')), 10_000),
+          setTimeout(() => reject(new Error('db-query-timeout(20s)')), 20_000),
         ),
       ])
     } catch (error) {
@@ -491,20 +494,30 @@ export async function readDiscoverMeta(): Promise<Map<string, DiscoverMeta & { s
   'use cache'
   cacheLife({ stale: 300, revalidate: 1800, expire: 7200 })
   const out = new Map<string, DiscoverMeta & { stars: number }>()
-  await withDb(async (sql) => {
-    const rows = await sql`SELECT payload FROM board_head WHERE item_count > 0`
-    for (const row of rows as unknown as Array<{ payload?: { items?: Array<Record<string, unknown> & { fullName?: string }> } }>) {
-      for (const it of row.payload?.items ?? []) {
-        if (!it.fullName || out.has(it.fullName)) continue
-        out.set(it.fullName, {
-          stars: Number(it.stars ?? 0),
-          language: (it.language as string | null) ?? null,
-          topics: Array.isArray(it.topics) ? (it.topics as string[]) : [],
-          createdAt: typeof it.createdAt === 'string' ? it.createdAt : undefined,
-        })
-      }
+  // fill 失败(库不可达/超时)必须抛错:'use cache' 会把空 Map 缓存 2h,变成毒空结果
+  // 库端展开 jsonb,只回轻量元组 —— 拉整包 payload(几 MB 跨境)曾是 discover 冷 fill
+  // 20s 都跑不完的真因;展开后亚秒。
+  const ok = await withDb(async (sql) => {
+    const rows = await sql`
+      SELECT it->>'fullName' AS full_name,
+             (it->>'stars') AS stars,
+             it->>'language' AS language,
+             it->'topics' AS topics,
+             it->>'createdAt' AS created_at
+      FROM board_head, jsonb_array_elements(payload->'items') AS it
+      WHERE item_count > 0 AND it->>'fullName' IS NOT NULL`
+    for (const r of rows as unknown as Array<{ full_name: string; stars: string; language: string | null; topics: string[] | null; created_at: string | null }>) {
+      if (out.has(r.full_name)) continue
+      out.set(r.full_name, {
+        stars: Number(r.stars ?? 0),
+        language: r.language ?? null,
+        topics: Array.isArray(r.topics) ? r.topics : [],
+        createdAt: r.created_at ?? undefined,
+      })
     }
+    return true
   })
+  if (!ok) throw new Error('discover-meta unavailable (db unreachable/timeout)')
   return out
 }
 

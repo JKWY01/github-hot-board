@@ -24,103 +24,110 @@ export interface DiscoverFilters {
   sort: 'stars' | 'gain'
 }
 
-interface StarTrack {
-  now: number
-  pastAt: Date
-  past: number
+export interface DiscoverRow {
+  fullName: string
+  stars: number
+  gain7: number | null
+  language: string | null
+  topics: string[]
+  createdAt?: string
 }
 
-const DAY = 86_400_000
+/** 全部过滤/排序/限幅在库内完成:跨洋链路传 6381 行元组曾要 44s(冷 fill 超时毒缓存),
+ *  只回最终 60 行后亚秒级。gain7 = 最新一拍 vs 6 天前或更早的最后一拍;无基线为 null(页面显示"—")。 */
+const BAND_SQL: Record<NonNullable<DiscoverFilters['band']>, string> = {
+  s0: '0 AND 100',
+  s1: '100 AND 1000',
+  s2: '1000 AND 10000',
+  s3: '10000 AND 2147483647',
+}
+const AGE_SQL: Record<NonNullable<DiscoverFilters['age']>, string> = {
+  '7': "now() - interval '7 days'",
+  '30': "now() - interval '30 days'",
+  '90': "now() - interval '90 days'",
+  year: "now() - interval '365 days'",
+}
 
-async function starTracks(): Promise<Map<string, StarTrack>> {
+async function discoverFiltered(f: DiscoverFilters): Promise<DiscoverRow[]> {
   'use cache'
-  cacheLife({ stale: 300, revalidate: 1800, expire: 7200 })
-  const out = new Map<string, StarTrack>()
-  await withDb(async (sql) => {
-    // DISTINCT ON 双取(每仓最新一拍 / 6 天前或更早的最后一拍),走 (repo, taken_at DESC) 索引;
-    // 此前 array_agg×3 全表聚合在 60 万行级要 30s,实测此形态毫秒级。
-    const rows = await sql`
-      WITH base AS (
-        SELECT repo, stars, taken_at FROM board_snapshots WHERE language = ''
+  cacheLife({ stale: 60, revalidate: 300, expire: 3600 })
+  const bandCond = f.band ? ` AND stars BETWEEN ${BAND_SQL[f.band]}` : ''
+  const ageCond = f.age ? ` AND created_at IS NOT NULL AND created_at > ${AGE_SQL[f.age]}` : ''
+  const langCond = f.lang ? ` AND lower(lang) = lower(${JSON.stringify(f.lang)})` : ''
+  const topicCond = f.topic ? ` AND topics @> jsonb_build_array(${JSON.stringify(f.topic)})` : ''
+  const order = f.sort === 'gain' ? 'COALESCE(gain7, -1) DESC, stars DESC' : 'stars DESC'
+  // 条件段全部来自白名单常量/JSON.stringify 字面量,无用户可注入面
+  const rows = await withDb(async (sql) =>
+    sql.unsafe(`
+      WITH meta AS (
+        SELECT it->>'fullName' AS full_name,
+               (it->>'stars')::bigint AS stars,
+               it->>'language' AS lang,
+               COALESCE(it->'topics', '[]'::jsonb) AS topics,
+               (it->>'createdAt')::timestamptz AS created_at
+        FROM board_head, jsonb_array_elements(payload->'items') AS it
+        WHERE item_count > 0 AND it->>'fullName' IS NOT NULL
       ),
       latest AS (
-        SELECT DISTINCT ON (repo) repo, stars, taken_at FROM base ORDER BY repo, taken_at DESC
+        SELECT DISTINCT ON (repo) repo, stars FROM board_snapshots
+        WHERE language = '' ORDER BY repo, taken_at DESC
       ),
       past AS (
-        SELECT DISTINCT ON (repo) repo, stars, taken_at FROM base
-        WHERE taken_at < now() - interval '6 days'
+        SELECT DISTINCT ON (repo) repo, stars FROM board_snapshots
+        WHERE language = '' AND taken_at < now() - interval '6 days'
         ORDER BY repo, taken_at DESC
+      ),
+      joined AS (
+        SELECT m.full_name, COALESCE(l.stars, m.stars) AS stars,
+               l.stars - COALESCE(p.stars, l.stars) AS gain7,
+               m.lang, m.topics, m.created_at
+        FROM meta m
+        LEFT JOIN latest l ON l.repo = m.full_name
+        LEFT JOIN past p ON p.repo = m.full_name
       )
-      SELECT l.repo, l.stars AS now_stars, p.stars AS past_stars, p.taken_at AS past_at
-      FROM latest l LEFT JOIN past p ON p.repo = l.repo`
-    for (const r of rows as unknown as Array<{ repo: string; now_stars: string | number; past_stars?: string | number | null; past_at?: Date | string | null }>) {
-      out.set(r.repo, {
-        now: Number(r.now_stars),
-        pastAt: new Date(r.past_at ?? 0),
-        past: Number(r.past_stars ?? 0),
-      })
-    }
-  })
-  return out
+      SELECT full_name, stars, gain7, lang, topics, created_at FROM joined
+      WHERE TRUE ${langCond} ${topicCond}
+        ${bandCond ? `AND stars BETWEEN ${BAND_SQL[f.band!]}` : ''}
+        ${ageCond ? `AND created_at IS NOT NULL AND created_at > ${AGE_SQL[f.age!]}` : ''}
+      ORDER BY ${order}
+      LIMIT 60`),
+  )
+  if (!rows) throw new Error('discover unavailable (db unreachable/timeout)')
+  return (rows as unknown as Array<{ full_name: string; stars: string | number; gain7: string | number | null; lang: string | null; topics: string[] | null; created_at: string | null }>).map((r) => ({
+    fullName: r.full_name,
+    stars: Number(r.stars),
+    gain7: r.gain7 === null ? null : Number(r.gain7),
+    language: r.lang,
+    topics: Array.isArray(r.topics) ? r.topics : [],
+    createdAt: r.created_at ?? undefined,
+  }))
 }
 
 export async function discoverQuery(f: DiscoverFilters): Promise<DiscoverRow[]> {
   'use cache'
   cacheLife({ stale: 60, revalidate: 300, expire: 3600 })
-
-  const [meta, tracks] = await Promise.all([readDiscoverMeta(), starTracks()])
-  const cutoff = Date.now() - 6 * DAY
-
-  const rows: DiscoverRow[] = []
-  for (const [fullName, m] of meta) {
-    const t = tracks.get(fullName)
-    const stars = t?.now ?? m.stars
-    const gain7 = t && t.pastAt.getTime() <= cutoff ? t.now - t.past : null
-    rows.push({ fullName, stars, gain7, language: m.language, topics: m.topics, createdAt: m.createdAt })
-  }
-
-  const bandRange: Record<NonNullable<DiscoverFilters['band']>, [number, number]> = {
-    s0: [0, 100],
-    s1: [100, 1_000],
-    s2: [1_000, 10_000],
-    s3: [10_000, Number.POSITIVE_INFINITY],
-  }
-  const filtered = rows.filter((r) => {
-    if (f.lang && (r.language ?? '').toLowerCase() !== f.lang.toLowerCase()) return false
-    if (f.topic && !r.topics.some((t) => t.toLowerCase() === f.topic!.toLowerCase())) return false
-    if (f.band) {
-      const [lo, hi] = bandRange[f.band]
-      if (r.stars < lo || r.stars >= hi) return false
-    }
-    if (f.age) {
-      if (!r.createdAt) return false
-      const created = Date.parse(r.createdAt)
-      if (!Number.isFinite(created)) return false
-      const days = f.age === 'year' ? 365 : Number(f.age)
-      if (created < Date.now() - days * DAY) return false
-    }
-    return true
-  })
-
-  filtered.sort((a, b) =>
-    f.sort === 'gain'
-      ? (b.gain7 ?? -1) - (a.gain7 ?? -1) || b.stars - a.stars
-      : b.stars - a.stars,
-  )
-  return filtered.slice(0, 60)
+  return discoverFiltered(f)
 }
 
 /** 筛选项(语言/主题 Top 榜):全库统计,与结果集无关(选项稳定不闪)。 */
 export async function discoverFacets(): Promise<{ languages: Array<[string, number]>; topics: Array<[string, number]> }> {
   'use cache'
   cacheLife({ stale: 300, revalidate: 1800, expire: 7200 })
-  const meta = await readDiscoverMeta()
-  const langs = new Map<string, number>()
-  const topics = new Map<string, number>()
-  for (const m of meta.values()) {
-    if (m.language) langs.set(m.language, (langs.get(m.language) ?? 0) + 1)
-    for (const t of m.topics) topics.set(t, (topics.get(t) ?? 0) + 1)
-  }
-  const top = (x: Map<string, number>, n: number) => [...x.entries()].sort((a, b) => b[1] - a[1]).slice(0, n)
-  return { languages: top(langs, 10), topics: top(topics, 12) }
+  const ok = await withDb(async (sql) => {
+    const rows = await sql`
+      SELECT it->>'language' AS lang,
+             it->'topics' AS topics
+      FROM board_head, jsonb_array_elements(payload->'items') AS it
+      WHERE item_count > 0`
+    const langs = new Map<string, number>()
+    const topics = new Map<string, number>()
+    for (const r of rows as unknown as Array<{ lang: string | null; topics: string[] | null }>) {
+      if (r.lang) langs.set(r.lang, (langs.get(r.lang) ?? 0) + 1)
+      for (const t of Array.isArray(r.topics) ? r.topics : []) topics.set(t, (topics.get(t) ?? 0) + 1)
+    }
+    const top = (x: Map<string, number>, n: number) => [...x.entries()].sort((a, b) => b[1] - a[1]).slice(0, n)
+    return { languages: top(langs, 10), topics: top(topics, 12) }
+  })
+  if (!ok) throw new Error('discover-facets unavailable (db unreachable/timeout)')
+  return ok
 }
