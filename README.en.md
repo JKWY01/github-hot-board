@@ -108,6 +108,18 @@ One platform fact worth keeping (established 2026-10): GitHub has removed the RE
 3. Open `facets` in `BOARD_META` if the board should have language sub-boards.
 4. Routes, nav, footer and sitemap follow `BOARD_ORDER` automatically.
 
+## Badge · Status · Milestone alerts
+
+- **Rank badge**: once your repo appears on any board, embed the rank badge in your own README — it auto-shows your current best rank (active / previously listed / not listed) and links back to the on-site archive page. This is the only outbound link we ask for:
+
+  ```markdown
+  [![GitHub Hot Board](https://git.vaiox.xyz/api/badge/{owner}/{repo}.svg)](https://git.vaiox.xyz/en/repo/{owner}/{repo})
+  ```
+
+  Every archive page (`/en/repo/{owner}/{repo}`) shows a live badge preview with a one-click copy of the embed code.
+- **Data health page**: `/{lang}/status` (footer link) — source, freshness and degradation state of every board key, from the same rows the site serves.
+- **Milestone alerts (optional)**: set `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` and a "milestone alert" toggle appears on the watch page — account-free Web Push when a watched repo crosses 1k/10k/50k/100k. Unset = the whole feature silently doesn't exist. Subscriptions store only the push endpoint and watchlist; unsubscribe deletes immediately.
+
 ## Known limits, stated plainly
 
 - Trending numbers can lag the official page by up to one sync cycle (≤30 min).

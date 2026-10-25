@@ -28,6 +28,11 @@
 
 - /en/repo/{owner}/{name} — repository archive: stars, forks, weekly/monthly deltas, descriptions in 16 languages, rendered README, and milestone context. Server-rendered and crawlable.
 
+## For repository authors
+
+- If a repo is listed on any board, authors can embed a rank badge in their README: `GET /api/badge/{owner}/{repo}.svg` returns a shields-style SVG (current best rank / previously listed / not listed).
+- Markdown: `[![GitHub Hot Board](https://git.vaiox.xyz/api/badge/{owner}/{repo}.svg)](https://git.vaiox.xyz/en/repo/{owner}/{repo})`
+
 ## Data health
 
 - /{ui-language}/status — live health page: freshness, source and degradation state of every board key, from the same rows the site serves. Check it before citing stale-looking numbers.

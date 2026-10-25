@@ -152,7 +152,13 @@ gh run watch                       # 看 Actions 同步跑完没有
 
 ## 徽章 · 状态页 · 跨线提醒
 
-- **上榜徽章**:`https://域名/api/badge/{owner}/{repo}.svg` —— shields 风格三态(现役名次 / 曾上榜 / 未上榜),档案页有现成的 Markdown 嵌入代码,作者贴进 README 即回链档案页。
+- **上榜徽章**:项目被任何一张榜收录后,维护者都可以把名次徽章贴进自家 README——徽章自动显示当前最好名次(现役 / 曾上榜 / 未上榜三态),点击回到站内档案页。这也是本站唯一的外链请求:
+
+  ```markdown
+  [![GitHub 火线榜](https://git.vaiox.xyz/api/badge/{owner}/{repo}.svg)](https://git.vaiox.xyz/zh/repo/{owner}/{repo})
+  ```
+
+  档案页(任意 `/zh/repo/{owner}/{repo}`)顶部有徽章预览与一键复制的嵌入码。
 - **数据健康页**:`/{lang}/status`(footer 入口)—— 34 个键各自的来源、新鲜度、降级状态,与站点读路径同一张表,不涂脂抹粉。
 - **跨线提醒(可选)**:配置 `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` 后,关注页出现"跨线提醒"开关 —— 无账号 Web Push,关注的仓库向上跨过 1k/10k/50k/100k 时推送;未配置则整条链路静默不存在。订阅只存推送端点与关注列表,退订即刻删除。
 
