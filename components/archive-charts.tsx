@@ -25,6 +25,8 @@ export default function ArchiveCharts({
   starUnit,
   rankGroups,
   rankLabel,
+  deltaPoints,
+  deltaLabel,
   locale,
 }: {
   starPoints: ChartDay[]
@@ -32,20 +34,24 @@ export default function ArchiveCharts({
   starUnit: string
   rankGroups: ChartSeries[]
   rankLabel: string
+  /** 每日新增 Star(可缺省:单点序列无增量) */
+  deltaPoints?: ChartDay[]
+  deltaLabel?: string
   locale: Locale
 }) {
   const starRef = useRef<HTMLDivElement>(null)
   const rankRef = useRef<HTMLDivElement>(null)
+  const deltaRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     let disposed = false
     let cleanup: (() => void) | undefined
     ;(async () => {
       const echarts = await import('echarts/core')
-      const { LineChart } = await import('echarts/charts')
+      const { LineChart, BarChart } = await import('echarts/charts')
       const { GridComponent, TooltipComponent, LegendComponent } = await import('echarts/components')
       const { CanvasRenderer } = await import('echarts/renderers')
-      echarts.use([LineChart, GridComponent, TooltipComponent, LegendComponent, CanvasRenderer])
+      echarts.use([LineChart, BarChart, GridComponent, TooltipComponent, LegendComponent, CanvasRenderer])
       if (disposed) return
 
       // 主题相关色:暗色下轴灰/图例文字/浮层都要翻转;html.dark 变化时重刷 option
@@ -171,9 +177,41 @@ export default function ArchiveCharts({
       })
       mo.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
 
+      // --- 每日新增 Star(柱图;序列变化量,回答"哪天火的") ---
+      let deltaChart: import('echarts/core').ECharts | null = null
+      if (deltaPoints && deltaPoints.length > 1 && deltaRef.current) {
+        deltaChart = echarts.init(deltaRef.current)
+        deltaChart.setOption({
+          grid,
+          tooltip: { ...baseTooltip, valueFormatter: (v: number) => `${fmtNum(v, locale)} ${starUnit}` },
+          xAxis: {
+            type: 'time',
+            axisLine: { lineStyle: { color: 'rgba(0,0,0,0.25)' } },
+            axisTick: { show: false },
+            axisLabel: { color: '#6e6e73', fontSize: 11, formatter: dayLabels() },
+            splitLine: { show: false },
+          },
+          yAxis: {
+            type: 'value',
+            axisLabel: { color: '#6e6e73', fontSize: 11, formatter: (v: number) => fmtNum(v, locale) },
+            splitLine: { lineStyle: { color: 'rgba(0,0,0,0.06)' } },
+          },
+          series: [
+            {
+              name: deltaLabel ?? '',
+              type: 'bar',
+              data: deltaPoints.map((p) => [p.day, p.value]),
+              barMaxWidth: 14,
+              itemStyle: { color: 'rgba(0,113,227,0.72)', borderRadius: [3, 3, 0, 0] },
+            },
+          ],
+        })
+      }
+
       const ro = new ResizeObserver(() => {
         starChart.resize()
         rankChart.resize()
+        deltaChart?.resize()
       })
       if (starRef.current) ro.observe(starRef.current)
       if (rankRef.current) ro.observe(rankRef.current)
@@ -189,7 +227,7 @@ export default function ArchiveCharts({
       disposed = true
       if (cleanup) cleanup()
     }
-  }, [starLabel, starUnit, rankLabel, locale, starPoints, rankGroups])
+  }, [starLabel, starUnit, rankLabel, deltaLabel, locale, starPoints, rankGroups, deltaPoints])
 
   return (
     <div className="space-y-3">
@@ -201,6 +239,12 @@ export default function ArchiveCharts({
         <p className="text-[13px] font-medium text-ink/60">{rankLabel}</p>
         <div ref={rankRef} className="h-[250px] w-full" />
       </div>
+      {deltaPoints && deltaPoints.length > 1 && deltaLabel && (
+        <div>
+          <p className="text-[13px] font-medium text-ink/60">{deltaLabel}</p>
+          <div ref={deltaRef} className="h-[190px] w-full" />
+        </div>
+      )}
     </div>
   )
 }

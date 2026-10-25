@@ -19,6 +19,8 @@ export interface RepoLite {
   createdAt?: string
   pushedAt?: string
   topics: string[]
+  /** SPDX 标识(MIT/Apache-2.0/…);trending 抓取项与未采集时缺省 */
+  license?: string | null
 }
 
 export interface BoardItem extends RepoLite {

@@ -78,6 +78,7 @@ interface GhSearchRepo {
   created_at: string
   pushed_at: string
   topics?: string[]
+  license?: { spdx_id?: string | null } | null
   owner?: { avatar_url?: string }
 }
 
@@ -420,6 +421,7 @@ function mapRepo(repo: GhSearchRepo): BoardRepoFields {
     createdAt: repo.created_at,
     pushedAt: repo.pushed_at,
     topics: (repo.topics ?? []).slice(0, 3),
+    license: repo.license?.spdx_id || null,
   }
 }
 
@@ -438,6 +440,7 @@ type BoardRepoFields = {
   createdAt: string
   pushedAt: string
   topics: string[]
+  license: string | null
 }
 
 export interface GhSearchOptions {

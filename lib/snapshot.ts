@@ -65,6 +65,11 @@ async function migrate(sql: Sql): Promise<void> {
     )`
   // 往日榜(2026-10-19 起):明细表补 degraded 列(老库幂等迁移)
   await sql`ALTER TABLE board_snapshots ADD COLUMN IF NOT EXISTS degraded BOOLEAN NOT NULL DEFAULT false`
+  // 项目状态三件套(2026-10-25 起采集):license/push/issues 随拍落列。
+  // 老行 NULL = 未采集,页面如实标"未知"——历史不可凭空补。
+  await sql`ALTER TABLE board_snapshots ADD COLUMN IF NOT EXISTS license TEXT`
+  await sql`ALTER TABLE board_snapshots ADD COLUMN IF NOT EXISTS pushed_at TEXT`
+  await sql`ALTER TABLE board_snapshots ADD COLUMN IF NOT EXISTS issues INTEGER`
   await sql`CREATE INDEX IF NOT EXISTS board_snapshots_repo_time ON board_snapshots (repo, taken_at DESC)`
   await sql`CREATE INDEX IF NOT EXISTS board_snapshots_board_time ON board_snapshots (board, language, taken_at DESC)`
   // 保留期清理走 taken_at 过滤:量级到千万行后,专用索引让 DELETE 不再全索引扫
@@ -208,12 +213,15 @@ export async function writeHeadAndRows(slug: string, language: string | undefine
             ? item.score
             : (item.gained ?? item.stars),
       repo_created_at: item.createdAt ? new Date(item.createdAt) : null,
+      license: item.license ?? null,
+      pushed_at: item.pushedAt ?? null,
+      issues: typeof item.issues === 'number' ? item.issues : null,
     }))
     if (values.length) {
       await sql`
         INSERT INTO board_snapshots ${sql(
           values,
-          'taken_at', 'board', 'language', 'source', 'degraded', 'rank', 'repo', 'stars', 'forks', 'metric', 'repo_created_at',
+          'taken_at', 'board', 'language', 'source', 'degraded', 'rank', 'repo', 'stars', 'forks', 'metric', 'repo_created_at', 'license', 'pushed_at', 'issues',
         )}`
       // 过榜名单随拍更新(主键 upsert,几万行小表,毫秒级)
       await sql`
@@ -402,6 +410,94 @@ export async function readHistorySnapshot(board: string, day: string): Promise<H
       })),
     }
   })) ?? null
+}
+
+/** 项目状态三件套:该仓库全部快照里最新的非空 license/pushed_at/issues。
+ *  2026-10-25 起随拍采集:更早的行是 NULL,聚合自然回落到首拍之后的首个非空值;全空 = 未采集。 */
+export interface RepoStatusFacts {
+  license: string | null
+  pushedAt: string | null
+  issues: number | null
+}
+
+export async function readRepoStatusFacts(fullName: string): Promise<RepoStatusFacts> {
+  const base: RepoStatusFacts = { license: null, pushedAt: null, issues: null }
+  return (await withDb(async (sql) => {
+    const rows = await sql`
+      SELECT
+        (array_agg(license   ORDER BY (license IS NOT NULL) DESC, taken_at DESC))[1] AS license,
+        (array_agg(pushed_at ORDER BY (pushed_at IS NOT NULL) DESC, taken_at DESC))[1] AS pushed_at,
+        (array_agg(issues    ORDER BY (issues IS NOT NULL) DESC, taken_at DESC))[1] AS issues
+      FROM board_snapshots WHERE repo = ${fullName}`
+    const r = rows[0] as { license?: string | null; pushed_at?: string | null; issues?: number | null } | undefined
+    return {
+      license: r?.license ?? null,
+      pushedAt: r?.pushed_at ?? null,
+      issues: r?.issues != null ? Number(r.issues) : null,
+    }
+  })) ?? base
+}
+
+/** 同类项目(主题邻居):扫全部榜头 payload 的 topics(现役口径),
+ *  与目标仓库共享 ≥1 主题者,按共享数→星数排,取前 N。零上游成本。 */
+export interface TopicPeer {
+  fullName: string
+  sharedTopics: string[]
+  stars: number
+}
+
+export async function readTopicPeers(fullName: string, topicsOf: string[], limit = 6): Promise<TopicPeer[]> {
+  'use cache'
+  cacheLife({ stale: 300, revalidate: 1800, expire: 7200 })
+  if (topicsOf.length === 0) return []
+  const want = new Set(topicsOf.map((t) => t.toLowerCase()))
+  const peers = new Map<string, { stars: number; shared: Set<string> }>()
+  await withDb(async (sql) => {
+    const rows = await sql`SELECT payload FROM board_head WHERE item_count > 0`
+    for (const row of rows as unknown as Array<{ payload?: { items?: Array<{ fullName?: string; stars?: number; topics?: string[] }> } }>) {
+      for (const it of row.payload?.items ?? []) {
+        if (!it.fullName || it.fullName === fullName) continue
+        for (const t of it.topics ?? []) {
+          if (!want.has(String(t).toLowerCase())) continue
+          const cur = peers.get(it.fullName)
+          if (cur) { cur.shared.add(t); if ((it.stars ?? 0) > cur.stars) cur.stars = it.stars ?? 0 }
+          else peers.set(it.fullName, { stars: it.stars ?? 0, shared: new Set([t]) })
+        }
+      }
+    }
+  })
+  return [...peers.entries()]
+    .map(([name, v]) => ({ fullName: name, stars: v.stars, sharedTopics: [...v.shared] }))
+    .sort((a, b) => b.sharedTopics.length - a.sharedTopics.length || b.stars - a.stars)
+    .slice(0, limit)
+}
+
+/** 发现页元数据:榜头 payload 汇总出 repo → {language, topics, createdAt, stars}。 */
+export interface DiscoverMeta {
+  language: string | null
+  topics: string[]
+  createdAt?: string
+}
+
+export async function readDiscoverMeta(): Promise<Map<string, DiscoverMeta & { stars: number }>> {
+  'use cache'
+  cacheLife({ stale: 300, revalidate: 1800, expire: 7200 })
+  const out = new Map<string, DiscoverMeta & { stars: number }>()
+  await withDb(async (sql) => {
+    const rows = await sql`SELECT payload FROM board_head WHERE item_count > 0`
+    for (const row of rows as unknown as Array<{ payload?: { items?: Array<Record<string, unknown> & { fullName?: string }> } }>) {
+      for (const it of row.payload?.items ?? []) {
+        if (!it.fullName || out.has(it.fullName)) continue
+        out.set(it.fullName, {
+          stars: Number(it.stars ?? 0),
+          language: (it.language as string | null) ?? null,
+          topics: Array.isArray(it.topics) ? (it.topics as string[]) : [],
+          createdAt: typeof it.createdAt === 'string' ? it.createdAt : undefined,
+        })
+      }
+    }
+  })
+  return out
 }
 
 /** sitemap 用:所有"曾经上榜过"的仓库(语义与明细保留期同窗)。读 repo_seen 小表,

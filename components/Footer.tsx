@@ -53,6 +53,14 @@ export default function Footer({ dict }: { dict: Dict }) {
             >
               Status · 数据健康 →
             </Link>
+            <br />
+            <Link
+              className="mt-1.5 inline-block text-[13px] text-ink/65 transition-colors hover:text-accent-strong"
+              href={`/${locale}/discover`}
+              prefetch={false}
+            >
+              Discover · 发现 →
+            </Link>
             <p className="mt-4 max-w-[220px] text-[12px] leading-relaxed text-sub">{dict.footer.disclaimer}</p>
           </div>
         </div>

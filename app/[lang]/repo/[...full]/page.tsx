@@ -5,7 +5,7 @@ import { isLocale } from '@/app/[lang]/dictionaries'
 import { LOCALES } from '@/lib/locales'
 import { fetchRepoReadme } from '@/lib/github'
 import { getRepoArchiveCached, isRepoFullName } from '@/lib/repoarchive'
-import { readBoardNeighbors, readRepoDescs } from '@/lib/snapshot'
+import { readBoardNeighbors, readRepoDescs, readDiscoverMeta, readRepoStatusFacts, readTopicPeers } from '@/lib/snapshot'
 import { borrowRepoDocFetch, readRepoDoc } from '@/lib/repodocs'
 import RepoArchiveView, { repoArchiveMetadata } from '@/components/repo-archive'
 
@@ -79,6 +79,17 @@ export default async function RepoPage({
   ])
   if (!archive) notFound()
 
+  // 状态三件套(license/push/issues,2026-10-25 起随拍采集)+ 同类项目(主题邻居)
+  const [statusFacts, topicPeers] = await Promise.all([
+    readRepoStatusFacts(fullName).catch(() => ({ license: null, pushedAt: null, issues: null })),
+    readDiscoverMeta()
+      .then((meta) => {
+        const mine = meta.get(fullName)
+        return mine && mine.topics.length > 0 ? readTopicPeers(fullName, mine.topics) : []
+      })
+      .catch(() => []),
+  ])
+
   // 视角语言描述合并在缓存外(与榜单洞同一纪律):zh 页面用 zh 描述,缺翻译回落 en 原文。
   const descs = descsMap.get(fullName)
   const descText = descs?.[lang] ?? descs?.en ?? null
@@ -109,6 +120,8 @@ export default async function RepoPage({
       descText={descText}
       related={related}
       relatedBoard={primary?.board}
+      statusFacts={statusFacts}
+      topicPeers={topicPeers}
       readmeHtml={readmeHtml}
     />
   )
