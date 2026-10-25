@@ -24,7 +24,8 @@ function fmtDay(iso: string, lang: string): string {
   return new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric', timeZone: 'UTC' }).format(new Date(`${iso}T00:00:00Z`))
 }
 
-/** 往日榜视图:历史拍是纯快照 — 无轮询、无 FLIP、零客户端脚本(服务端直出)。 */
+/** 往日榜视图:历史拍是纯快照 — 无轮询、无 FLIP、零客户端脚本(服务端直出)。
+ * 日期互链(prev/next)按 gitstock 验证的矩阵手法:每页链出相邻日期,爬虫沿链走完整日历。 */
 export function HistoryView({
   lang,
   slug,
@@ -74,6 +75,28 @@ export function HistoryView({
                 </Link>
               )
             })
+          )}
+          {/* 日期互链:相邻日期存在才渲染(日期是语言中立文本,不占字典) */}
+          {(days.some((d) => d.day < activeDay) || days.some((d) => d.day > activeDay)) && (
+            <div className="mt-3 flex items-center gap-3 text-[12.5px]">
+              {(() => {
+                const prev = [...days].reverse().find((d) => d.day < activeDay)
+                return prev ? (
+                  <Link href={`/${lang}/history/${slug}/${prev.day}`} prefetch={false} className="font-medium text-accent-strong hover:underline">
+                    ← {prev.day}
+                  </Link>
+                ) : <span className="text-ink/30">← —</span>
+              })()}
+              <span className="text-ink/25">·</span>
+              {(() => {
+                const next = days.find((d) => d.day > activeDay)
+                return next ? (
+                  <Link href={`/${lang}/history/${slug}/${next.day}`} prefetch={false} className="font-medium text-accent-strong hover:underline">
+                    {next.day} →
+                  </Link>
+                ) : <span className="text-ink/30">— →</span>
+              })()}
+            </div>
           )}
         </div>
       </section>
