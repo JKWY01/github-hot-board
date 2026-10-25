@@ -74,7 +74,8 @@ export default async function RepoPage({
 
   // 档案与描述两读无依赖,并行省一次 Neon 往返串行(冷访 1.7s→约减半)
   const [archive, descsMap] = await Promise.all([
-    getRepoArchiveCached(fullName),
+    // 9 秒上限:库被挤爆时宁可诚实 404,绝不挂到 maxDuration 被掐成 200 空体
+    withTimeout(getRepoArchiveCached(fullName), 9000),
     readRepoDescs([fullName]),
   ])
   if (!archive) notFound()

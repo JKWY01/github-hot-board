@@ -132,7 +132,15 @@ export async function withDb<T>(fn: (sql: Sql) => Promise<T>): Promise<T | undef
     }
     const sql = sqlSingleton
     try {
-      return await fn(sql)
+      // 查询级竞速超时(10s):连接池被同步/并发爬取挤爆时,postgres 驱动会无界排队,
+      // Lambda 到 maxDuration 被掐 → 200 空流被边缘缓存成毒对象(实测事故)。
+      // 超时走下方 catch → 返回 undefined → 调用方走各自的兜底路径。
+      return await Promise.race([
+        fn(sql),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('db-query-timeout(10s)')), 10_000),
+        ),
+      ])
     } catch (error) {
       // 访客冷启动跳过了建表:撞到"表不存在"(42P01)时补一次迁移再重试,
       // 之后 tableReady 置位,正常路径零额外往返。
