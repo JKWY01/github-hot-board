@@ -1,11 +1,13 @@
 # 部署完即清扫:生产部署一落地,立刻滚掉历史部署的构建产物占用。
 # 背景:Vercel 部署是"不可变整套构建快照"(源码副本 + .next 产物 + 静态资源),
-# 平台为支持回滚默认永久保留;免费层 10GB 计量会被历史部署一路吃满。
+# 平台为支持回滚默认永久保留;免费层 10GB 是全队共享计量,会被历史部署一路吃满
+# (2026-10-25 实锤:10 项目 113 发 ≈ 70GB 超限 7 倍)。
 # 触发两层:
 #   1) deployment_status=success(Vercel GitHub App 回报生产部署完成)→ 即时清;
 #   2) 每日一次兜底调度(防事件丢发)。
-# 保险丝:以"最新 READY 生产部署"(=当前带别名服务流量的那发)为界,
-# 只删比它更旧的一切(含 CANCELED/ERROR 残留);没有 READY 时一个都不删。
+# 范围:全队所有项目逐个扫(team 级共享额度,只清 hot-board 没用)。
+# 保险丝:每个项目以"最新 READY 生产部署"(=当前带别名服务流量的那发)为界,
+# 只删比它更旧的一切(含 CANCELED/ERROR);没有 READY 时一个都不删。
 name: vercel-cleanup
 
 on:
@@ -24,25 +26,36 @@ jobs:
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || (github.event.deployment_status.environment == 'production' && github.event.deployment_status.state == 'success')
     runs-on: ubuntu-latest
     steps:
-      - name: 清扫旧生产部署(只留最新一发)
+      - name: 全队清扫(每项目只留最新一发)
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: |
           npm i -g vercel@latest >/dev/null 2>&1 || true
-          vercel ls github-hot-board --json --token "$VERCEL_TOKEN" --scope jkwy01s-projects > /tmp/deps.json || exit 1
+          vercel project ls --json --limit 100 --token "$VERCEL_TOKEN" --scope jkwy01s-projects > /tmp/projects.json || exit 1
           python3 - <<'PY'
           import json, subprocess, os
-          info = json.load(open('/tmp/deps.json'))
-          ds = [d for d in info['deployments'] if d.get('target') == 'production']
-          ds.sort(key=lambda d: d['createdAt'], reverse=True)
-          live_i = next((i for i, d in enumerate(ds) if d.get('state') == 'READY'), None)
-          if live_i is None:
-              print('kept: (no READY production deployment, delete nothing)')
-          else:
-              go = ['--token', os.environ['VERCEL_TOKEN'], '--scope', 'jkwy01s-projects']
+          pj = json.load(open('/tmp/projects.json'))
+          names = [p['name'] for p in (pj if isinstance(pj, list) else pj.get('projects', []))]
+          go = ['--token', os.environ['VERCEL_TOKEN'], '--scope', 'jkwy01s-projects']
+          total = 0
+          for name in names:
+              r = subprocess.run(['vercel', 'ls', name, '--json', '--limit', '100', *go],
+                                 capture_output=True, text=True)
+              try:
+                  ds = json.loads(r.stdout).get('deployments', [])
+              except Exception:
+                  print(name, 'LIST FAIL', r.stderr.strip()[:100]); continue
+              ds.sort(key=lambda d: d['createdAt'], reverse=True)
+              live_i = next((i for i, d in enumerate(ds)
+                             if d.get('target') == 'production' and d.get('state') == 'READY'), None)
+              if live_i is None:
+                  print(f'{name}: 无 READY 生产部署,不动任何东西({len(ds)} 条)')
+                  continue
               for d in ds[live_i + 1:]:
                   url = d['url']
-                  r = subprocess.run(['vercel', 'rm', url, '--yes', *go], capture_output=True, text=True)
-                  print('rm', url, f"({d.get('state')}) ->", 'ok' if r.returncode == 0 else r.stderr.strip()[:120])
-              print('kept:', ds[live_i]['url'])
+                  r2 = subprocess.run(['vercel', 'rm', url, '--yes', *go], capture_output=True, text=True)
+                  total += r2.returncode == 0
+                  print('rm', name, url[:40], f"({d.get('state')}) ->", 'ok' if r2.returncode == 0 else r2.stderr.strip()[:120])
+              print('kept:', name, ds[live_i]['url'][:40])
+          print('TOTAL rm:', total)
           PY
