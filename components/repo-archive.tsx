@@ -200,6 +200,7 @@ export default function RepoArchiveView({
         {
           const latest = starPoints[starPoints.length - 1]!.day
           const latestMs = Date.parse(`${latest}T00:00:00Z`)
+          // eslint-disable-next-line react-hooks/purity -- 本页 instant=false 请求时态渲染,此刻读钟即"现在"
           if (Date.now() - latestMs < 2 * 86_400_000) {
             for (let i = 0; ; i += 1) {
               const day = utcDay(latestMs - i * 86_400_000)
