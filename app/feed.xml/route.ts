@@ -8,7 +8,7 @@ function xmlEscape(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;')
 }
 
-/** RSS 喂源(全局,en 口径):三大榜各取前五,每 30 分钟一轮同步后自动变新。
+/** RSS 喂源(全局,en 口径):三大榜各取前五,每 6 小时一轮同步后自动变新。
  * 阅读器聚合与爬虫的固定新鲜度入口;存档页仍是收录主战场。
  * cacheComponents 下不用段级 dynamic 配置——本路由本就每次请求现读库,无须声明。 */
 export async function GET(): Promise<Response> {

@@ -5,7 +5,7 @@ import { isRepoFullName } from '@/lib/reposhape'
 /** 仓库上榜徽章:GET /api/badge/{owner}/{repo}(.svg 后缀可有可无,README 里带后缀更直观)。
  *  数据与档案页同源(board_snapshots 最近一拍 + 3 天现役口径),读不到库 → "未上榜"灰章,
  *  绝不 5xx —— 作者 README 里的图挂了比灰章难看得多。
- *  CDN 缓存 10 分钟,与同步节奏(30 分钟)同数量级。 */
+ *  CDN 缓存 10 分钟,与同步节奏(6 小时)同数量级。 */
 
 const SVG_HEADERS = {
   'content-type': 'image/svg+xml; charset=utf-8',

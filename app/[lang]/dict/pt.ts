@@ -7,7 +7,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: 'Os 300 projetos com mais Star da história do GitHub.',
     metricLabel: 'Star acumuladas',
     metricHint: 'acumulado',
-    desc: 'Ordenados pelo número de Star acumuladas desde sempre, dados do GitHub Search API (stars:>1000, sem Fork), atualizados a cada 5–15 minutos.',
+    desc: 'Ordenados pelo número de Star acumuladas desde sempre, dados do GitHub Search API (stars:>1000, sem Fork), atualizados a cada ~6 horas.',
     faqs: [
       { q: 'Por que meu projeto não aparece?', a: 'A lista só inclui projetos com mais de 1000 Star acumuladas que não sejam Fork de outro repositório. O índice de busca do GitHub pode manter algumas horas de atraso.' },
       { q: 'Qual a diferença para o Trending oficial?', a: 'O Trending oficial olha a velocidade recente; aqui o que vale é o calor acumulado — os clássicos que sustentam o open source.' },
@@ -20,7 +20,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     metricHint: 'ganho 7 d',
     desc: 'Os dados vêm direto da página semanal do GitHub Trending. A ordem segue a página oficial; o número à direita é o ganho real de Star da semana.',
     faqs: [
-      { q: 'Às vezes os números não batem com a página oficial?', a: 'A coleta fica em cache por uns 15 minutos, enquanto os números oficiais continuam se movendo. Um refresh realinha tudo.' },
+      { q: 'Às vezes os números não batem com a página oficial?', a: 'A coleta fica em cache por até ~6 horas, enquanto os números oficiais continuam se movendo. Um refresh realinha tudo.' },
       { q: 'E se a coleta falhar?', a: 'O GitHub não tem API oficial de Trending. Em caso de falha, o ranking troca temporariamente para “repos criados nos últimos 7 dias, ordenados por Star”, com o modo de fallback bem sinalizado na página.' },
     ],
   },
@@ -43,7 +43,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     desc: 'Somente repositórios criados depois de 1º de janeiro do ano corrente, ordenados por Star totais, sem Fork. Os hits de verdade do ano no open source.',
     faqs: [
       { q: 'Sobrepõe com o ranking histórico?', a: 'Sim — um repo criado neste ano que já está no ranking de todos os tempos aparece nos dois; é o esperado.' },
-      { q: 'De quanto em quanto tempo atualiza?', a: 'Como todos os rankings do Search API: a cada 5–15 minutos, dependendo da disponibilidade de token.' },
+      { q: 'De quanto em quanto tempo atualiza?', a: 'Como todos os rankings do Search API: a cada ~6 horas, dependendo da disponibilidade de token.' },
     ],
   },
   rising: {
@@ -105,7 +105,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: 'Repos correndo para as linhas de 1k / 10k / 50k / 100k Star, assistido ao vivo.',
     metricLabel: 'Star até a próxima linha',
     metricHint: 'diferença',
-    desc: 'A cada 5–15 minutos a gente procura repos ativos a menos de ±80 Star dos quatro marcos (1k, 10k, 50k, 100k). A página consulta a cada minuto; quando alguém cruza uma linha, entra uma animação de celebração e o toast de “milestone alcançado”.',
+    desc: 'A cada ~6 horas a gente procura repos ativos a menos de ±80 Star dos quatro marcos (1k, 10k, 50k, 100k). A página consulta a cada minuto; quando alguém cruza uma linha, entra uma animação de celebração e o toast de “milestone alcançado”.',
     faqs: [
       { q: 'Preciso manter a página aberta para ver as celebrações?', a: 'Sim. O cruzamento é detectado no navegador, comparando consultas seguidas — o servidor não guarda histórico para ti.' },
       { q: 'Por que a “diferença” pode ser zero?', a: 'O repo cruzou uma linha mas ainda está dentro da janela de ±80 Star — o estado de “acabou de cruzar”.' },
@@ -132,7 +132,7 @@ export const ptDict: Dict = {
     brickOneTitle: 'Encontrar projetos sem se afogar',
     brickOneDesc: 'Dez listas, dez filtros: o histórico enquadra o campo, semanal e mensal ditam o ritmo, os outsiders avisam o inesperado.',
     brickTwoTitle: 'Da assimetria à vantagem',
-    brickTwoDesc: 'Um retrato a cada 30 minutos: o cavalo escuro antes de estourar, o retorno enquanto se recupera. Quem vê primeiro, age primeiro.',
+    brickTwoDesc: 'Um retrato a cada 6 horas: o cavalo escuro antes de estourar, o retorno enquanto se recupera. Quem vê primeiro, age primeiro.',
     brickThreeTitle: 'Curvas reais, não ruído',
     brickThreeDesc: 'Renda extra, aposta de produto ou pura inspiração — tendências com estrelas reais vencem o barulho do dia.',
     heroKicker: 'GITHUB OPEN SOURCE PULSE',
@@ -254,7 +254,7 @@ export const ptDict: Dict = {
   },
   history: {
     title: 'Máquina do tempo',
-    subtitle: 'O ranking completo é fotografado a cada 30 minutos — volta pela data e vê como estava a classificação naquele momento.',
+    subtitle: 'O ranking completo é fotografado a cada 6 horas — volta pela data e vê como estava a classificação naquele momento.',
     pickDate: 'Escolhe uma data',
     latest: 'última foto',
     daysCount: 'dias arquivados',

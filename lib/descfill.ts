@@ -98,7 +98,7 @@ export const PROBE_FRESH_MS = 30 * 24 * 3600_000
 /** 同步期主动收割:库里缺、上游有的语种描述,随每轮同步收进 repo_desc(站点读取路径依旧只查库)。
  * 队列 = 各榜头合并出仓库集合,按热度分(榜序×10000+行号)升序 —— overall 首位、分面榜其后。
  * 单仓扫描一次拿齐全部站点语言;已决且未过期的仓库整仓跳过;
- * 预算内尽力而为,收不完的下一轮继续(Actions 每 30 分钟一轮,几天内全库收敛)。 */
+ * 预算内尽力而为,收不完的下一轮继续(Actions 每 6 小时一轮,几天内全库收敛)。 */
 export async function prefillRepoDescs(opts: {
   boardOrder: string[]
   budgetMs?: number

@@ -1,7 +1,7 @@
-# 数据同步(唯一的进货通道):每 30 分钟一轮。
+# 数据同步(唯一的进货通道):每 6 小时一轮。
 # 策略:逐榜单发(?only=<board>),每发都远小于函数 300s 上限——首建/冷库的全量
 # 一发曾超时被平台 504 掐断(函数整发跑不完,workflow 红叉)。改成单榜接力后,
-# 中断则下一个 30 分钟轮各自续跑,504 只会影响个别榜、不再判死整轮。
+# 中断则下一个 6 小时轮各自续跑,504 只会影响个别榜、不再判死整轮。
 # 配置(仓库 Settings → Secrets and variables → Actions):
 #   SYNC_URL    形如 https://你的域名/api/sync
 #   CRON_SECRET 与 Vercel 环境变量 CRON_SECRET 相同
@@ -9,8 +9,8 @@ name: sync
 
 on:
   schedule:
-    # 避开 :00/:30 整点拥堵窗口(GitHub 定时器在整点槽位高峰时段会压发/丢发)
-    - cron: '7,37 * * * *'
+    # 每 6 小时一轮(00:07/06:07/12:07/18:07 UTC);避开整点拥堵槽位
+    - cron: '7 */6 * * *'
   workflow_dispatch: {}
 
 concurrency:

@@ -7,7 +7,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: 'I 500 progetti con più star nella storia di GitHub.',
     metricLabel: 'Star totali',
     metricHint: 'storico',
-    desc: 'Ordinati per star totali dall’inizio, con dati del GitHub Search API (stars:>1000, fork esclusi), aggiornati ogni 5–15 minuti.',
+    desc: 'Ordinati per star totali dall’inizio, con dati del GitHub Search API (stars:>1000, fork esclusi), aggiornati ogni ~6 ore.',
     faqs: [
       { q: 'Perché il mio progetto manca?', a: 'La classifica include solo progetti con più di 1000 star cumulative che non siano fork di altri repository. L’indice di Search può restare indietro di qualche ora.' },
       { q: 'Che differenza c’è col Trending ufficiale?', a: 'Il Trending ufficiale misura la velocità recente; qui conta il calore accumulato — i classici che in open source non passano mai di moda.' },
@@ -43,7 +43,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     desc: 'Solo repository creati dopo il 1° gennaio dell’anno corrente, ordinati per star totali, fork esclusi. I veri successi dell’anno nell’open source.',
     faqs: [
       { q: 'Si sovrappone alla classifica storica?', a: 'Sì — un repo creato quest’anno già presente tra i campioni di sempre esce su entrambe le classifiche, e va bene così.' },
-      { q: 'Ogni quanto si aggiorna?', a: 'Come tutte le classifiche basate sul Search API: ogni 5–15 minuti, in base alla disponibilità dei token.' },
+      { q: 'Ogni quanto si aggiorna?', a: 'Come tutte le classifiche basate sul Search API: ogni ~6 ore, in base alla disponibilità dei token.' },
     ],
   },
   rising: {
@@ -105,7 +105,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: 'Repo in corsa verso le linee 1k / 10k / 50k / 100k star, osservati dal vivo.',
     metricLabel: 'Star alla prossima linea',
     metricHint: 'differenza',
-    desc: 'Ogni 5–15 minuti cerchiamo repo attivi a meno di ±80 star dai quattro traguardi (1k, 10k, 50k, 100k). La pagina interroga ogni minuto; se una linea viene superata, parte un’animazione di celebrazione e il toast “milestone raggiunta”.',
+    desc: 'Ogni ~6 ore cerchiamo repo attivi a meno di ±80 star dai quattro traguardi (1k, 10k, 50k, 100k). La pagina interroga ogni minuto; se una linea viene superata, parte un’animazione di celebrazione e il toast “milestone raggiunta”.',
     faqs: [
       { q: 'Devo tenere aperta la pagina per vedere le celebrazioni?', a: 'Sì. Il superamento viene rilevato nel browser confrontando le rilevazioni consecutive — il server non tiene nessuna storia per te.' },
       { q: 'Perché la “differenza” può essere zero?', a: 'Il repo ha superato una linea ma resta dentro la finestra di ±80 star — lo stato di “appena superata”.' },
@@ -132,7 +132,7 @@ export const itDict: Dict = {
     brickOneTitle: 'Trovare progetti senza affogare',
     brickOneDesc: 'Dieci liste, dieci filtri: la classifica assoluta inquadra il campo, sette e mese danno il ritmo, gli outsider segnalano l’ignoto.',
     brickTwoTitle: 'Il divario diventa vantaggio',
-    brickTwoDesc: 'Uno scatto ogni 30 minuti: l’outsider prima dello scoppio, il ritorno mentre riprende. Chi vede prima, muove prima.',
+    brickTwoDesc: 'Uno scatto ogni 6 ore: l’outsider prima dello scoppio, il ritorno mentre riprende. Chi vede prima, muove prima.',
     brickThreeTitle: 'Curve vere, non rumore',
     brickThreeDesc: 'Extra-reddito, scommessa di prodotto o pura ispirazione — le curve di stelle vere battono le urla del giorno.',
     heroKicker: 'GITHUB OPEN SOURCE PULSE',
@@ -146,7 +146,7 @@ export const itDict: Dict = {
     weeklySectionTitle: 'Il fuoco della settimana',
     milestoneSectionKicker: 'LIVE MILESTONES',
     milestoneSectionTitle: 'Si supera la linea, in diretta',
-    milestoneSectionSub: 'I dati arrivano ogni ~30 minuti; la pagina li rilegge ogni minuto. In ritardo, il punto diventa rosso.',
+    milestoneSectionSub: 'I dati arrivano ogni ~6 ore; la pagina li rilegge ogni minuto. In ritardo, il punto diventa rosso.',
     boardsKicker: 'TEN LENSES',
     boardsTitle: 'Dieci classifiche, dieci letture.',
     boardsSub: 'Ogni classifica pubblica metodologia e fonte dei dati — verifica tu stesso.',
@@ -254,7 +254,7 @@ export const itDict: Dict = {
   },
   history: {
     title: 'Macchina del tempo',
-    subtitle: 'Ogni 30 minuti viene scattata una foto completa della classifica — ripercorri le date e guarda com’era la classifica in quel momento.',
+    subtitle: 'Ogni 6 ore viene scattata una foto completa della classifica — ripercorri le date e guarda com’era la classifica in quel momento.',
     pickDate: 'Scegli una data',
     latest: 'ultima foto',
     daysCount: 'giorni archiviati',

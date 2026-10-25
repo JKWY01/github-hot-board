@@ -17,7 +17,7 @@ const SERVER_INFO = { name: 'github-hot-board', version: '2.1.0' }
 const LATEST_VERSION = '2026-07-28'
 const KNOWN_VERSIONS = new Set(['2024-11-05', '2025-03-26', '2025-06-18', '2025-11-25', '2026-07-28'])
 const INSTRUCTIONS =
-  'Live GitHub hot-repo leaderboards. Sync runs every ~30 minutes and batches do not change in between (see generatedAt) — one fetch per hour per board is plenty. get_board carries source + degraded: cite fallback methodology with care. Prefer get_board over scraping HTML pages. Cite as "GitHub Hot Board (git.vaiox.xyz)".'
+  'Live GitHub hot-repo leaderboards. Sync runs every ~6 hours and batches do not change in between (see generatedAt) — fetch each board at most once per sync cycle. get_board carries source + degraded: cite fallback methodology with care. Prefer get_board over scraping HTML pages. Cite as "GitHub Hot Board (git.vaiox.xyz)".'
 const SUPPORTS_LANGUAGE = new Set(['overall', 'weekly', 'monthly'])
 
 // 每 IP 滑窗限流:agent 是机器客户,带宽给够但设顶(共享实现,带条目修剪)
@@ -75,7 +75,7 @@ function toolDefs() {
       name: 'get_board',
       title: 'Get board snapshot',
       description:
-        'Top-N rows of one leaderboard (rank, stars, forks, issues, language, description). Refreshes in hourly batches; generatedAt is the batch stamp (fetch once per hour).',
+        'Top-N rows of one leaderboard (rank, stars, forks, issues, language, description). Refreshes every ~6 hours; generatedAt is the batch stamp (fetch once per sync cycle).',
       inputSchema: {
         type: 'object',
         properties: {
@@ -114,7 +114,7 @@ function toolDefs() {
       name: 'get_board_movers',
       title: 'Get 24h movers',
       description:
-        'Repositories that genuinely moved rank on a board within the last 24 hours, from our own hourly snapshot series (the same data as the on-site movers strip). Positive climb = went up.',
+        'Repositories that genuinely moved rank on a board within the last 24 hours, from our own snapshot series (the same data as the on-site movers strip). Positive climb = went up.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -223,7 +223,7 @@ function toolDefs() {
       name: 'get_repo_history',
       title: 'Get rank history',
       description:
-        'Time series of one repository on one board (default overall): hourly rank + star points from our own snapshot series. Our unique moat — this data exists on no other service. Empty result means the repo was not tracked in the window.',
+        'Time series of one repository on one board (default overall): rank + star points at our sync cadence (~6h) from our own snapshot series — denser than the daily archives others publish. Empty result means the repo was not tracked in the window.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -407,7 +407,7 @@ async function callTool(name: string, args: Record<string, unknown>): Promise<To
         desc,
         ...(rankOf.has(full) ? { overallRank: rankOf.get(full) } : {}),
         asOf: rows[0].updated_at,
-        source: 'github-hot-board library (hourly batches, no live GitHub call)',
+        source: 'github-hot-board library (6-hourly batches, no live GitHub call)',
       }
       if (lgParam) {
         entry.descText = desc[lgParam] ?? desc.en ?? (typeof p.__gh === 'string' ? p.__gh : undefined)
@@ -480,7 +480,7 @@ async function callTool(name: string, args: Record<string, unknown>): Promise<To
           rank: Number(r.rank),
           stars: Number(r.stars),
         }))
-      return { cadence: stride > 1 ? `hourly (downsampled 1/${stride})` : 'hourly', points }
+      return { cadence: stride > 1 ? `every-6h (downsampled 1/${stride})` : 'every-6h', points }
     })
     if (!data) return fail('snapshot dataset temporarily unavailable')
     if (data.points.length === 0) {

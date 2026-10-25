@@ -42,7 +42,7 @@
 - `GET /api/boards/{slug}?language={lang}&lg={ui-language}` returns the full board snapshot as JSON:
   `{ slug, language, items: [{fullName, htmlUrl, desc, stars, forks, issues, language, prevRank?, gained?, slope?, ...}], generatedAt, degraded }`.
   - The `language` facet is supported only for overall, weekly, and monthly.
-  - `generatedAt` is the data-batch timestamp. Sync runs every ~30 minutes and batches do not change in between; one fetch per hour per board is plenty.
+  - `generatedAt` is the data-batch timestamp. Sync runs every ~6 hours and batches do not change in between; one fetch per sync cycle is plenty.
   - `degraded: true` means the official Trending scrape failed and a Search-based fallback methodology was served — the HTML pages show the same warning. Cite with care.
   - `items[].prevRank` (0-based) is the repo's rank in the previous batch — the up/down signal, also rendered as badges on the pages.
 - robots.txt explicitly allows AI crawlers on `/api/boards/*`; the other `/api/*` endpoints stay closed to crawlers.
@@ -55,9 +55,9 @@
 ## MCP server (agent-native)
 
 - Endpoint: `https://git.vaiox.xyz/api/mcp` — MCP Streamable HTTP, stateless JSON, latest protocolVersion 2026-07-28 (older clients down-negotiated automatically).
-- Tools (all read-only, structured output): `list_boards`, `get_board`, `get_board_movers`, `get_repo`, `search_library` (keyword search over tracked repos), `get_repo_history` (hourly rank + star time series per repository — served from our own snapshot series, available nowhere else).
+- Tools (all read-only, structured output): `list_boards`, `get_board`, `get_board_movers`, `get_repo`, `search_library` (keyword search over tracked repos), `get_repo_history` (rank + star time series per repository at our ~6h sync cadence — served from our own snapshot series, denser than daily archives).
 - `get_board` returns `source` and `degraded` alongside the rows: `degraded: true` means the official Trending scrape failed and a Search-based fallback methodology was served. Same honesty as the HTML pages.
-- Data provenance: our own cached dataset; no live GitHub API calls. Rate limit 60 requests/min per IP; sync runs every ~30 minutes and batches do not change in between — one fetch per hour per board is enough.
+- Data provenance: our own cached dataset; no live GitHub API calls. Rate limit 60 requests/min per IP; sync runs every ~6 hours and batches do not change in between — one fetch per sync cycle is enough.
 
 ## Attribution
 

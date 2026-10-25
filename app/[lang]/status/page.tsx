@@ -42,10 +42,10 @@ const T: Record<Locale, {
   id: { title: 'Kesehatan data', lead: 'Sumber dan kesegaran setiap kunci papan — tabel yang sama dengan yang diterima pengunjung. Kalau basi, tampak basi.', db: 'Basis data', dbDown: 'Basis data sempat tak terjangkau — situs beralih ke snapshot, papan tetap terbaca.', dbOff: 'DATABASE_URL belum diatur — deployment ini berjalan mode disk/ambil langsung.', oldest: 'batch tertua', fresh: 'segar', aging: 'menua', stale: 'kedaluwarsa', keyCol: 'Papan', srcCol: 'Sumber', rowsCol: 'Baris', ageCol: 'Usia', degraded: 'terdegradasi', base: 'dasar', lang: 'bahasa' },
 }
 
-/** 新鲜度色档:同步节奏 30 分钟。≤40 分钟 = 绿;≤90 分钟(GHB_DB_MAX_MIN 默认值)= 琥珀;更久 = 红。 */
+/** 新鲜度色档:同步节奏 6 小时。≤6.5 小时 = 绿;≤13 小时(容忍两轮失败)= 琥珀;更久 = 红。 */
 function ageBucket(ageMs: number): 'fresh' | 'aging' | 'stale' {
-  if (ageMs <= 40 * 60_000) return 'fresh'
-  if (ageMs <= 90 * 60_000) return 'aging'
+  if (ageMs <= 390 * 60_000) return 'fresh'
+  if (ageMs <= 780 * 60_000) return 'aging'
   return 'stale'
 }
 
@@ -120,7 +120,7 @@ export default async function StatusPage({
           <p className="text-[30px] font-bold leading-none tabular-nums tracking-tight text-ink">
             {overall ? `${overall.fresh}/${rows?.length ?? 0}` : '—'}
           </p>
-          <p className="mt-2 text-[12.5px] text-sub">{t.fresh} · ≤40 min</p>
+          <p className="mt-2 text-[12.5px] text-sub">{t.fresh} · ≤6.5 h</p>
         </div>
         <div className="card px-5 py-4">
           <p className={`text-[30px] font-bold leading-none tabular-nums tracking-tight ${overall && overall.degraded > 0 ? 'text-bad' : 'text-ink'}`}>
@@ -144,7 +144,7 @@ export default async function StatusPage({
         <p className="mt-6 rounded-2xl border-[0.5px] border-black/10 bg-[#fff8e6] px-4 py-3 text-[13px] text-bad">{t.dbDown}</p>
       )}
 
-      {/* 一眼判停摆:最旧一拍多久前(同步 30 分钟一轮,超 90 分钟即同步链路异常) */}
+      {/* 一眼判停摆:最旧一拍多久前(同步 6 小时一轮,超 13 小时即同步链路异常) */}
       {overall && (
         <p className="mt-4 px-1 text-[12.5px] text-sub">
           {t.oldest}: {fmtAge(overall.oldest)}

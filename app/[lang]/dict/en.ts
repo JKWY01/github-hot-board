@@ -7,7 +7,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: 'The 500 most starred projects in GitHub history.',
     metricLabel: 'Total stars',
     metricHint: 'lifetime',
-    desc: 'Ranked by lifetime star count, sourced from the GitHub Search API (stars:>1000, forks excluded), refreshed every 5–15 minutes.',
+    desc: 'Ranked by lifetime star count, sourced from the GitHub Search API (stars:>1000, forks excluded), refreshed every ~6 hours.',
     faqs: [
       { q: 'Why is my project missing?', a: 'The board only includes projects with more than 1000 lifetime stars that are not forks of another repository. Search indexing may lag by a few hours.' },
       { q: 'How is this different from official Trending?', a: 'Official Trending measures recent velocity; this board values accumulated heat — the evergreen assets of open source.' },
@@ -20,7 +20,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     metricHint: '7d gain',
     desc: 'Data is read directly from the official GitHub Trending weekly page. Order follows the official page; the number on the right is the real “stars this week” delta.',
     faqs: [
-      { q: 'Numbers sometimes differ from the official page?', a: 'Fetching results are cached for ~15 minutes while the official numbers keep moving. A refresh re-aligns them.' },
+      { q: 'Numbers sometimes differ from the official page?', a: 'Fetching results are cached for up to ~6 hours while the official numbers keep moving. A refresh re-aligns them.' },
       { q: 'What happens if crawling fails?', a: 'GitHub has no official Trending API. On failure, this board temporarily switches to “newest repos created in 7 days, ranked by stars” and clearly labels the fallback on the page.' },
     ],
   },
@@ -43,7 +43,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     desc: 'Only repositories created after January 1 of the current year, ranked by total stars, forks excluded. The real hits of this year in open source.',
     faqs: [
       { q: 'Overlap with the overall board?', a: 'Yes — a repo created this year and already in the all-time rankings appears on both, which is expected.' },
-      { q: 'Refresh rate?', a: 'Same as all Search API boards: every 5–15 minutes depending on token availability.' },
+      { q: 'Refresh rate?', a: 'Same as all Search API boards: every ~6 hours depending on token availability.' },
     ],
   },
   rising: {
@@ -105,7 +105,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: 'Repos sprinting toward the 1k / 10k / 50k / 100k star lines, watched live.',
     metricLabel: 'Stars to next line',
     metricHint: 'gap',
-    desc: 'Every 5–15 minutes we search for active repos sitting within ±80 stars of four milestone thresholds (1k, 10k, 50k, 100k). The page polls every minute; if a line is crossed, a celebration animation and a “milestone reached” toast appear.',
+    desc: 'Every ~6 hours we search for active repos sitting within ±80 stars of four milestone thresholds (1k, 10k, 50k, 100k). The page polls every minute; if a line is crossed, a celebration animation and a “milestone reached” toast appear.',
     faqs: [
       { q: 'Must I keep the page open to see celebrations?', a: 'Yes. Crossing is detected in the browser by comparing successive polls — the server holds no history for you.' },
       { q: 'Why can the “gap” be zero?', a: 'The repo has crossed a line but still sits in the ±80 window — the “just crossed” state.' },
@@ -132,7 +132,7 @@ export const enDict: Dict = {
     brickOneTitle: 'Find projects without drowning',
     brickOneDesc: 'Ten boards, ten filters: the all-time chart frames the field, weekly and monthly set the pace, dark horses flag what you have not heard of yet.',
     brickTwoTitle: 'Turn the information gap into the first move',
-    brickTwoDesc: 'Snapshots every 30 minutes: dark horses before they break out, comebacks while they heal. Whoever sees first, moves first.',
+    brickTwoDesc: 'Snapshots every 6 hours: dark horses before they break out, comebacks while they heal. Whoever sees first, moves first.',
     brickThreeTitle: 'Follow real star curves, follow real momentum',
     brickThreeDesc: 'Side hustles, product bets or plain inspiration — trends built from real star history beat whatever shouts loudest today.',
     heroKicker: 'GITHUB OPEN SOURCE PULSE',
@@ -146,7 +146,7 @@ export const enDict: Dict = {
     weeklySectionTitle: 'This week’s fire',
     milestoneSectionKicker: 'LIVE MILESTONES',
     milestoneSectionTitle: 'Crossing the line, live',
-    milestoneSectionSub: 'Data lands every ~30 minutes; the page re-reads each minute. If a snapshot runs late, the dot turns red.',
+    milestoneSectionSub: 'Data lands every ~6 hours; the page re-reads each minute. If a snapshot runs late, the dot turns red.',
     boardsKicker: 'TEN LENSES',
     boardsTitle: 'Ten boards, ten readings.',
     boardsSub: 'Every board publishes its methodology and data source — verify it yourself.',
@@ -254,7 +254,7 @@ export const enDict: Dict = {
   },
   history: {
     title: 'Time Machine',
-    subtitle: 'The full board is photographed every 30 minutes — rewind by date to see the ranking at that moment.',
+    subtitle: 'The full board is photographed every 6 hours — rewind by date to see the ranking at that moment.',
     pickDate: 'Pick a date',
     latest: 'latest tap',
     daysCount: 'days archived',

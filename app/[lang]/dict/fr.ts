@@ -7,7 +7,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: 'Les 500 projets les plus étoilés de l’histoire de GitHub.',
     metricLabel: 'Stars totales',
     metricHint: 'à vie',
-    desc: 'Classement par nombre de stars cumulées, données issues de la GitHub Search API (stars:>1000, forks exclus), rafraîchies toutes les 5 à 15 minutes.',
+    desc: 'Classement par nombre de stars cumulées, données issues de la GitHub Search API (stars:>1000, forks exclus), rafraîchies toutes les ~6 heures.',
     faqs: [
       { q: 'Pourquoi mon projet est-il absent ?', a: 'Le tableau ne liste que les projets dépassant 1000 stars cumulées et qui ne sont pas le fork d’un autre dépôt. L’indexation de Search peut prendre quelques heures de retard.' },
       { q: 'Quelle différence avec le Trending officiel ?', a: 'Le Trending officiel mesure la vitesse récente ; ce tableau valorise la chaleur accumulée — les valeurs pérennes de l’open source.' },
@@ -20,7 +20,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     metricHint: 'gain sur 7 j',
     desc: 'Les données sont lues directement depuis la page hebdomadaire officielle de GitHub Trending. L’ordre suit la page officielle ; le chiffre de droite est le vrai delta « stars cette semaine ».',
     faqs: [
-      { q: 'Les chiffres divergent parfois de la page officielle ?', a: 'Les résultats récupérés restent ~15 minutes en cache pendant que les chiffres officiels continuent de bouger. Un rafraîchissement remet tout d’accord.' },
+      { q: 'Les chiffres divergent parfois de la page officielle ?', a: 'Les résultats récupérés restent jusqu’à ~6 heures en cache pendant que les chiffres officiels continuent de bouger. Un rafraîchissement remet tout d’accord.' },
       { q: 'Que se passe-t-il si le crawl échoue ?', a: 'GitHub ne fournit aucune API officielle pour Trending. En cas d’échec, ce tableau bascule temporairement sur « dépôts créés dans les 7 derniers jours, triés par stars », et le repli est clairement signalé sur la page.' },
     ],
   },
@@ -43,7 +43,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     desc: 'Uniquement les dépôts créés après le 1er janvier de l’année en cours, classés par nombre total de stars, forks exclus. Les vrais cartons de l’année dans l’open source.',
     faqs: [
       { q: 'Chevauchement avec le classement global ?', a: 'Oui — un dépôt créé cette année et déjà présent au classement de tous les temps paraît des deux côtés, c’est attendu.' },
-      { q: 'Fréquence d’actualisation ?', a: 'Comme pour tous les tableaux issus de la Search API : toutes les 5 à 15 minutes, selon la disponibilité des tokens GitHub.' },
+      { q: 'Fréquence d’actualisation ?', a: 'Comme pour tous les tableaux issus de la Search API : toutes les ~6 heures, selon la disponibilité des tokens GitHub.' },
     ],
   },
   rising: {
@@ -105,7 +105,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: 'Les dépôts qui sprintent vers les lignes 1k / 10k / 50k / 100k stars, suivis en direct.',
     metricLabel: 'Stars jusqu’à la prochaine ligne',
     metricHint: 'écart',
-    desc: 'Toutes les 5 à 15 minutes, on cherche les dépôts actifs situés à ±80 stars de quatre jalons (1k, 10k, 50k, 100k). La page interroge chaque minute ; si une ligne est franchie, une animation de célébration et un toast « jalon atteint » apparaissent.',
+    desc: 'Toutes les ~6 heures, on cherche les dépôts actifs situés à ±80 stars de quatre jalons (1k, 10k, 50k, 100k). La page interroge chaque minute ; si une ligne est franchie, une animation de célébration et un toast « jalon atteint » apparaissent.',
     faqs: [
       { q: 'Faut-il laisser la page ouverte pour voir les célébrations ?', a: 'Oui. Le franchissement est détecté dans le navigateur, en comparant les sondages successifs — le serveur ne conserve aucun historique pour vous.' },
       { q: 'Pourquoi « l’écart » peut-il valoir zéro ?', a: 'Le dépôt vient de franchir une ligne mais reste dans la fenêtre de ±80 — l’état « vient de passer ».' },
@@ -132,7 +132,7 @@ export const frDict: Dict = {
     brickOneTitle: 'Trouver des projets sans se noyer',
     brickOneDesc: 'Dix listes, dix filtres : le palmarès historique cadre le champ, l’hebdo et le mensuel donnent le tempo, les outsiders signalent l’inconnu.',
     brickTwoTitle: 'Le fossé devient l’avance',
-    brickTwoDesc: 'Un photo toutes les 30 minutes : l’outsider avant l’explosion, le retour pendant qu’il remonte. Celui qui voit d’abord bouge d’abord.',
+    brickTwoDesc: 'Un photo toutes les 6 heures : l’outsider avant l’explosion, le retour pendant qu’il remonte. Celui qui voit d’abord bouge d’abord.',
     brickThreeTitle: 'Suivre de vraies courbes, pas le vacarme',
     brickThreeDesc: 'Revenu complémentaire, pari produit ou simple inspiration — les vraies courbes d’étoiles battent le bruit du jour.',
     heroKicker: 'GITHUB OPEN SOURCE PULSE',
@@ -254,7 +254,7 @@ export const frDict: Dict = {
   },
   history: {
     title: 'Machine à remonter le temps',
-    subtitle: 'Un cliché complet du tableau toutes les 30 minutes — revenez par date pour voir le classement de ce moment.',
+    subtitle: 'Un cliché complet du tableau toutes les 6 heures — revenez par date pour voir le classement de ce moment.',
     pickDate: 'Choisir une date',
     latest: 'dernier cliché',
     daysCount: 'jours archivés',

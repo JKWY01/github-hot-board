@@ -8,7 +8,7 @@ export const maxDuration = 300
 export const GET = handle
 export const POST = handle
 
-/** 数据同步端点(唯一的进货通道):cron Actions 每 30 分钟敲一次,也可手动触发。
+/** 数据同步端点(唯一的进货通道):cron Actions 每 6 小时敲一次,也可手动触发。
  * 鉴权统一走 lib/apiguard:配 CRON_SECRET 时只认 Bearer 头(常数时间比较);
  * 未配置时仅放行本地回环 —— 公网部署不配密钥不再等于开放同步。 */
 async function handle(request: Request): Promise<Response> {

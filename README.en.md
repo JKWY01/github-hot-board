@@ -38,7 +38,7 @@ GitHub ──(only the sync job)──> Postgres (Neon or self-hosted) ──(si
 - A scheduled sync (`lib/sync.ts`) walks all 34 keys (10 boards + language facets) and writes two tables:
   - `board_head`: the newest tap per key; the site reads this. New taps overwrite old ones in place.
   - `board_snapshots`: one row per repo per rank — an archive of each tap, whatever it was.
-- Triggers: `npm run sync` (local, needs the server running), `POST /api/sync` (with CRON_SECRET), or GitHub Actions every 30 minutes (`.github/workflows/sync.yml`).
+- Triggers: `npm run sync` (local, needs the server running), `POST /api/sync` (with CRON_SECRET), or GitHub Actions every 6 hours (`.github/workflows/sync.yml`).
 - The rendering path makes **zero requests to GitHub**. Fallback chain: database → local disk snapshots (rebuild hydrates from `.data/`, no GitHub calls) → live fetch. If sync is down for a while, data goes stale in a labeled way; it does not go fake.
 - When GitHub blocks the trending crawl, weekly/monthly pivot to a Search-based stand-in, labeled as such on the page.
 
@@ -87,7 +87,7 @@ curl -H "Authorization: Bearer $CRON_SECRET" https://<domain>/api/dbcheck  # DB 
 gh run watch                       # watch the Actions sync
 ```
 
-Sync walks slowly on purpose (rate limits and half-open connections): about 4 minutes per round, well within a 30-minute cadence. Snapshot rows older than 60 days are pruned automatically; `board_head` keeps only the newest tap. Nothing to babysit.
+Sync walks slowly on purpose (rate limits and half-open connections): about 4 minutes per round, well within a 6-hour cadence. Snapshot rows older than 60 days are pruned automatically; `board_head` keeps only the newest tap. Nothing to babysit.
 
 ## Market analysis (optional, separate from the site)
 

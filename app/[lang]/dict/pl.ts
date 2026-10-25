@@ -7,7 +7,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: 'Pięćset najbardziej gwiazdkowych projektów w historii GitHuba.',
     metricLabel: 'Gwiazdki ogółem',
     metricHint: 'łącznie',
-    desc: 'Pozycje według łącznej liczby gwiazdek za cały czas; przychodzi to z GitHub Search API (stars:>1000, forków brak), odświeżane co 5–15 minut.',
+    desc: 'Pozycje według łącznej liczby gwiazdek za cały czas; przychodzi to z GitHub Search API (stars:>1000, forków brak), odświeżane co ~6 godzin.',
     faqs: [
       { q: 'Dlaczego mojego projektu tu nie ma?', a: 'Lista obejmuje wyłącznie projekty z ponad 1000 gwiazdek, które nie są forkami innych repozytoriów. Indeks wyszukiwania bywa opóźniony o kilka godzin.' },
       { q: 'Czym to się różni od oficjalnego Trending?', a: 'Oficjalny Trending mierzy świeży rozpęd; ta lista ceni nagromadzony rozgłos — wiecznie zielone aktywa open source.' },
@@ -20,7 +20,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     metricHint: 'tydzień',
     desc: 'Dane czytamy wprost z oficjalnej strony GitHub Trending (tydzień). Kolejność zgodna z oficjalną; liczba po prawej to prawdziwa delta gwiazdek w tym tygodniu.',
     faqs: [
-      { q: 'Liczby czasem nie zgadzają się z oficjalną stroną?', a: 'Wyniki trzymane są w cache przez ok. 15 minut, a oficjalne liczby cały czas płyną. Po odświeżeniu znowu się zrównają.' },
+      { q: 'Liczby czasem nie zgadzają się z oficjalną stroną?', a: 'Wyniki trzymane są w cache przez do ok. 6 godzin, a oficjalne liczby cały czas płyną. Po odświeżeniu znowu się zrównają.' },
       { q: 'Co jeśli scraping padnie?', a: 'GitHub nie ma oficjalnego Trending API. W takim razie lista tymczasowo przełącza się na „repozytoria utworzone w ciągu 7 dni, po gwiazdkach”, a strona wyraźnie oznacza awaryjny tryb.' },
     ],
   },
@@ -43,7 +43,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     desc: 'Tylko repozytoria utworzone po 1 stycznia bieżącego roku, w kolejności malejącej po łącznej liczbie gwiazdek; forki wykluczone. Odpowiedź na pytanie: co w tym roku w open source naprawdę trafiło.',
     faqs: [
       { q: 'Czy dubluje się z listą wszech czasów?', a: 'Tak — repozytorium utworzone w tym roku, które jest już w ogólnym topie, pokaże się w obu listach. To przewidziane.' },
-      { q: 'Ile wynosi odświeżanie?', a: 'Jak na wszystkich listach opartych na Search API: co 5–15 minut, zależnie od dostępności tokenu.' },
+      { q: 'Ile wynosi odświeżanie?', a: 'Jak na wszystkich listach opartych na Search API: co ~6 godzin, zależnie od dostępności tokenu.' },
     ],
   },
   rising: {
@@ -105,7 +105,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: 'Repozytoria pędzące do linii 1k / 10k / 50k / 100k gwiazdek — pod bezpośrednią obserwacją.',
     metricLabel: 'Gwiazdek do następnej linii',
     metricHint: 'luka',
-    desc: 'Co 5–15 minut szukamy aktywnych repozytoriów w zasięgu ±80 gwiazdek od czterech progów (1k, 10k, 50k, 100k). Strona odpytuje co minutę; gdy linia padnie, rusza animacja świętowania i toast „próg osiągnięty”.',
+    desc: 'Co ~6 godzin szukamy aktywnych repozytoriów w zasięgu ±80 gwiazdek od czterech progów (1k, 10k, 50k, 100k). Strona odpytuje co minutę; gdy linia padnie, rusza animacja świętowania i toast „próg osiągnięty”.',
     faqs: [
       { q: 'Świętowanie widzę tylko przy otwartej karcie?', a: 'Tak. Przekroczenie wykrywamy w przeglądarce, porównując kolejne odpytania — serwer nie trzyma za ciebie historii.' },
       { q: 'Dlaczego „luka” może być zerowa?', a: 'Repozytorium już przekroczyło linię, wciąż mieści się jednak w oknie ±80 — stan „właśnie przekroczył”.' },
@@ -132,7 +132,7 @@ export const plDict: Dict = {
     brickOneTitle: 'Znajdować projekt bez tonięcia',
     brickOneDesc: 'Dziesięć tablic, dziesięć filtrów: tablica all-time ustawia pole, tydzień i miesiąc nadają tempo, ciemne konie oznaczają to, czego jeszcze nie znasz.',
     brickTwoTitle: 'Luka staje się przewagą',
-    brickTwoDesc: 'Kadr co 30 minut: ciemny koń przed wybiciem, powrót w trakcie zdrowienia. Kto widzi pierwszy, rusza pierwszy.',
+    brickTwoDesc: 'Kadr co 6 godzin: ciemny koń przed wybiciem, powrót w trakcie zdrowienia. Kto widzi pierwszy, rusza pierwszy.',
     brickThreeTitle: 'Prawdziwe krzywe, nie hałas',
     brickThreeDesc: 'Dodatkowy zarobek, zakład produktowy czy czysta inspiracja — trendy z prawdziwej historii gwiazd biją krzyk dnia.',
     heroKicker: 'GITHUB OPEN SOURCE PULSE',
@@ -146,7 +146,7 @@ export const plDict: Dict = {
     weeklySectionTitle: 'Ogień tego tygodnia',
     milestoneSectionKicker: 'LIVE MILESTONES',
     milestoneSectionTitle: 'Przekroczenia na żywo',
-    milestoneSectionSub: 'Dane trafiają co ~30 minut; strona przegląda je co minutę. Przy opóźnieniu kropka robi się czerwona.',
+    milestoneSectionSub: 'Dane trafiają co ~6 godzin; strona przegląda je co minutę. Przy opóźnieniu kropka robi się czerwona.',
     boardsKicker: 'TEN LENSES',
     boardsTitle: 'Dziesięć list, dziesięć odczytów.',
     boardsSub: 'Każda lista otwarcie podaje metodologię i źródło danych — zweryfikuj sam.',
@@ -254,7 +254,7 @@ export const plDict: Dict = {
   },
   history: {
     title: 'Wehikuł czasu',
-    subtitle: 'Każde 30 minut lista zostaje zatrzymana w kadrze — wybierz datę i zobacz ranking dokładnie tamtego momentu.',
+    subtitle: 'Każde 6 godzin lista zostaje zatrzymana w kadrze — wybierz datę i zobacz ranking dokładnie tamtego momentu.',
     pickDate: 'Wybierz datę',
     latest: 'świeży kadr',
     daysCount: 'dni w archiwum',

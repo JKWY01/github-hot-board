@@ -7,7 +7,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: 'GitHub tarihinin en çok Star alan 500 projesi.',
     metricLabel: 'Toplam Star',
     metricHint: 'yaşam boyu',
-    desc: 'Yaşam boyu Star sayısına göre sıralanır; veri GitHub Search API’den gelir (stars:>1000, fork’lar hariç) ve 5–15 dakikada bir yenilenir.',
+    desc: 'Yaşam boyu Star sayısına göre sıralanır; veri GitHub Search API’den gelir (stars:>1000, fork’lar hariç) ve ~6 saatte bir yenilenir.',
     faqs: [
       { q: 'Projem neden listede yok?', a: 'Listeye yalnızca yaşam boyu Star sayısı 1000’i aşan ve başka bir deponun fork’u olmayan projeler girer. Arama indekslemesi birkaç saat geride kalabilir.' },
       { q: 'Resmi Trending’den farkı ne?', a: 'Resmi Trending son dönemin hızına bakar; bu liste birikmiş ilgiyi ölçer — açık kaynağın “hep yeşil” varlıkları.' },
@@ -20,7 +20,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     metricHint: '7 günlük artış',
     desc: 'Veri doğrudan resmi GitHub Trending haftalık sayfasından okunur. Sıralama resmi sayfayla aynıdır; sağdaki sayı, gerçekten “bu hafta kazanılan Star” farkıdır.',
     faqs: [
-      { q: 'Sayılar bazen resmi sayfayla tutmuyor mu?', a: 'Çekilen sonuçlar yaklaşık 15 dakika önbelleğe alınırken resmi sayı akmaya devam eder. Her yenilemede ikisi yeniden hizalanır.' },
+      { q: 'Sayılar bazen resmi sayfayla tutmuyor mu?', a: 'Çekilen sonuçlar ~6 saate kadar önbelleğe alınırken resmi sayı akmaya devam eder. Her yenilemede ikisi yeniden hizalanır.' },
       { q: 'Tarama başarısız olursa ne olur?', a: 'GitHub’ın resmi bir Trending API’si yok. Hata durumunda bu liste geçici olarak “son 7 günde oluşturulan repoları Star sayısına göre sıralayan” yedek yönteme geçer; bu durum sayfada açıkça etiketlenir.' },
     ],
   },
@@ -43,7 +43,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     desc: 'Yalnızca bu yıl 1 Ocak’tan sonra oluşturulan depolar sayılır ve toplam Star’a göre sıralanır; fork’lar dışarıda. Açık kaynak dünyasının bu yılki gerçek hitleri.',
     faqs: [
       { q: 'Tüm zamanlar listesiyle çakışır mı?', a: 'Evet — bu yıl oluşturulup hâlihazırda tüm zamanlar sıralamasına girmiş bir repo her ikisinde de görünür; bu beklenen bir durum.' },
-      { q: 'Yenileme aralığı ne sıklıkta?', a: 'Tüm Search API listeleriyle aynı: 5–15 dakikada bir, mevcut token durumuna göre.' },
+      { q: 'Yenileme aralığı ne sıklıkta?', a: 'Tüm Search API listeleriyle aynı: ~6 saatte bir, mevcut token durumuna göre.' },
     ],
   },
   rising: {
@@ -105,7 +105,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: '1k / 10k / 50k / 100k Star çizgilerine koşan repolar, canlı izleniyor.',
     metricLabel: 'Sonraki çizgiye Star',
     metricHint: 'fark',
-    desc: '5–15 dakikada bir, dört milestone eşiğinin (1k, 10k, 50k, 100k) ±80 Star yakınındaki aktif repoları tararız. Sayfa her dakika sorgular; bir çizgi geçildiğinde kutlama animasyonu ve “kilometre taşı geçildi” bildirimi çıkar.',
+    desc: '~6 saatte bir, dört milestone eşiğinin (1k, 10k, 50k, 100k) ±80 Star yakınındaki aktif repoları tararız. Sayfa her dakika sorgular; bir çizgi geçildiğinde kutlama animasyonu ve “kilometre taşı geçildi” bildirimi çıkar.',
     faqs: [
       { q: 'Kutlamaları görmek için sayfada kalmam şart mı?', a: 'Evet. Çizgi geçişi, tarayıcı peş peşe iki anlık veriyi karşılaştırarak yakalar; sunucu sizin için geçmiş tutmaz.' },
       { q: '“Fark” neden 0 olabilir?', a: 'Repo bir çizgiyi geçmiştir ama hâlâ ±80 penceresinin içindedir — “az önce geçti” durumu budur.' },
@@ -132,7 +132,7 @@ export const trDict: Dict = {
     brickOneTitle: 'Boğulmadan proje bulmak',
     brickOneDesc: 'On pano, on filtre: tüm zamanlar alanı çerçeveler, haftalık ve aylık temposu koyar, kara atlar henüz duyulmamışı işaretler.',
     brickTwoTitle: 'Bilgi farkından hamleye',
-    brickTwoDesc: 'Her 30 dakikada bir kare: patlamadan önce kara at, toparlanırken geri dönüş. Önce gören, önce oynar.',
+    brickTwoDesc: 'Her 6 saatda bir kare: patlamadan önce kara at, toparlanırken geri dönüş. Önce gören, önce oynar.',
     brickThreeTitle: 'Gerçek eğriler, gerçek ivme',
     brickThreeDesc: 'Yan gelir, ürün bahisleri ya da sadece ilham — gerçek yıldız geçmişinden kurulan akıntılar, gürültücü günün sesinden daha sağlamdır.',
     heroKicker: 'GITHUB OPEN SOURCE PULSE',
@@ -146,7 +146,7 @@ export const trDict: Dict = {
     weeklySectionTitle: 'Bu haftanın yangını',
     milestoneSectionKicker: 'LIVE MILESTONES',
     milestoneSectionTitle: 'Çizgiyi geçenleri canlı izle',
-    milestoneSectionSub: 'Veriler ~30 dakikada bir gelir; sayfa her dakika yeniden okur. Gecikirse nokta kırmızı olur.',
+    milestoneSectionSub: 'Veriler ~6 saatda bir gelir; sayfa her dakika yeniden okur. Gecikirse nokta kırmızı olur.',
     boardsKicker: 'TEN LENSES',
     boardsTitle: 'On liste, on farklı okuma.',
     boardsSub: 'Her liste kendi metodolojisini ve veri kaynağını açıkça yazar — doğrulaması size kalmış.',
@@ -254,7 +254,7 @@ export const trDict: Dict = {
   },
   history: {
     title: 'Zaman Makinesi',
-    subtitle: 'Tüm liste her 30 dakikada bir fotoğraflanır — o güne geri dönüp o anki sıralamayı görün.',
+    subtitle: 'Tüm liste her 6 saatda bir fotoğraflanır — o güne geri dönüp o anki sıralamayı görün.',
     pickDate: 'Tarih seç',
     latest: 'son kayıt',
     daysCount: 'gün arşivlendi',

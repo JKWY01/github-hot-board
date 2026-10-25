@@ -41,7 +41,7 @@ const zh: GuideCopy = {
     },
     {
       q: "多久更新一次?",
-      a: "数据管线每 30 分钟进一轮货,站点 60 秒轮询;里程碑直播榜里的项目冲过阈值当场跨线。",
+      a: "数据管线每 6 小时进一轮货,站点 60 秒轮询;里程碑榜的跨线情况随最新一拍更新。",
     },
   ],
   boardsKicker: "TEN BOARDS",
@@ -72,7 +72,7 @@ const en: GuideCopy = {
     },
     {
       q: "How often does it update?",
-      a: "The pipeline ingests every ~30 minutes, the page re-reads the list every minute, and the milestone board flags whatever crossed its line in the latest snapshot. If a snapshot runs late, the updated chip turns red.",
+      a: "The pipeline ingests every ~6 hours, the page re-reads the list every minute, and the milestone board flags whatever crossed its line in the latest snapshot. If a snapshot runs late, the updated chip turns red.",
     },
   ],
   boardsKicker: "TEN BOARDS",
@@ -103,7 +103,7 @@ const zhTW: GuideCopy = {
     },
     {
       q: "多久更新一次?",
-      a: "資料管線每 30 分鐘進一輪貨,站點 60 秒輪詢;里程碑直播榜裡的專案衝過門檻當場跨線。",
+      a: "資料管線每 6 小時進一輪貨,站點 60 秒輪詢;里程碑直播榜裡的專案衝過門檻當場跨線。",
     },
   ],
   boardsKicker: "TEN BOARDS",
@@ -164,7 +164,7 @@ const ko: GuideCopy = {
     },
     {
       q: "얼마나 자주 갱신되나요?",
-      a: "파이프라인은 30분마다 데이터를 굴리고, 사이트는 60초 폴링, 마일스톤 라이브표는 임계값 통과 즉시 갱신됩니다.",
+      a: "파이프라인은 6시간마다 데이터를 굴리고, 사이트는 60초 폴링, 마일스톤 라이브표는 임계값 통과 즉시 갱신됩니다.",
     },
   ],
   boardsKicker: "TEN BOARDS",
@@ -195,7 +195,7 @@ const de: GuideCopy = {
     },
     {
       q: "Wie oft aktualisiert sich das?",
-      a: "Die Pipeline zieht alle 30 Minuten Ware, die Seite fragt alle 60 Sekunden nach, und das Live-Meilenstein-Brett schlägt genau dann zu, wenn ein Repo die Schwelle reißt.",
+      a: "Die Pipeline zieht alle 6 Stunden Ware, die Seite fragt alle 60 Sekunden nach, und das Live-Meilenstein-Brett schlägt genau dann zu, wenn ein Repo die Schwelle reißt.",
     },
   ],
   boardsKicker: "TEN BOARDS",
@@ -226,7 +226,7 @@ const fr: GuideCopy = {
     },
     {
       q: "À quelle fréquence les mises à jour ?",
-      a: "Le pipeline charge toutes les 30 minutes, le site interroge toutes les 60 secondes, et le palmarès live des jalons réagit au franchissement d'un seuil.",
+      a: "Le pipeline charge toutes les 6 hours, le site interroge toutes les 60 secondes, et le palmarès live des jalons réagit au franchissement d'un seuil.",
     },
   ],
   boardsKicker: "TEN BOARDS",
@@ -257,7 +257,7 @@ const es: GuideCopy = {
     },
     {
       q: "¿Cada cuánto se actualiza?",
-      a: "El pipeline ingiere cada 30 minutos, la página consulta cada 60 segundos y la tabla de hitos en vivo reacciona al cruzar un umbral.",
+      a: "El pipeline ingiere cada 6 horas, la página consulta cada 60 segundos y la tabla de hitos en vivo reacciona al cruzar un umbral.",
     },
   ],
   boardsKicker: "TEN BOARDS",
@@ -288,7 +288,7 @@ const pt: GuideCopy = {
     },
     {
       q: "Com que frequência atualiza?",
-      a: "O pipeline carrega a cada 30 minutos, o site consulta a cada 60 segundos e o ranking ao vivo de marcos reage ao cruzar um limiar.",
+      a: "O pipeline carrega a cada 6 horas, o site consulta a cada 60 segundos e o ranking ao vivo de marcos reage ao cruzar um limiar.",
     },
   ],
   boardsKicker: "TEN BOARDS",
@@ -319,7 +319,7 @@ const it: GuideCopy = {
     },
     {
       q: "Ogni quanto si aggiorna?",
-      a: "La pipeline carica ogni 30 minuti, il sito interroga ogni 60 secondi e la classifica live delle pietre miliari reagisce al superamento di una soglia.",
+      a: "La pipeline carica ogni 6 ore, il sito interroga ogni 60 secondi e la classifica live delle pietre miliari reagisce al superamento di una soglia.",
     },
   ],
   boardsKicker: "TEN BOARDS",
@@ -350,7 +350,7 @@ const ru: GuideCopy = {
     },
     {
       q: "Как часто обновляется?",
-      a: "Конвейер забирает данные каждые 30 минут, сайт опрашивает каждые 60 секунд, живая доска рубежей срабатывает в момент пересечения порога.",
+      a: "Конвейер забирает данные каждые 6 часов, сайт опрашивает каждые 60 секунд, живая доска рубежей срабатывает в момент пересечения порога.",
     },
   ],
   boardsKicker: "TEN BOARDS",
@@ -412,7 +412,7 @@ const pl: GuideCopy = {
     },
     {
       q: "Jak często aktualizacja?",
-      a: "Potok ładuje dane co 30 minut, strona zapytuje co 60 sekund, a tablica kamieni milowych na żywo reaguje w chwili przekroczenia progu.",
+      a: "Potok ładuje dane co 6 godzin, strona zapytuje co 60 sekund, a tablica kamieni milowych na żywo reaguje w chwili przekroczenia progu.",
     },
   ],
   boardsKicker: "TEN BOARDS",
@@ -443,7 +443,7 @@ const tr: GuideCopy = {
     },
     {
       q: "Ne sıklıkta güncelleniyor?",
-      a: "Hat 30 dakikada bir veri çeker, sayfa 60 saniyede bir yoklar, canlı kilometre taşı listesi eşiğin geçildiği an tetiklenir.",
+      a: "Hat 6 saatda bir veri çeker, sayfa 60 saniyede bir yoklar, canlı kilometre taşı listesi eşiğin geçildiği an tetiklenir.",
     },
   ],
   boardsKicker: "TEN BOARDS",
@@ -474,7 +474,7 @@ const vi: GuideCopy = {
     },
     {
       q: "Cập nhật bao lâu một lần?",
-      a: "Đường ống nạp dữ liệu mỗi 30 phút, trang hỏi thăm mỗi 60 giây, bảng cột mốc trực tiếp bắn đúng khoảnh khắc vượt ngưỡng.",
+      a: "Đường ống nạp dữ liệu mỗi 6 giờ, trang hỏi thăm mỗi 60 giây, bảng cột mốc trực tiếp bắn đúng khoảnh khắc vượt ngưỡng.",
     },
   ],
   boardsKicker: "TEN BOARDS",
@@ -505,7 +505,7 @@ const idn: GuideCopy = {
     },
     {
       q: "Seberapa sering diperbarui?",
-      a: "Pipeline menarik data setiap 30 menit, situs memantau tiap 60 detik, dan papan tonggak langsung meledak tepat saat ambang terlewati.",
+      a: "Pipeline menarik data setiap 6 jam, situs memantau tiap 60 detik, dan papan tonggak langsung meledak tepat saat ambang terlewati.",
     },
   ],
   boardsKicker: "TEN BOARDS",

@@ -8,7 +8,7 @@ import { isRepoFullName } from './reposhape'
 import { dbKey, pruneOld, upsertRepoDesc, writeHeadAndRows } from './snapshot'
 import type { BoardData } from './types'
 
-/** 数据同步任务:唯一的「进货」通道。定时触发(GitHub Actions 每 30 分钟 / 本地 npm run sync / 外部 cron),
+/** 数据同步任务:唯一的「进货」通道。定时触发(GitHub Actions 每 6 小时 / 本地 npm run sync / 外部 cron),
  * 顺序把全部榜单(含语言分面)抓全量,写数据库(head + 明细)并镜像落盘 .data。
  * 站点读路径只吃 board_head —— 本任务的成功与否与访客完全解耦。
  *

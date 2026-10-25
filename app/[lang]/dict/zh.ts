@@ -7,7 +7,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: 'GitHub 开源历史上，累计 Star 数最多的五百个项目。',
     metricLabel: '累计 Star',
     metricHint: '总数',
-    desc: '按仓库历史累计 Star 数降序排列，数据来自 GitHub Search API（stars:>1000、排除 fork 仓库），缓存约 5～15 分钟刷新一次。',
+    desc: '按仓库历史累计 Star 数降序排列，数据来自 GitHub Search API（stars:>1000、排除 fork 仓库），缓存约 ~6 小时刷新一次。',
     faqs: [
       { q: '为什么我的项目没有上榜？', a: '本榜只收录累计 Star 超过 1000 且不是其他仓库 fork 的项目；GitHub Search 索引存在一定延迟，新晋项目通常几小时内即可入池。' },
       { q: '与官方 Trending 有什么区别？', a: '官方 Trending 关注的是近期增速；本榜看重的是长期累计热度，更适合观察开源世界的“常青资产”。' },
@@ -20,7 +20,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     metricHint: '7 日窗口',
     desc: '数据直接读取 GitHub 官方 Trending 周榜页面，榜单顺序与官方一致，右侧数字为官方标注的本周新增 Star 数，属于真实增量。',
     faqs: [
-      { q: '数字和官方页面有时对不上？', a: '抓取结果在缓存期内（约 15 分钟），官方数字可能继续变化；每次自动刷新后会重新对齐。' },
+      { q: '数字和官方页面有时对不上？', a: '抓取结果在缓存期内（最长约 6 小时），官方数字可能继续变化；每次自动刷新后会重新对齐。' },
       { q: '为什么不及抓失败时会换口径？', a: 'GitHub 并未提供官方 Trending API。当页面抓取受阻时，周榜会临时切换为“近 7 天新创建仓库按星数排序”的降级口径，并在页面顶部明确标注。' },
     ],
   },
@@ -43,7 +43,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     desc: '仅统计本年度（1 月 1 日之后）创建的仓库，按累计 Star 降序，排除 fork 仓库。它回答的问题是：今年开源圈真正的爆款有哪些。',
     faqs: [
       { q: '为什么和总榜的数字可能重叠？', a: '年度新星榜限定“今年创建”，如果某项目今年创建且也已进入总榜，两边出现同一项目是正常的。' },
-      { q: '刷新频率是多少？', a: '与所有 Search API 榜单一致：每 5～15 分钟（取决于是否配置 GitHub Token）。' },
+      { q: '刷新频率是多少？', a: '与所有 Search API 榜单一致：每 ~6 小时（取决于是否配置 GitHub Token）。' },
     ],
   },
   rising: {
@@ -106,7 +106,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: '紧盯 1,000、10,000、50,000、100,000 四条星标分割线，正在冲线的仓库都在这里。',
     metricLabel: '距下一档',
     metricHint: '差值',
-    desc: '每 5～15 分钟搜索一次处于四个里程碑阈值 ±80 星附近的活跃仓库，并按剩余差值排序。页面每分钟轮询；出现在屏幕上时若成功跨线，将触发庆典动画与“恭喜突破”提示。',
+    desc: '每 ~6 小时搜索一次处于四个里程碑阈值 ±80 星附近的活跃仓库，并按剩余差值排序。页面每分钟轮询；出现在屏幕上时若成功跨线，将触发庆典动画与“恭喜突破”提示。',
     faqs: [
       { q: '必须停留在页面才会看到庆典吗？', a: '是。跨线检测由浏览器端比对两次轮询数据完成，因此请在页面停留；服务器不会替你持有历史状态。' },
       { q: '“差值”为什么可能为 0？', a: '仓库已越过某条阈值但仍停留在 ±80 的候选窗口内，属于“刚刚破线”的状态。' },
@@ -133,7 +133,7 @@ export const zhDict: Dict = {
     brickOneTitle: '找项目，不再大海捞针',
     brickOneDesc: '十张榜单各管一层：总榜看格局，周月榜看势能，黑马看你还没听说过的苗头，3 分钟锁到值得下钻的那个。',
     brickTwoTitle: '把信息差变成先手',
-    brickTwoDesc: '30 分钟一拍，每个项目的热度曲线都被记下：出圈前的黑马、回暖中的宝藏——先看到的人先用。',
+    brickTwoDesc: '6 小时一拍，每个项目的热度曲线都被记下：出圈前的黑马、回暖中的宝藏——先看到的人先用。',
     brickThreeTitle: '顺着趋势找赚钱抓手',
     brickThreeDesc: '做副业、选方向、找灵感，跟着真实星标曲线走，比追着喊单的风口靠谱。',
     heroKicker: 'GITHUB OPEN SOURCE PULSE',
@@ -147,7 +147,7 @@ export const zhDict: Dict = {
     weeklySectionTitle: '本周点火',
     milestoneSectionKicker: 'LIVE MILESTONES',
     milestoneSectionTitle: '破星直播',
-    milestoneSectionSub: '数据每约 30 分钟进货一次，页面每分钟续读。若快照延迟，左上圆点会变红。',
+    milestoneSectionSub: '数据每约 6 小时进货一次，页面每分钟续读。若快照延迟，左上圆点会变红。',
     boardsKicker: 'TEN LENSES',
     boardsTitle: '十张榜单，十种解读。',
     boardsSub: '每张榜公开口径与数据源，逐页即可验证。',

@@ -2,7 +2,7 @@
 
 [English](README.en.md)
 
-**GitHub 排行榜 · 趋势榜 · 飙升榜**(周榜 / 月榜 / 总榜 / 黑马 / 里程碑),中英文双语界面,每小时自动更新:https://git.vaiox.xyz
+**GitHub 排行榜 · 趋势榜 · 飙升榜**(周榜 / 月榜 / 总榜 / 黑马 / 里程碑),中英文双语界面,每 6 小时自动更新:https://git.vaiox.xyz
 
 十个视角的 GitHub 开源热榜。数据只有公开数据一种来源,口径贴在每一页上,中英文双语,站点刷新每 60 秒一次。
 
@@ -98,7 +98,7 @@ GitHub ──(只有同步任务碰)──> Postgres(Neon 或自托管)──(�
   - `board_head`:每个键的最新一拍,站点读它。插新的,前拍自然被覆盖。
   - `board_snapshots`:逐仓逐名次的明细行,本次同步是历史事实的存档。
 - 触发方式:`npm run sync`(本地,需站点在跑)、`POST /api/sync`(带 CRON_SECRET)、
-  GitHub Actions 每 30 分钟一轮(`.github/workflows/sync.yml`)。
+  GitHub Actions 每 6 小时一轮(`.github/workflows/sync.yml`)。
 - 站点渲染路径对 GitHub **零请求**。降级链:数据库 → 磁盘快照(本地 `.data/`,重建时不打 GitHub)→ 现场拉取。同步停太久时数据会旧,但不会假。
 - Trending 页被风控挡住时,周榜/月榜内部自行换到 Search 口径补命,页面上如实标注,不糊弄。
 
@@ -135,7 +135,7 @@ npm run dev
 
 1. 在 [Neon](https://neon.tech) 建个项目,拿 Pooled connection 连接串。
 2. Vercel 导入仓库,配四个环境变量(上表 + `CRON_SECRET` 自定义一个长随机串)。
-3. 仓库 Actions secrets 配 `SYNC_URL`(你的域名 `/api/sync`)和 `CRON_SECRET`,30 分钟一次的同步就转起来了。
+3. 仓库 Actions secrets 配 `SYNC_URL`(你的域名 `/api/sync`)和 `CRON_SECRET`,6 小时一次的同步就转起来了。
 4. `https://域名/robots.txt` 里已有 sitemap 指向;搜索引擎控制台提交一次即可。
 
 自托管也成立(本项目生产即此形态):`npm run build && npm run start`,数据面只要求能连上 Postgres——Neon 托管或自建实例(Docker/1Panel 等)均可,对 Host/Vercel 无偏好。自建库建议配每日 `pg_dump` 滚动备份,参考 `scripts/ghb-backup.sh`(每日一备、保留最近 7 份,cron 挂机即可)。
@@ -148,7 +148,7 @@ curl -H "Authorization: Bearer $CRON_SECRET" https://域名/api/dbcheck   # 库�
 gh run watch                       # 看 Actions 同步跑完没有
 ```
 
-同步是顺序慢跑(为控边界与限流),一轮约 4 分钟;30 分钟一次绰绰有余。明细行过 60 天自动清,`board_head` 只留最新,不需要人手干预。
+同步是顺序慢跑(为控边界与限流),一轮约 4 分钟;6 小时一次绰绰有余。明细行过 60 天自动清,`board_head` 只留最新,不需要人手干预。
 
 ## 徽章 · 状态页 · 跨线提醒
 
@@ -192,7 +192,7 @@ node scripts/market.mjs risers --days 30 --limit 15      # 涨星火箭榜
 
 ## 已知限制,如实说
 
-- Trending 数字在缓存期内(同步后 ≤30 分钟)可能与官方页面存在偏差。
+- Trending 数字在缓存期内(同步后 ≤6 小时)可能与官方页面存在偏差。
 - Search API 单查询 1000 条上限;总榜展示 Top 500,头部故事全覆盖。
 - **潜力榜(90 天斜率)的候选池先按星数取 90 天新仓的前 300 名,再按斜率重排**——Search API 工作集内的排序,不是全量扫描;斜率本身也天然偏爱更年轻的仓库。
 - **黑红榜的候选池是总榜(前 300)中 ≥3000 星的仓库**,即"明星仓内部"的争议对比;`open_issues` 口径含 PR(GitHub 字段如此,页面已明示)。请勿读成"情感评分"。

@@ -7,7 +7,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: 'Die 500 Projekte mit den meisten Stars in der Geschichte von GitHub.',
     metricLabel: 'Stars insgesamt',
     metricHint: 'seit Erstellung',
-    desc: 'Absteigend sortiert nach der Gesamtzahl aller jemals vergebenen Stars, Quelle ist die GitHub Search API (stars:>1000, Forks ausgenommen), Aktualisierung alle 5–15 Minuten.',
+    desc: 'Absteigend sortiert nach der Gesamtzahl aller jemals vergebenen Stars, Quelle ist die GitHub Search API (stars:>1000, Forks ausgenommen), Aktualisierung alle ~6 Stunden.',
     faqs: [
       { q: 'Warum fehlt mein Projekt?', a: 'Das Board listet nur Projekte mit über 1000 Stars insgesamt, die kein Fork eines anderen Repositorys sind. Die Search-Indizierung kann ein paar Stunden hinterherhinken.' },
       { q: 'Worin unterscheidet sich das vom offiziellen Trending?', a: 'Offizielles Trending misst die aktuelle Geschwindigkeit; dieses Board bewertet die aufgelaufene Hitze – die Dauerbrenner des Open Source.' },
@@ -20,7 +20,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     metricHint: '7-Tage-Zuwachs',
     desc: 'Die Daten werden direkt von der offiziellen Trending-Wochenseite gelesen. Die Reihenfolge entspricht der offiziellen Seite; die Zahl rechts ist das echte „Sterne diese Woche“-Delta.',
     faqs: [
-      { q: 'Die Zahlen stimmen manchmal nicht mit der offiziellen Seite überein?', a: 'Die abgerufenen Ergebnisse liegen bis zu ~15 Minuten im Cache, während die offiziellen Zahlen weiterlaufen. Ein Refresh richtet sie wieder aus.' },
+      { q: 'Die Zahlen stimmen manchmal nicht mit der offiziellen Seite überein?', a: 'Die abgerufenen Ergebnisse liegen bis zu ~6 Stunden im Cache, während die offiziellen Zahlen weiterlaufen. Ein Refresh richtet sie wieder aus.' },
       { q: 'Was passiert, wenn das Crawling fehlschlägt?', a: 'Eine offizielle Trending-API gibt es von GitHub nicht. Schlägt das Abrufen fehl, schaltet dieses Board vorübergehend auf „neueste Repos der letzten 7 Tage, sortiert nach Sternen“ um und kennzeichnet den Fallback klar auf der Seite.' },
     ],
   },
@@ -43,7 +43,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     desc: 'Nur Repositories, die nach dem 1. Januar des laufenden Jahres erstellt wurden, sortiert nach Stars gesamt, Forks ausgenommen. Die echten Hits des Jahres im Open Source.',
     faqs: [
       { q: 'Überschneidung mit dem Allzeit-Board?', a: 'Ja – ein Repo, das in diesem Jahr erstellt wurde und bereits in der Allzeitliste steht, erscheint auf beiden Boards. Das ist erwartet.' },
-      { q: 'Wie oft wird aktualisiert?', a: 'Wie bei allen Search-API-Boards: alle 5–15 Minuten, je nachdem, ob ein GitHub-Token verfügbar ist.' },
+      { q: 'Wie oft wird aktualisiert?', a: 'Wie bei allen Search-API-Boards: alle ~6 Stunden, je nachdem, ob ein GitHub-Token verfügbar ist.' },
     ],
   },
   rising: {
@@ -105,7 +105,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: 'Repos im Sprint Richtung 1k / 10k / 50k / 100k Sterne, live beobachtet.',
     metricLabel: 'Sterne bis zur nächsten Marke',
     metricHint: 'Abstand',
-    desc: 'Alle 5–15 Minuten suchen wir nach aktiven Repos, die innerhalb von ±80 Sternen an einer der vier Marken liegen (1k, 10k, 50k, 100k). Die Seite fragt jede Minute nach; wird eine Marke überschritten, erscheint eine Feier-Animation samt „Meilenstein erreicht“-Toast.',
+    desc: 'Alle ~6 Stunden suchen wir nach aktiven Repos, die innerhalb von ±80 Sternen an einer der vier Marken liegen (1k, 10k, 50k, 100k). Die Seite fragt jede Minute nach; wird eine Marke überschritten, erscheint eine Feier-Animation samt „Meilenstein erreicht“-Toast.',
     faqs: [
       { q: 'Muss ich die Seite offen lassen, um die Feiern zu sehen?', a: 'Ja. Das Überschreiten wird im Browser ermittelt, indem aufeinanderfolgende Abfragen verglichen werden – der Server hält keine Historie für dich.' },
       { q: 'Warum kann der „Abstand“ null sein?', a: 'Das Repo hat eine Marke überschritten und liegt noch im ±80-Fenster – der Zustand „gerade geschafft“.' },
@@ -132,7 +132,7 @@ export const deDict: Dict = {
     brickOneTitle: 'Projekte finden, ohne unterzugehen',
     brickOneDesc: 'Zehn Boards, zehn Filter: die Allzeit-Liste zeigt das Feld, Woche und Monat das Tempo, Dark Horses zeigen, was noch unsichtbar ist.',
     brickTwoTitle: 'Aus der Lücke wird ein Vorsprung',
-    brickTwoDesc: 'Alle 30 Minuten ein Schnappschuss: Dark Horses vor dem Durchbruch, Comebacks während der Erholung. Wer zuerst sieht, bewegt zuerst.',
+    brickTwoDesc: 'Alle 6 Stunden ein Schnappschuss: Dark Horses vor dem Durchbruch, Comebacks während der Erholung. Wer zuerst sieht, bewegt zuerst.',
     brickThreeTitle: 'Echten Kurven folgen statt Schlagworten',
     brickThreeDesc: 'Nebenprojekt, Produktwette oder Inspiration — Trends aus echter Sternhistorie schlagen das laute Getöse des Tages.',
     heroKicker: 'GITHUB OPEN SOURCE PULSE',
@@ -146,7 +146,7 @@ export const deDict: Dict = {
     weeklySectionTitle: 'Das Feuer dieser Woche',
     milestoneSectionKicker: 'LIVE MILESTONES',
     milestoneSectionTitle: 'Live, wenn eine Marke fällt',
-    milestoneSectionSub: 'Daten kommen alle ~30 Minuten; die Seite liest jede Minute nach. Bei Verzug wird der Punkt rot.',
+    milestoneSectionSub: 'Daten kommen alle ~6 Stunden; die Seite liest jede Minute nach. Bei Verzug wird der Punkt rot.',
     boardsKicker: 'TEN LENSES',
     boardsTitle: 'Zehn Boards, zehn Lesarten.',
     boardsSub: 'Jedes Board veröffentlicht seine Methodik und Datenquelle – prüf es selbst.',
@@ -254,7 +254,7 @@ export const deDict: Dict = {
   },
   history: {
     title: 'Zeitmaschine',
-    subtitle: 'Alle 30 Minuten wird das komplette Board fotografiert – blättere per Datum zurück und sieh, wie die Liste damals stand.',
+    subtitle: 'Alle 6 Stunden wird das komplette Board fotografiert – blättere per Datum zurück und sieh, wie die Liste damals stand.',
     pickDate: 'Datum wählen',
     latest: 'neuestes Foto',
     daysCount: 'Tage archiviert',

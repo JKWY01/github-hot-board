@@ -7,7 +7,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: 'GitHub 開源歷史上，累計星星數最多的五百個專案。',
     metricLabel: '累計星星',
     metricHint: '總數',
-    desc: '按儲存庫歷史累計星星數降序排列，資料來自 GitHub Search API（stars:>1000、排除 fork 儲存庫），快取約 5～15 分鐘更新一次。',
+    desc: '按儲存庫歷史累計星星數降序排列，資料來自 GitHub Search API（stars:>1000、排除 fork 儲存庫），快取約 ~6 小時更新一次。',
     faqs: [
       { q: '為什麼我的專案沒有上榜？', a: '本榜只收錄累計星星超過 1000、且不是其他儲存庫 fork 的專案；GitHub Search 索引有一定延遲，新專案通常幾小時內就會入池。' },
       { q: '跟官方 Trending 有什麼差別？', a: '官方 Trending 看的是近期增速；本榜看重的是長期累積熱度，更適合觀察開源世界的「長青資產」。' },
@@ -20,7 +20,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     metricHint: '7 日視窗',
     desc: '資料直接讀取 GitHub 官方 Trending 週榜頁面，排序與官方一致；右側數字是官方標註的本週星星增量，屬於真實增量。',
     faqs: [
-      { q: '數字有時跟官方頁面對不上？', a: '抓取結果在快取期間內（約 15 分鐘），官方數字仍會持續變動；每次自動刷新後就會重新對齊。' },
+      { q: '數字有時跟官方頁面對不上？', a: '抓取結果在快取期間內（最長約 6 小時），官方數字仍會持續變動；每次自動刷新後就會重新對齊。' },
       { q: '抓取失敗時會怎樣？', a: 'GitHub 並未提供官方 Trending API。頁面抓取受阻時，週榜會暫時切換成「近 7 天新建儲存庫按星星數排序」的備援方式，並在頁面頂端明確標註。' },
     ],
   },
@@ -43,7 +43,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     desc: '只統計今年（1 月 1 日之後）建立的儲存庫，按累計星星降序、排除 fork 儲存庫。它回答的問題是：今年開源圈真正的爆款有哪些。',
     faqs: [
       { q: '為什麼可能跟總榜重疊？', a: '年度新星榜限定「今年建立」，如果某專案今年建立、而且也已進入總榜，同一專案同時出現在兩邊是正常的。' },
-      { q: '多久刷新一次？', a: '與所有 Search API 榜單一致：每 5～15 分鐘一次（取決於是否設定了 GitHub Token）。' },
+      { q: '多久刷新一次？', a: '與所有 Search API 榜單一致：每 ~6 小時一次（取決於是否設定了 GitHub Token）。' },
     ],
   },
   rising: {
@@ -105,7 +105,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: '緊盯 1,000、10,000、50,000、100,000 四條星星分界線，正在衝線的儲存庫都在這裡。',
     metricLabel: '距下一條線',
     metricHint: '差值',
-    desc: '每 5～15 分鐘搜尋一次位於四個里程碑門檻 ±80 星範圍內的活躍儲存庫，並按剩餘差值排序。頁面每分鐘輪詢；停留在畫面前時剛好目睹跨線，就會觸發慶祝動畫與「恭喜突破」提示。',
+    desc: '每 ~6 小時搜尋一次位於四個里程碑門檻 ±80 星範圍內的活躍儲存庫，並按剩餘差值排序。頁面每分鐘輪詢；停留在畫面前時剛好目睹跨線，就會觸發慶祝動畫與「恭喜突破」提示。',
     faqs: [
       { q: '一定要留在頁面上才看得到慶祝嗎？', a: '是。跨線偵測由瀏覽器端比對前後兩次輪詢資料完成，所以請留在頁面上；伺服器不會替你保存歷史狀態。' },
       { q: '「差值」為什麼可能是 0？', a: '儲存庫已越過某條門檻、但仍停留在 ±80 的候選區間內，屬於「剛剛破線」的狀態。' },
@@ -132,7 +132,7 @@ export const zhTWDict: Dict = {
     brickOneTitle: '找專案，不再大海撈針',
     brickOneDesc: '十張榜單各管一層：總榜看格局，週月榜看勢能，黑馬看你還沒聽過的苗頭，3 分鐘鎖到值得下鑽的那個。',
     brickTwoTitle: '把資訊差變成先手',
-    brickTwoDesc: '30 分鐘一拍，每個專案的熱度曲線都被記下：出圈前的黑馬、回暖中的寶藏——先看到的人先用。',
+    brickTwoDesc: '6 小時一拍，每個專案的熱度曲線都被記下：出圈前的黑馬、回暖中的寶藏——先看到的人先用。',
     brickThreeTitle: '順著趨勢找賺錢抓手',
     brickThreeDesc: '做副業、選方向、找靈感，跟著真實星標曲線走，比追著喊單的風口靠譜。',
     heroKicker: 'GITHUB OPEN SOURCE PULSE',
@@ -146,7 +146,7 @@ export const zhTWDict: Dict = {
     weeklySectionTitle: '本週點火',
     milestoneSectionKicker: 'LIVE MILESTONES',
     milestoneSectionTitle: '破星直播',
-    milestoneSectionSub: '資料每約 30 分鐘進貨一次，頁面每分鐘續讀。若快照延遲，左上圓點會變紅。',
+    milestoneSectionSub: '資料每約 6 小時進貨一次，頁面每分鐘續讀。若快照延遲，左上圓點會變紅。',
     boardsKicker: 'TEN LENSES',
     boardsTitle: '十張榜單，十種解讀。',
     boardsSub: '每一榜都公開統計方式與資料來源，點開頁面即可驗證。',

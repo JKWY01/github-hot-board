@@ -7,7 +7,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: '500 dự án có nhiều Star nhất trong lịch sử GitHub.',
     metricLabel: 'Tổng Star',
     metricHint: 'trọn đời',
-    desc: 'Xếp theo tổng số Star trọn đời, dữ liệu lấy từ GitHub Search API (stars:>1000, loại trừ repo fork), làm mới mỗi 5–15 phút.',
+    desc: 'Xếp theo tổng số Star trọn đời, dữ liệu lấy từ GitHub Search API (stars:>1000, loại trừ repo fork), làm mới mỗi ~6 giờ.',
     faqs: [
       { q: 'Tại sao dự án của tôi không có mặt?', a: 'Bảng chỉ nhận các dự án có hơn 1000 Star trọn đời và không phải là fork của repo khác. Việc đánh chỉ mục tìm kiếm có thể trễ vài tiếng.' },
       { q: 'Khác gì với Trending chính thức?', a: 'Trending chính thức đo tốc độ tăng gần đây; bảng này coi sức nóng tích lũy — “tài sản trường tồn” của mã nguồn mở.' },
@@ -20,7 +20,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     metricHint: 'tăng 7 ngày',
     desc: 'Dữ liệu đọc trực tiếp từ trang Trending hàng tuần chính thức của GitHub. Thứ tự theo đúng trang chính thức; số bên phải là mức tăng Star thật của tuần này.',
     faqs: [
-      { q: 'Đôi khi con số lệch với trang chính thức?', a: 'Kết quả lấy về được cache khoảng 15 phút trong khi con số chính thức trên trang vẫn nhích tiếp. Sau mỗi lần làm mới, hai bên tự canh lại.' },
+      { q: 'Đôi khi con số lệch với trang chính thức?', a: 'Kết quả lấy về được cache tối đa ~6 giờ trong khi con số chính thức trên trang vẫn nhích tiếp. Sau mỗi lần làm mới, hai bên tự canh lại.' },
       { q: 'Crawl dữ liệu thất bại thì sao?', a: 'GitHub không có API Trending chính thức. Khi crawl hỏng, bảng chuyển tạm sang phương án “repo mới tạo trong 7 ngày xếp theo Star” và ghi chú rõ phương án này ngay trên trang.' },
     ],
   },
@@ -43,7 +43,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     desc: 'Chỉ tính repo tạo sau ngày 1 tháng 1 của năm nay, xếp theo tổng Star, loại trừ repo fork. Đây là những bản hit thật sự của mã nguồn mở trong năm.',
     faqs: [
       { q: 'Có trùng với bảng mọi thời đại không?', a: 'Có — repo tạo trong năm nay mà đã lọt bảng mọi thời đại thì xuất hiện ở cả hai; chuyện đó là bình thường.' },
-      { q: 'Tần suất làm mới thế nào?', a: 'Giống mọi bảng dùng Search API: mỗi 5–15 phút, tùy tình trạng token.' },
+      { q: 'Tần suất làm mới thế nào?', a: 'Giống mọi bảng dùng Search API: mỗi ~6 giờ, tùy tình trạng token.' },
     ],
   },
   rising: {
@@ -105,7 +105,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: 'Các repo đang nước rút tới biên 1k / 10k / 50k / 100k Star, được theo dõi trực tiếp.',
     metricLabel: 'Còn thiếu tới vạch',
     metricHint: 'chênh lệch',
-    desc: 'Mỗi 5–15 phút, tìm các repo đang hoạt động nằm trong ±80 Star quanh bốn mốc (1k, 10k, 50k, 100k). Trang tự hỏi mỗi phút một lần; nếu có vạch vừa bị vượt qua, sẽ có animation ăn mừng và toast “chạm mốc” hiện ra.',
+    desc: 'Mỗi ~6 giờ, tìm các repo đang hoạt động nằm trong ±80 Star quanh bốn mốc (1k, 10k, 50k, 100k). Trang tự hỏi mỗi phút một lần; nếu có vạch vừa bị vượt qua, sẽ có animation ăn mừng và toast “chạm mốc” hiện ra.',
     faqs: [
       { q: 'Có phải giữ nguyên trang mới thấy được ăn mừng?', a: 'Đúng. Việc vượt vạch được phát hiện ngay trên trình duyệt bằng cách so sánh các lần poll liên tiếp — máy chủ không lưu lịch sử giúp bạn.' },
       { q: 'Vì sao khoảng cách có thể bằng 0?', a: 'Repo đã vượt vạch nhưng vẫn nằm trong cửa sổ ±80 — dạng “vừa vượt qua”.' },
@@ -132,7 +132,7 @@ export const viDict: Dict = {
     brickOneTitle: 'Tìm dự án không bị loãng',
     brickOneDesc: 'Mười bảng, mười lớp lọc: bảng toàn thời gian kê khung cảnh trường, tuần và tháng đặt nhịp, ngựa ô cảnh báo điều chưa nghe.',
     brickTwoTitle: 'Từ chênh lệch thành lợi thế',
-    brickTwoDesc: 'Một khung cảnh 30 phút một lần: ngựa ô trước khi bùng nổ, sự trở lại trong lúc hồi phục. Ai thấy trước, người đó đi trước.',
+    brickTwoDesc: 'Một khung cảnh 6 giờ một lần: ngựa ô trước khi bùng nổ, sự trở lại trong lúc hồi phục. Ai thấy trước, người đó đi trước.',
     brickThreeTitle: 'Đường cong thật, không phải ồn ào',
     brickThreeDesc: 'Thu nhập thêm, cược sản phẩm hay đơn thuần cảm hứng — xu hướng từ lịch sử ngôi sao thật vượt mọi kẻ gào to hôm nay.',
     heroKicker: 'GITHUB OPEN SOURCE PULSE',
@@ -146,7 +146,7 @@ export const viDict: Dict = {
     weeklySectionTitle: 'Ngọn lửa tuần này',
     milestoneSectionKicker: 'LIVE MILESTONES',
     milestoneSectionTitle: 'Vượt vạch theo thời gian thực',
-    milestoneSectionSub: 'Dữ liệu đến mỗi ~30 phút; trang đọc lại mỗi phút. Nếu trễ, chấm góc trên sẽ đỏ lên.',
+    milestoneSectionSub: 'Dữ liệu đến mỗi ~6 giờ; trang đọc lại mỗi phút. Nếu trễ, chấm góc trên sẽ đỏ lên.',
     boardsKicker: 'TEN LENSES',
     boardsTitle: 'Mười bảng xếp hạng, mười cách đọc.',
     boardsSub: 'Mỗi bảng công khai phương pháp lẫn nguồn dữ liệu — mở trang là tự kiểm chứng được.',
@@ -254,7 +254,7 @@ export const viDict: Dict = {
   },
   history: {
     title: 'Cỗ Máy Thời Gian',
-    subtitle: 'Cả bảng được chụp mỗi 30 phút — kéo lại theo ngày để xem bảng xếp hạng tại thời điểm đó.',
+    subtitle: 'Cả bảng được chụp mỗi 6 giờ — kéo lại theo ngày để xem bảng xếp hạng tại thời điểm đó.',
     pickDate: 'Chọn ngày',
     latest: 'ảnh mới nhất',
     daysCount: 'ngày đã lưu',

@@ -7,7 +7,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: '500 proyek dengan Star terbanyak dalam sejarah GitHub.',
     metricLabel: 'Total Star',
     metricHint: 'sepanjang masa',
-    desc: 'Diperingkat berdasarkan jumlah Star sepanjang masa, data dari GitHub Search API (stars:>1000, repo fork dikecualikan), diperbarui tiap 5–15 menit.',
+    desc: 'Diperingkat berdasarkan jumlah Star sepanjang masa, data dari GitHub Search API (stars:>1000, repo fork dikecualikan), diperbarui tiap ~6 jam.',
     faqs: [
       { q: 'Kenapa proyek saya tidak masuk?', a: 'Papan ini hanya memuat proyek dengan lebih dari 1000 Star sepanjang masa dan bukan fork dari repo lain. Pengindeksan pencarian bisa tertinggal beberapa jam.' },
       { q: 'Bedanya dengan Trending resmi?', a: 'Trending resmi mengukur kecepatan terkini; papan ini menilai panas yang terkumpul — aset “evergreen” open source.' },
@@ -20,7 +20,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     metricHint: 'tambah 7 hari',
     desc: 'Data dibaca langsung dari halaman Trending mingguan resmi GitHub. Urutan mengikuti halaman resmi; angka di kanan adalah selisih “Star minggu ini” yang sebenarnya.',
     faqs: [
-      { q: 'Angkanya kadang beda dengan halaman resmi?', a: 'Hasil ambil data di-cache sekitar 15 menit sementara angka resmi terus bergerak. Setiap pembaruan menyelaraskannya kembali.' },
+      { q: 'Angkanya kadang beda dengan halaman resmi?', a: 'Hasil ambil data di-cache hingga ~6 jam sementara angka resmi terus bergerak. Setiap pembaruan menyelaraskannya kembali.' },
       { q: 'Kalau crawling gagal?', a: 'GitHub tidak punya API Trending resmi. Saat gagal, papan ini sementara beralih ke “repo baru yang dibuat dalam 7 hari, diperingkat berdasarkan Star” dan fallback itu ditandai jelas di halaman.' },
     ],
   },
@@ -43,7 +43,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     desc: 'Hanya repo yang dibuat setelah 1 Januari tahun berjalan, diperingkat berdasarkan total Star, repo fork dikecualikan. Inilah hit sejati open source tahun ini.',
     faqs: [
       { q: 'Tumpang tindih dengan papan sepanjang masa?', a: 'Ya — repo yang dibuat tahun ini dan sudah masuk peringkat sepanjang masa muncul di keduanya; itu memang wajar.' },
-      { q: 'Seberapa sering diperbarui?', a: 'Sama seperti semua papan Search API: tiap 5–15 menit, tergantung ketersediaan token.' },
+      { q: 'Seberapa sering diperbarui?', a: 'Sama seperti semua papan Search API: tiap ~6 jam, tergantung ketersediaan token.' },
     ],
   },
   rising: {
@@ -105,7 +105,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: 'Repo-repo yang sedang sprint menuju garis 1k / 10k / 50k / 100k Star, dipantau langsung.',
     metricLabel: 'Star ke garis berikutnya',
     metricHint: 'selisih',
-    desc: 'Setiap 5–15 menit, kita mencari repo aktif yang berada dalam ±80 Star dari empat ambang milestone (1k, 10k, 50k, 100k). Halaman di-polling tiap menit; saat garis ditembus, muncul animasi perayaan dan toast “milestone tercapai”.',
+    desc: 'Setiap ~6 jam, kita mencari repo aktif yang berada dalam ±80 Star dari empat ambang milestone (1k, 10k, 50k, 100k). Halaman di-polling tiap menit; saat garis ditembus, muncul animasi perayaan dan toast “milestone tercapai”.',
     faqs: [
       { q: 'Harus tetap membuka halaman untuk melihat perayaan?', a: 'Ya. Penembusan dideteksi di browser dengan membandingkan hasil polling beruntun — server tidak menyimpan riwayat untukmu.' },
       { q: 'Kenapa “selisih” bisa nol?', a: 'Repo sudah menembus garis tapi masih berada dalam jendela ±80 — kondisi “baru saja lewat”.' },
@@ -132,7 +132,7 @@ export const idDict: Dict = {
     brickOneTitle: 'Menemukan proyek tanpa tenggelam',
     brickOneDesc: 'Sepuluh papan, sepuluh penyaring: papan sepanjang masa membingkai medan, mingguan dan bulanan menentukan tempo, kuda hitam menandai yang belum terdengar.',
     brickTwoTitle: 'Dari kesenjangan menjadi keunggulan',
-    brickTwoDesc: 'Potret setiap 30 menit: kuda hitam sebelum meledak, comeback di tengah pemulihan. Yang melihat dulu, bergerak dulu.',
+    brickTwoDesc: 'Potret setiap 6 jam: kuda hitam sebelum meledak, comeback di tengah pemulihan. Yang melihat dulu, bergerak dulu.',
     brickThreeTitle: 'Kurva nyata, bukan keriuhan',
     brickThreeDesc: 'Penghasilan tambahan, taruhan produk, atau hanya inspirasi — gelombang dari riwayat bintang nyata lebih kuat daripada gaduh hari itu.',
     heroKicker: 'GITHUB OPEN SOURCE PULSE',
@@ -146,7 +146,7 @@ export const idDict: Dict = {
     weeklySectionTitle: 'Api minggu ini',
     milestoneSectionKicker: 'LIVE MILESTONES',
     milestoneSectionTitle: 'Menembus garis, secara langsung',
-    milestoneSectionSub: 'Data masuk tiap ~30 menit; halaman membaca ulang tiap menit. Jika tertunda, titiknya merah.',
+    milestoneSectionSub: 'Data masuk tiap ~6 jam; halaman membaca ulang tiap menit. Jika tertunda, titiknya merah.',
     boardsKicker: 'TEN LENSES',
     boardsTitle: 'Sepuluh papan, sepuluh pembacaan.',
     boardsSub: 'Setiap papan mempublikasikan metodologi dan sumber datanya — verifikasi sendiri.',
@@ -254,7 +254,7 @@ export const idDict: Dict = {
   },
   history: {
     title: 'Mesin Waktu',
-    subtitle: 'Papan penuh difoto tiap 30 menit — gulir kembali berdasarkan tanggal untuk melihat peringkat saat itu.',
+    subtitle: 'Papan penuh difoto tiap 6 jam — gulir kembali berdasarkan tanggal untuk melihat peringkat saat itu.',
     pickDate: 'Pilih tanggal',
     latest: 'tangkapan terbaru',
     daysCount: 'hari terarsip',

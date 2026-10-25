@@ -7,7 +7,7 @@ import { cleanDesc, parseTrendingHtml } from './parse'
 import type { BoardData, BoardItem } from './types'
 
 /** 持久层水合上限:重建后(.next 数据缓存清空)优先读 .data 磁盘快照,
- * 不去打 GitHub。超龄(默认 30 分钟)才走真实拉取。 */
+ * 不去打 GitHub。超龄(默认 13 小时,随 6 小时同步节奏)才走真实拉取。 */
 const HYDRATE_MAX_MIN = Number(process.env.PERSIST_HYDRATE_MAX_MIN) || 30
 
 /** cacheKey 与文件名的共用键;语言用 URL 安全 slug(c++ → cpp)。 */
@@ -415,7 +415,8 @@ export async function getBoardDataCached(
     // ① 数据库优先(唯一数据源):只有同步任务联 GitHub,站点读路径 0 次上游请求。
     if (process.env.DATABASE_URL) {
       const head = await readBoardHead(key)
-      const dbMaxAge = (Number(process.env.GHB_DB_MAX_MIN) || 90) * 60_000
+      // 默认 780 分钟(13h)= 容忍两轮 6h 同步失败;超龄才回退磁盘/现场拉取
+      const dbMaxAge = (Number(process.env.GHB_DB_MAX_MIN) || 780) * 60_000
       if (head && head.ageMs < dbMaxAge) {
         if (process.env.GHB_FILL_DEBUG) {
           console.error(`[fill] db-head ${slug}:${language ?? 'all'} age=${Math.round(head.ageMs / 1000)}s items=${(head.data as BoardData).items?.length ?? 0}`)
@@ -444,7 +445,7 @@ export async function getBoardDataCached(
     // ② 正路:真实拉取(GitHub Search / Trending,内部有配额节流与降级口径)
     const t0 = Date.now()
     const data = await getBoardData(slug, language)
-    // ③ 落盘:最新快照 + 按月分段的历史拍(30 分钟一拍起,PERSIST_HISTORY_MIN 控制)
+    // ③ 落盘:最新快照 + 按月分段的历史拍(同步一拍起,PERSIST_HISTORY_MIN 控制)
     savePersistedBoard(key, data)
     appendHistory(key, toHistoryPayload(key, data))
     if (process.env.GHB_FILL_DEBUG) console.error(`[fill] done ${slug}:${language ?? 'all'} ${Date.now() - t0}ms`)
