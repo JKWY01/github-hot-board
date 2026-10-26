@@ -458,7 +458,9 @@ export interface GhSearchOptions {
   pages?: number
 }
 
-/** Search API 仓库搜索；pages=2 表示并发取前两页。 */
+/** Search API 仓库搜索；pages=2 表示并发取前两页。
+ *  部分页失败必须抛(2026-10-26 六轮审查实锤):只回成功页 = 榜面静默缩水、名次整体前移,
+ *  爬虫/用户都无从分辨 —— 比全灭更危险。失败信息进异常消息,同步层保留上一拍。 */
 export async function ghSearch(
   q: string,
   { sort = 'stars', order = 'desc', perPage = 100, pages = 1 }: GhSearchOptions = {},
@@ -473,12 +475,14 @@ export async function ghSearch(
   const items: BoardRepoFields[] = []
   let firstError: unknown = null
   let sawRateLimit = false
+  let failedPages = 0
 
   for (const result of settled) {
     if (result.status === 'fulfilled') {
       const payload = result.value as GhSearchResponse
       items.push(...(payload.items ?? []).map(mapRepo))
     } else {
+      failedPages += 1
       firstError ||= result.reason
       if (result.reason instanceof RateLimitError) sawRateLimit = true
     }
@@ -488,6 +492,12 @@ export async function ghSearch(
     throw sawRateLimit
       ? new RateLimitError('GitHub Search rate limited')
       : firstError
+  }
+  if (failedPages > 0) {
+    // 部分页失败:宁缺毋滥 —— 半张榜比报错更误导(名次前移无从察觉)
+    throw sawRateLimit
+      ? new RateLimitError(`GitHub Search rate limited (${failedPages}/${urls.length} pages failed)`)
+      : new Error(`GitHub Search partial failure: ${failedPages}/${urls.length} pages (${String(firstError).slice(0, 80)})`)
   }
   return items
 }

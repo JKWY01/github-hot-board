@@ -140,9 +140,15 @@ export async function sendMilestonePushes(): Promise<{ subs: number; sent: numbe
       if (stars === undefined) continue
       const prev = state[repo]
       const crossed = crossedThresholds(prev, stars)
-      state[repo] = stars
-      subChanged = true
-      if (crossed.length === 0 || stat.sent >= MAX_SENDS_PER_ROUND) continue
+      // 达到本轮上限时不写 state(六轮审查实锤):写了=这个跨线被记成"已处理",
+      // 下轮 crossedThresholds 不再命中 —— 该订阅者永远收不到这次提醒。
+      // state 留旧值,下轮重新命中、重新尝试发送。
+      if (crossed.length === 0) {
+        state[repo] = stars
+        subChanged = true
+        continue
+      }
+      if (stat.sent >= MAX_SENDS_PER_ROUND) continue
 
       const threshold = crossed[crossed.length - 1]!
       const locale: Locale = isLocale(sub.locale) ? sub.locale : 'en'

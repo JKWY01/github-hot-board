@@ -72,11 +72,15 @@ function preferredLocale(request: NextRequest): Locale {
 }
 
 /** 真状态码的 404。cacheComponents 下动态参数的未知值会经共享壳 fill 出 200 soft-404,
- * 所以必须在路由前直接给 404;noindex 防止爬虫当质量页收录。 */
+ * 所以必须在路由前直接给 404;noindex 防止爬虫当质量页收录。插值一律 HTML 转义:
+ * pathname 来自原始请求路径,非浏览器客户端可发未编码字符(反射面,60s 缓存放大)。 */
+function escHtml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}
 function notFound404(lang: string, pathname: string): NextResponse {
   const zh = lang === 'zh'
   return new NextResponse(
-    `<!doctype html><html lang="${lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>404 · GitHub 火线榜</title><meta name="robots" content="noindex"><link rel="canonical" href="/${lang}"></head><body style="margin:0;min-height:100vh;display:grid;place-items:center;background:#fff;font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Hiragino Sans GB',sans-serif;color:#1d1d1f"><main style="text-align:center;padding:24px"><p style="letter-spacing:.18em;font-size:13px;font-weight:600;color:#0067d4">404</p><h1 style="font-size:34px;line-height:1.2;margin:.3em 0;font-weight:650">${zh ? '页面不存在' : 'Page not found'}</h1><p style="color:#6e6e73;font-size:15px">${zh ? '这个路径不存在,或从未存在过。' : 'This path does not exist — or never did.'}</p><p style="margin-top:24px"><a href="/${lang}" style="color:#0071e3">← ${zh ? '回到首页' : 'Back home'}</a></p><p style="color:rgba(0,0,0,.35);font-size:12px;margin-top:8px">${pathname}</p></main></body></html>`,
+    `<!doctype html><html lang="${escHtml(lang)}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>404 · GitHub 火线榜</title><meta name="robots" content="noindex"><link rel="canonical" href="/${escHtml(lang)}"></head><body style="margin:0;min-height:100vh;display:grid;place-items:center;background:#fff;font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Hiragino Sans GB',sans-serif;color:#1d1d1f"><main style="text-align:center;padding:24px"><p style="letter-spacing:.18em;font-size:13px;font-weight:600;color:#0067d4">404</p><h1 style="font-size:34px;line-height:1.2;margin:.3em 0;font-weight:650">${zh ? '页面不存在' : 'Page not found'}</h1><p style="color:#6e6e73;font-size:15px">${zh ? '这个路径不存在,或从未存在过。' : 'This path does not exist — or never did.'}</p><p style="margin-top:24px"><a href="/${escHtml(lang)}" style="color:#0071e3">← ${zh ? '回到首页' : 'Back home'}</a></p><p style="color:rgba(0,0,0,.35);font-size:12px;margin-top:8px">${escHtml(pathname)}</p></main></body></html>`,
     {
       status: 404,
       headers: {

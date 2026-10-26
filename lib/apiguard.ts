@@ -23,23 +23,16 @@ function bearerToken(request: Request): string {
 
 /** 是否本地回环请求:URL host 是 loopback,或反代后 XFF 首 IP 是私网/回环。 */
 export function isLocalRequest(request: Request): boolean {
+  // 只认 URL 主机名(2026-10-26 六轮审查实锤):XFF 头是客户端可伪造的 ——
+  // `X-Forwarded-For: 10.0.0.1` 一个头就能骗过私网判定,把 fail-closed 重新开成 fail-open。
+  // 本机调用(兜底脚本 loopback/docker 内部)URL 一定是 localhost/127.0.0.1,这条链路够用。
   let host = ''
   try {
     host = new URL(request.url).hostname.toLowerCase()
   } catch {
     return false
   }
-  if (host === 'localhost' || host === '127.0.0.1' || host === '::1' || host === '[::1]' || host.endsWith('.local')) {
-    return true
-  }
-  const xff = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? ''
-  if (!xff) return false
-  if (xff === '::1') return true
-  const m = xff.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/)
-  if (!m) return false
-  const first = Number(m[1])
-  return first === 10 || first === 127 || (first === 172 && Number(m[2]) >= 16 && Number(m[2]) <= 31) ||
-    (first === 192 && Number(m[2]) === 168)
+  return host === 'localhost' || host === '127.0.0.1' || host === '::1' || host === '[::1]' || host.endsWith('.local')
 }
 
 /** 统一守卫:返回 null = 放行;返回 Response = 直接作为路由响应(401)。 */
