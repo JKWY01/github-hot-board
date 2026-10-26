@@ -68,6 +68,17 @@ async function migrate(sql: Sql): Promise<void> {
   // 项目状态三件套(2026-10-25 起采集):license/push/issues 随拍落列。
   // 老行 NULL = 未采集,页面如实标"未知"——历史不可凭空补。
   await sql`ALTER TABLE board_snapshots ADD COLUMN IF NOT EXISTS license TEXT`
+  // 星速表(2026-10-26):每仓每日一行星数收盘价,近 7/30 天增量、官方新面孔判定都从这查。
+  // 明细表 60 天滚动,这张是永久层 —— 历史增量资产不再被收割。同步尾部每日 upsert 一次。
+  await sql`
+    CREATE TABLE IF NOT EXISTS repo_daily_stars (
+      repo  TEXT        NOT NULL,
+      day   DATE        NOT NULL,
+      stars BIGINT      NOT NULL,
+      first_seen_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      PRIMARY KEY (repo, day)
+    )`
+  await sql`CREATE INDEX IF NOT EXISTS idx_daily_stars_day ON repo_daily_stars (day, stars DESC)`
   await sql`ALTER TABLE board_snapshots ADD COLUMN IF NOT EXISTS pushed_at TEXT`
   await sql`ALTER TABLE board_snapshots ADD COLUMN IF NOT EXISTS issues INTEGER`
   await sql`CREATE INDEX IF NOT EXISTS board_snapshots_repo_time ON board_snapshots (repo, taken_at DESC)`
@@ -95,7 +106,7 @@ async function migrate(sql: Sql): Promise<void> {
   // 过榜仓库名单(仓库粒度一行):proxy 的"存在名单"与 sitemap 的全量仓库源。
   // 之前两处都对 board_snapshots 做 DISTINCT 全表扫 —— 明细表按 60 天保留能涨到千万行级,
   // 每 5 分钟扫一次是真实的算力地雷;这里用小表(几万行、主键索引)承载同一语义,
-  // 由 writeHeadAndRows 随拍 upsert、pruneOld 与明细同窗清理。
+  // 由 writeHeadAndRows 随拍 upsert;不再被 pruneOld 清理(档案页存在性判定源,永久保留)。
   await sql`
     CREATE TABLE IF NOT EXISTS repo_seen (
       repo      TEXT PRIMARY KEY,
@@ -273,8 +284,8 @@ export async function pruneOld(): Promise<number> {
   return (await withDb(async (sql) => {
     const result = await sql`
       DELETE FROM board_snapshots WHERE taken_at < now() - (${RETENTION_DAYS} || ' days')::interval`
-    await sql`
-      DELETE FROM repo_seen WHERE last_seen < now() - (${RETENTION_DAYS} || ' days')::interval`
+    // repo_seen 不随明细清理(2026-10-26 保护资产批):它是档案页存在性的唯一判定源,
+    // 删了 = 60 天没露面的老仓库档案页 404 → 收录面塌方。表很小(几千行),永久保留。
     await sql`
       DELETE FROM repo_docs WHERE fetched_at < now() - interval '30 days'`
     return Number(result.count)
@@ -314,6 +325,88 @@ export async function dbStats(): Promise<{ headKeys: number; rows: number } | nu
     const rows = await sql`SELECT count(*)::bigint AS n FROM board_snapshots`
     return { headKeys: Number((head[0] as { n: number }).n), rows: Number((rows[0] as { n: number }).n) }
   })) ?? null
+}
+
+/* ───────────────────────── 星速层(repo_daily_stars)─────────────────────────
+ * 每仓每日一行的星数收盘价。近 N 天增量 = 首尾两行差;官方新面孔 = 官方榜仓不在本表。
+ * 只增不改(同日重跑 upsert 覆盖同值),是唯一的永久历史层 —— 明细表 60 天滚动后,
+ * "半年谁在持续涨"这类问题只有它能答。 */
+
+/** 同步尾部调用:把本拍全部 (repo, day, stars) upsert 进来。UTC 日切(与快照 taken_at
+ * 同源);一天多拍取最后一次写入(ON CONFLICT 覆盖),不叠加。 */
+export async function writeDailyStars(rows: Array<{ repo: string; takenAt: Date; stars: number }>): Promise<number> {
+  if (rows.length === 0) return 0
+  return (await withDb(async (sql) => {
+    const day = rows[0]!.takenAt.toISOString().slice(0, 10)
+    await sql`
+      INSERT INTO repo_daily_stars ${sql(
+        rows.map((r) => ({ repo: r.repo, day, stars: r.stars })),
+        'repo', 'day', 'stars',
+      )}
+      ON CONFLICT (repo, day) DO UPDATE SET stars = EXCLUDED.stars`
+    return rows.length
+  })) ?? 0
+}
+
+/** 近 N 天增量榜:每仓取窗口内首尾两个收盘日,差值排序。首日即末日的仓(当天新进,
+ * 只有一个收盘价)无基线 → 不入榜,由"官方新面孔"栏接住 —— 不给伪零。
+ * day 窗口按 UTC 日期,与 writeDailyStars 同一切口。 */
+export interface DailyGainRow {
+  fullName: string
+  gain: number
+  startStars: number
+  endStars: number
+  startDay: string
+  endDay: string
+}
+
+export async function readDailyGains(days: number, limit = 100): Promise<DailyGainRow[]> {
+  return (await withDb(async (sql) => {
+    const rows = await sql`
+      WITH ends AS (
+        SELECT repo, day, stars,
+               row_number() OVER (PARTITION BY repo ORDER BY day DESC) AS rn_desc
+        FROM repo_daily_stars
+        WHERE day > (CURRENT_DATE - (${days} || ' days')::interval)
+      ),
+      start_stars AS (
+        SELECT repo, day, stars,
+               row_number() OVER (PARTITION BY repo ORDER BY day ASC) AS rn_asc
+        FROM ends
+      )
+      SELECT e.repo, e.stars AS end_stars, e.day AS end_day,
+             s.stars AS start_stars, s.day AS start_day
+      FROM ends e
+      JOIN start_stars s ON s.repo = e.repo AND s.rn_asc = 1
+      WHERE e.rn_desc = 1 AND s.day < e.day
+      ORDER BY (e.stars - s.stars) DESC
+      LIMIT ${limit}`
+    return (rows as unknown as Array<{
+      repo: string; end_stars: string | number; end_day: string; start_stars: string | number; start_day: string
+    }>).map((r) => ({
+      fullName: r.repo,
+      gain: Number(r.end_stars) - Number(r.start_stars),
+      startStars: Number(r.start_stars),
+      endStars: Number(r.end_stars),
+      startDay: r.start_day,
+      endDay: r.end_day,
+    }))
+  })) ?? []
+}
+
+/** 官方新面孔判定:一批官方榜仓 vs 本表有收盘价的仓,差集 = 我们尚未收录的。
+ *  @param officialRepos 官方 trending 上的仓库全名列表(一般 15-21 个,调用方需先过 isRepoFullName 形态校验) */
+export async function filterUnknownRepos(officialRepos: string[]): Promise<string[]> {
+  if (officialRepos.length === 0) return []
+  return (await withDb(async (sql) => {
+    // 参数化 unnest:官方仓全名经 trending 解析+形态校验,但走绑定参数不拼字面
+    const rows = await sql`
+      SELECT r.repo
+      FROM (SELECT unnest(${sql(officialRepos)}::text[]) AS repo) r
+      LEFT JOIN (SELECT DISTINCT repo FROM repo_daily_stars) k ON k.repo = r.repo
+      WHERE k.repo IS NULL`
+    return (rows as unknown as Array<{ repo: string }>).map((r) => r.repo)
+  })) ?? officialRepos
 }
 
 /** 状态页用:全部榜头键的健康面(键/榜/语言/来源/是否降级/拍时刻/行数)。

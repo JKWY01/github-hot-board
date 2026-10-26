@@ -5,7 +5,7 @@ import { FACET_LANGUAGES } from './facet'
 import { sendMilestonePushes } from './push'
 import { savePersistedBoard } from './persist'
 import { isRepoFullName } from './reposhape'
-import { dbKey, pruneOld, upsertRepoDesc, writeHeadAndRows } from './snapshot'
+import { dbKey, pruneOld, upsertRepoDesc, writeDailyStars, writeHeadAndRows } from './snapshot'
 import type { BoardData } from './types'
 
 /** 数据同步任务:唯一的「进货」通道。定时触发(GitHub Actions 每 6 小时 / 本地 npm run sync / 外部 cron),
@@ -47,6 +47,15 @@ async function fetchOne(target: SyncTarget): Promise<BoardData> {
 async function storeOne(target: SyncTarget, data: BoardData): Promise<void> {
   // 数据库(head + 明细)。库未配置/不可用时静默跳过,磁盘镜像照常。
   await writeHeadAndRows(target.slug, target.language, data)
+  // 星速层随拍收盘:基准口径(总榜/单语总榜)即全仓收盘价,一天多拍同日覆盖不叠加。
+  // 非基准口径(weekly/dark 等子集)不写,免得"榜上有名才算收盘"造成假下跌。
+  if (process.env.DATABASE_URL && (target.language === undefined || target.language === '')) {
+    const takenAt = data.generatedAt ? new Date(data.generatedAt) : new Date()
+    if (!Number.isNaN(takenAt.getTime()) && data.items.length > 0) {
+      const ok = await writeDailyStars(data.items.map((it) => ({ repo: it.fullName, takenAt, stars: it.stars })))
+      if (!ok) console.error(`[sync] daily-stars write failed ${dbKey(target.slug, target.language)}`)
+    }
+  }
   // 原文描述就地入档(repo_desc.payload['en'],非破坏合并):
   // 同步已经在手GitHub 返回的 description,不再花一次请求;仓库档案页与收割兜底共用。
   if (process.env.DATABASE_URL) {

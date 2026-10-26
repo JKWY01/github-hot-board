@@ -215,6 +215,10 @@ export default function LiveBoardList({
     const q = searchDeb.trim()
     if (q.length < 2) {
       setSearchHits([])
+      // 短词提前退出也必须复位转圈(2026-10-26 实锤):上一拍长词正转圈时,
+      // 请求被 cleanup 置 stale、回调里不再 setSearching(false) —— 不复位就永远转圈
+      setSearching(false)
+      setWebConfirmed('')
       return
     }
     if (items.some((it) => it.fullName.toLowerCase().includes(q.toLowerCase()))) return

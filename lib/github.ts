@@ -43,6 +43,7 @@ function githubHeaders(): HeadersInit {
 /* ------------------------------ 多账号发牌 ------------------------------ */
 
 let tokenIdx = 0
+let lastQuotaLogAt = 0
 const tokenCooldown = new Map<string, number>()
 
 /** 发牌轮转:冷却中的账号靠边,其余按序轮换;全部冷却时沿用当前(反正配额也换不到)。 */
@@ -397,6 +398,13 @@ async function ghJson(url: string): Promise<unknown> {
       throw new RateLimitError(`GitHub rate limited [${res.status}] ${url}`)
     }
     if (!res.ok) throw new Error(`GitHub API ${res.status} on ${url}`)
+    // 配额记账(2026-10-26 保护资产批):同步/搜索/README/MCP 共用同一池,403 前毫无预警。
+    // 只记脱敏 token 序号+余量,绝不落 token 本身;每小时最多一条,不刷日志。
+    const rem = res.headers.get('x-ratelimit-remaining')
+    if (rem !== null && Date.now() - lastQuotaLogAt > 3_600_000) {
+      lastQuotaLogAt = Date.now()
+      console.error(`[quota] pool=${TOKENS.length} used#=${tokenIdx % Math.max(1, TOKENS.length)} remaining=${rem} reset=${res.headers.get('x-ratelimit-reset') ?? '?'}`)
+    }
     return res.json()
   }
   throw new RateLimitError('GitHub token pool exhausted')

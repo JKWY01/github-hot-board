@@ -155,9 +155,10 @@ export default function WatchClient({ locale, pushKey }: { locale: Locale; pushK
     }
   }
 
-  // 已开启后关注列表变化 → 3 秒静默续订(端点 upsert,服务器侧列表换新)
+  // 已开启后关注列表变化 → 3 秒静默续订(端点 upsert,服务器侧列表换新)。
+  // 空列表也要同步(否则服务端残留已删关注,继续给用户推已取消项目的跨线通知)
   useEffect(() => {
-    if (!pushOn || entries.length === 0) return
+    if (!pushOn) return
     const t = setTimeout(() => {
       const endpoint = localStorage.getItem(PUSH_ENDPOINT_KEY)
       if (!endpoint) return
@@ -189,7 +190,15 @@ export default function WatchClient({ locale, pushKey }: { locale: Locale; pushK
   }, [])
 
   useEffect(() => {
-    if (!ready || entries.length === 0) return
+    // 空列表也要走(2026-10-26 实锤):原版提前 return 导致清空后 lastFetchKey 残留——
+    // 再加回同一仓库不重新取数;开推送时服务端残留已删关注继续推送。空列表 = 清状态。
+    if (!ready) return
+    if (entries.length === 0) {
+      lastFetchKey.current = ''
+      setStatus({})
+      setDeltas({})
+      return
+    }
     const fulls = entries.map((e) => e.f)
     const key = fulls.join(',')
     if (key === lastFetchKey.current) return
