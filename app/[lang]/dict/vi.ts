@@ -15,10 +15,10 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
   },
   weekly: {
     name: 'Cơn Sốt Hàng Tuần',
-    tagline: 'Tuần này repo nào bùng nổ — lấy thẳng từ Trending chính thức.',
+    tagline: 'Top 100 tăng sao thật trong bảy ngày, đo từ ảnh chụp của chúng tôi.',
     metricLabel: 'Star tuần này',
-    metricHint: 'tăng 7 ngày',
-    desc: 'Dữ liệu đọc trực tiếp từ trang Trending hàng tuần chính thức của GitHub. Thứ tự theo đúng trang chính thức; số bên phải là mức tăng Star thật của tuần này.',
+    metricHint: 'đo thực tế, cửa sổ 7 ngày',
+    desc: 'Xếp theo số liệu ảnh chụp 6 giờ/lần: chênh lệch sao giữa ảnh đầu và ảnh mới nhất trong tuần. Repo cũng có trên Trending chính thức gắn nhãn «chính thức»; repo chưa thu thập nằm ở cuối trang.',
     faqs: [
       { q: 'Đôi khi con số lệch với trang chính thức?', a: 'Kết quả lấy về được cache tối đa ~6 giờ trong khi con số chính thức trên trang vẫn nhích tiếp. Sau mỗi lần làm mới, hai bên tự canh lại.' },
       { q: 'Crawl dữ liệu thất bại thì sao?', a: 'GitHub không có API Trending chính thức. Khi crawl hỏng, bảng chuyển tạm sang phương án “repo mới tạo trong 7 ngày xếp theo Star” và ghi chú rõ phương án này ngay trên trang.' },
@@ -258,7 +258,7 @@ export const viDict: Dict = {
   },
   history: {
     title: 'Cỗ Máy Thời Gian',
-    subtitle: 'Cả bảng được chụp mỗi 6 giờ — kéo lại theo ngày để xem bảng xếp hạng tại thời điểm đó.',
+    subtitle: 'Lưu toàn bộ bảng xếp hạng mỗi 6 giờ — xem lại xếp hạng đầy đủ của bất kỳ ngày nào.',
     pickDate: 'Chọn ngày',
     latest: 'ảnh mới nhất',
     daysCount: 'ngày đã lưu',

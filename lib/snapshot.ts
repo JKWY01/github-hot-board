@@ -306,6 +306,23 @@ export async function readBoardNeighbors(board: string, fullName: string) {
     .map((it) => ({ fullName: it.fullName, rank: items.indexOf(it) + 1, stars: Number(it.stars) || 0 }))
 }
 
+/** 同作者的其他上榜仓(档案页内链网第二层):repo_seen 前缀匹配,排除自己,
+ * 按最近在榜时间降序。表仅几千行、主键索引,前缀 LIKE 走得了 seq 也无感;
+ * 拿不到 stars(纯名单)——渲染只展示仓库名,不给假数。 */
+export async function readSiblingRepos(fullName: string, cap = 6) {
+  if (!DATABASE_URL) return []
+  const owner = fullName.split('/')[0]
+  if (!owner || owner.length > 100) return []
+  const prefix = `${owner}/`
+  return (await withDb(async (sql) => {
+    const rows = await sql`
+      SELECT repo FROM repo_seen
+      WHERE repo LIKE ${prefix + '%'} AND repo <> ${fullName}
+      ORDER BY last_seen DESC LIMIT ${cap}`
+    return rows.map((r) => String(r.repo))
+  })) ?? []
+}
+
 /** 近 N 分钟在榜过的仓库(去重,上限 cap):IndexNow 催收清单的种子。 */
 export async function readRecentRepos(mins = 35, cap = 100): Promise<string[]> {
   if (!DATABASE_URL) return []

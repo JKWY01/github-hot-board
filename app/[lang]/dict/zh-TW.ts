@@ -15,10 +15,10 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
   },
   weekly: {
     name: '週榜 · 本週點火',
-    tagline: '過去七天，GitHub 上星星漲勢最猛的專案，順序與官方 Trending 即時一致。',
+    tagline: '過去七天,漲星最多的 100 個專案,數字按本站快照實算。',
     metricLabel: '本週新增星星',
-    metricHint: '7 日視窗',
-    desc: '資料直接讀取 GitHub 官方 Trending 週榜頁面，排序與官方一致；右側數字是官方標註的本週星星增量，屬於真實增量。',
+    metricHint: '7 日快照實測',
+    desc: '榜單按本站每 6 小時一次的快照實算:每個倉庫本週第一拍和最新一拍的星數之差。官方 Trending 本週也點名的專案會帶「官方同款」標記;官方頁有而本站還沒收進的,列在頁尾「官方 Trending 新面孔」。',
     faqs: [
       { q: '數字有時跟官方頁面對不上？', a: '抓取結果在快取期間內（最長約 6 小時），官方數字仍會持續變動；每次自動刷新後就會重新對齊。' },
       { q: '抓取失敗時會怎樣？', a: 'GitHub 並未提供官方 Trending API。頁面抓取受阻時，週榜會暫時切換成「近 7 天新建儲存庫按星星數排序」的備援方式，並在頁面頂端明確標註。' },
@@ -258,7 +258,7 @@ export const zhTWDict: Dict = {
   },
   history: {
     title: '往日榜',
-    subtitle: '每半小時為整張榜拍一張快照，按日期回看當時的完整排名。',
+    subtitle: '每 6 小時存一整張榜，按日期回看當時的完整排名。',
     pickDate: '選擇日期',
     latest: '最新一拍',
     daysCount: '天存檔',

@@ -35,6 +35,8 @@ export interface BoardItem extends RepoLite {
   milestoneTarget?: number
   /** 上一拍(上一次同步)的名次(0 基；本拍新入榜则缺省)——落库持久化,任何访客打开都能看到爬/掉徽章 */
   prevRank?: number
+  /** 官方 Trending 同期收录标记(周/月榜自算增量榜的行内小标,双源互证) */
+  officialTrending?: boolean
 }
 
 export type BoardSource =
@@ -42,6 +44,16 @@ export type BoardSource =
   | 'github-trending'
   | 'github-search-fallback'
   | 'github-error'
+  | 'daily-stars'
+
+/** 周/月榜自算口径的官方新面孔(官方 Trending 有、本站快照尚未收录的仓) */
+export interface OfficialNewcomer {
+  fullName: string
+  stars: number
+  gained: number
+  desc: string | null
+  htmlUrl: string
+}
 
 export interface BoardData {
   slug: string
@@ -51,6 +63,10 @@ export interface BoardData {
   degraded?: boolean
   /** 上游取数失败时由 cached 包装层烘焙的价值（页面需显式标注，cacheTTL 到期自愈） */
   error?: { code: 'rate-limited' | 'upstream' }
+  /** 周/月榜:官方 Trending 新面孔(本站尚未收录),官方数量 < 增量主榜数量 */
+  officialNewcomers?: OfficialNewcomer[]
+  /** 增量窗口实际覆盖天数(星速表建立初期 <7/<30,页面如实标注"数据积累中") */
+  gainWindowDays?: number
   generatedAt: string
 }
 

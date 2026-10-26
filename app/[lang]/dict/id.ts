@@ -15,10 +15,10 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
   },
   weekly: {
     name: 'Lonjakan Mingguan',
-    tagline: 'Minggu ini repo mana yang meledak — langsung dari Trending resmi.',
+    tagline: '100 besar berdasarkan kenaikan bintang nyata selama tujuh hari, diukur dari snapshot kami.',
     metricLabel: 'Star minggu ini',
-    metricHint: 'tambah 7 hari',
-    desc: 'Data dibaca langsung dari halaman Trending mingguan resmi GitHub. Urutan mengikuti halaman resmi; angka di kanan adalah selisih “Star minggu ini” yang sebenarnya.',
+    metricHint: 'terukur, jendela 7 hari',
+    desc: 'Peringkat dihitung dari snapshot tiap 6 jam: selisih bintang antara potongan pertama dan terakhir dalam minggu. Repo yang juga ada di Trending resmi diberi lencana «resmi»; yang belum terkumpul ada di bagian bawah halaman.',
     faqs: [
       { q: 'Angkanya kadang beda dengan halaman resmi?', a: 'Hasil ambil data di-cache hingga ~6 jam sementara angka resmi terus bergerak. Setiap pembaruan menyelaraskannya kembali.' },
       { q: 'Kalau crawling gagal?', a: 'GitHub tidak punya API Trending resmi. Saat gagal, papan ini sementara beralih ke “repo baru yang dibuat dalam 7 hari, diperingkat berdasarkan Star” dan fallback itu ditandai jelas di halaman.' },
@@ -258,7 +258,7 @@ export const idDict: Dict = {
   },
   history: {
     title: 'Mesin Waktu',
-    subtitle: 'Papan penuh difoto tiap 6 jam — gulir kembali berdasarkan tanggal untuk melihat peringkat saat itu.',
+    subtitle: 'Snapshot lengkap setiap 6 jam — lihat kembali peringkat hari apa pun.',
     pickDate: 'Pilih tanggal',
     latest: 'tangkapan terbaru',
     daysCount: 'hari terarsip',

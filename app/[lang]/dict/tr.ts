@@ -15,10 +15,10 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
   },
   weekly: {
     name: 'Haftalık Yükseliş',
-    tagline: 'Bu hafta hangi repo patladı — resmi Trending’den birebir.',
+    tagline: 'Yedi günde en çok yıldız kazanan 100 depo, kendi anlık görüntülerimizle ölçüldü.',
     metricLabel: 'Bu hafta eklenen Star',
-    metricHint: '7 günlük artış',
-    desc: 'Veri doğrudan resmi GitHub Trending haftalık sayfasından okunur. Sıralama resmi sayfayla aynıdır; sağdaki sayı, gerçekten “bu hafta kazanılan Star” farkıdır.',
+    metricHint: 'ölçüldü, 7 günlük pencere',
+    desc: '6 saatte bir çekilen görüntülerimize göre sıralandı: haftanın ilk ve son görüntüsündeki yıldız farkı. Resmî Trending’de de yer alan depolar «resmî» rozeti taşır; henüz toplanmayanlar sayfa sonunda listelenir.',
     faqs: [
       { q: 'Sayılar bazen resmi sayfayla tutmuyor mu?', a: 'Çekilen sonuçlar ~6 saate kadar önbelleğe alınırken resmi sayı akmaya devam eder. Her yenilemede ikisi yeniden hizalanır.' },
       { q: 'Tarama başarısız olursa ne olur?', a: 'GitHub’ın resmi bir Trending API’si yok. Hata durumunda bu liste geçici olarak “son 7 günde oluşturulan repoları Star sayısına göre sıralayan” yedek yönteme geçer; bu durum sayfada açıkça etiketlenir.' },
@@ -258,7 +258,7 @@ export const trDict: Dict = {
   },
   history: {
     title: 'Zaman Makinesi',
-    subtitle: 'Tüm liste her 6 saatda bir fotoğraflanır — o güne geri dönüp o anki sıralamayı görün.',
+    subtitle: 'Her 6 saatte bir tam anlık görüntü — her günün tam sıralamasını yeniden görün.',
     pickDate: 'Tarih seç',
     latest: 'son kayıt',
     daysCount: 'gün arşivlendi',

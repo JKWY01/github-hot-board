@@ -15,10 +15,10 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
   },
   weekly: {
     name: 'Wochen-Schub',
-    tagline: 'Welche Repos diese Woche explodiert sind – direkt aus dem offiziellen Trending.',
+    tagline: 'Top 100 nach echtem Sterne-Zuwachs in sieben Tagen, gemessen in eigenen Snapshots.',
     metricLabel: 'Sterne diese Woche',
-    metricHint: '7-Tage-Zuwachs',
-    desc: 'Die Daten werden direkt von der offiziellen Trending-Wochenseite gelesen. Die Reihenfolge entspricht der offiziellen Seite; die Zahl rechts ist das echte „Sterne diese Woche“-Delta.',
+    metricHint: 'gemessen, 7-Tage-Fenster',
+    desc: 'Berechnet aus unseren 6-stündlichen Snapshots: Die Zahl rechts ist die Differenz zwischen erstem und letztem Snapshot der Woche. Repos auch im offiziellen Trending tragen eine „offiziell“-Markierung; noch nicht erfasste stehen unten unter „Neu im offiziellen Trending“.',
     faqs: [
       { q: 'Die Zahlen stimmen manchmal nicht mit der offiziellen Seite überein?', a: 'Die abgerufenen Ergebnisse liegen bis zu ~6 Stunden im Cache, während die offiziellen Zahlen weiterlaufen. Ein Refresh richtet sie wieder aus.' },
       { q: 'Was passiert, wenn das Crawling fehlschlägt?', a: 'Eine offizielle Trending-API gibt es von GitHub nicht. Schlägt das Abrufen fehl, schaltet dieses Board vorübergehend auf „neueste Repos der letzten 7 Tage, sortiert nach Sternen“ um und kennzeichnet den Fallback klar auf der Seite.' },
@@ -258,7 +258,7 @@ export const deDict: Dict = {
   },
   history: {
     title: 'Zeitmaschine',
-    subtitle: 'Alle 6 Stunden wird das komplette Board fotografiert – blättere per Datum zurück und sieh, wie die Liste damals stand.',
+    subtitle: 'Alle 6 Stunden ein vollständiger Snapshot — jeder Tag mit komplettem Ranking.',
     pickDate: 'Datum wählen',
     latest: 'neuestes Foto',
     daysCount: 'Tage archiviert',

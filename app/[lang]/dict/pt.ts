@@ -15,10 +15,10 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
   },
   weekly: {
     name: 'Explosão semanal',
-    tagline: 'Quais repos explodiram nesta semana — direto do Trending oficial.',
+    tagline: 'Top 100 por ganho real de estrelas em sete dias, medido pelas nossas capturas.',
     metricLabel: 'Star nesta semana',
-    metricHint: 'ganho 7 d',
-    desc: 'Os dados vêm direto da página semanal do GitHub Trending. A ordem segue a página oficial; o número à direita é o ganho real de Star da semana.',
+    metricHint: 'medido, janela de 7 dias',
+    desc: 'Classificado pelo que nossas capturas a cada 6 horas mediram: a diferença de estrelas entre a primeira e a última captura da semana. Repos também presentes no Trending oficial recebem o selo «oficial»; os ainda não coletados aparecem no rodapé.',
     faqs: [
       { q: 'Às vezes os números não batem com a página oficial?', a: 'A coleta fica em cache por até ~6 horas, enquanto os números oficiais continuam se movendo. Um refresh realinha tudo.' },
       { q: 'E se a coleta falhar?', a: 'O GitHub não tem API oficial de Trending. Em caso de falha, o ranking troca temporariamente para “repos criados nos últimos 7 dias, ordenados por Star”, com o modo de fallback bem sinalizado na página.' },
@@ -258,7 +258,7 @@ export const ptDict: Dict = {
   },
   history: {
     title: 'Máquina do tempo',
-    subtitle: 'O ranking completo é fotografado a cada 6 horas — volta pela data e vê como estava a classificação naquele momento.',
+    subtitle: 'Um snapshot completo a cada 6 horas — reveja o ranking de qualquer dia.',
     pickDate: 'Escolhe uma data',
     latest: 'última foto',
     daysCount: 'dias arquivados',

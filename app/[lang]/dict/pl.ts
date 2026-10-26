@@ -15,10 +15,10 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
   },
   weekly: {
     name: 'Tygodniowy zryw',
-    tagline: 'Które repozytoria wystrzeliły w tym tygodniu — prosto z oficjalnego Trending.',
+    tagline: 'Top 100 według realnego przyrostu gwiazdek w siedem dni — wg naszych migawek.',
     metricLabel: 'Gwiazdki w tym tygodniu',
-    metricHint: 'tydzień',
-    desc: 'Dane czytamy wprost z oficjalnej strony GitHub Trending (tydzień). Kolejność zgodna z oficjalną; liczba po prawej to prawdziwa delta gwiazdek w tym tygodniu.',
+    metricHint: 'zmierzone, okno 7 dni',
+    desc: 'Ranking wg naszych migawek co 6 godzin: różnica gwiazdek między pierwszym a ostatnim ujęciem tygodnia. Repozytoria z oficjalnego Trending mają znacznik „oficjalne”; jeszcze nie zebrane — na dole strony.',
     faqs: [
       { q: 'Liczby czasem nie zgadzają się z oficjalną stroną?', a: 'Wyniki trzymane są w cache przez do ok. 6 godzin, a oficjalne liczby cały czas płyną. Po odświeżeniu znowu się zrównają.' },
       { q: 'Co jeśli scraping padnie?', a: 'GitHub nie ma oficjalnego Trending API. W takim razie lista tymczasowo przełącza się na „repozytoria utworzone w ciągu 7 dni, po gwiazdkach”, a strona wyraźnie oznacza awaryjny tryb.' },
@@ -258,7 +258,7 @@ export const plDict: Dict = {
   },
   history: {
     title: 'Wehikuł czasu',
-    subtitle: 'Każde 6 godzin lista zostaje zatrzymana w kadrze — wybierz datę i zobacz ranking dokładnie tamtego momentu.',
+    subtitle: 'Pełna migawka co 6 godzin — wróć do pełnego rankingu każdego dnia.',
     pickDate: 'Wybierz datę',
     latest: 'świeży kadr',
     daysCount: 'dni w archiwum',

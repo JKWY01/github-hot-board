@@ -2,9 +2,9 @@ import { cacheLife, cacheTag } from 'next/cache'
 
 import { RateLimitError, fetchTrendingPage, ghSearch, resolveAvatarUrl } from './github'
 import { appendHistory, readPersistedBoard, savePersistedBoard } from './persist'
-import { readBoardHead } from './snapshot'
+import { filterUnknownRepos, readBoardHead, readDailyGains, readDiscoverMeta } from './snapshot'
 import { cleanDesc, parseTrendingHtml } from './parse'
-import type { BoardData, BoardItem } from './types'
+import type { BoardData, BoardItem, OfficialNewcomer } from './types'
 
 /** 持久层水合上限:重建后(.next 数据缓存清空)优先读 .data 磁盘快照,
  * 不去打 GitHub。超龄(默认 13 小时,随 6 小时同步节奏)才走真实拉取。 */
@@ -135,7 +135,81 @@ interface TrendingParams {
   language?: string
 }
 
+/** 周/月榜:主榜 = 本站快照自算的真实星增量(近 7/30 天 Top 100,数量与口径都不受官方
+ * 页 15/21 条的天花板限制);官方 Trending 页继续抓,承担两件事——①给主榜行打"官方同款"
+ * 标(双源互证)②差集出"官方新面孔"(官方收录了、本站快照还没接住的仓,单独列出)。
+ * 官方抓取失败不拖垮主榜(自算数据不依赖上游),新面孔栏缺省。 */
 export async function getTrendingBoardData({ period, language }: TrendingParams): Promise<BoardData> {
+  const days = period === 'weekly' ? 7 : 30
+
+  // ① 自算主榜:星速层近 N 天增量。语言分面按仓库主语言过滤(discover 元数据现成)。
+  const gainRows = await readDailyGains(days, 400)
+  let langFiltered = gainRows
+  if (language) {
+    const meta = await readDiscoverMeta().catch(() => null)
+    if (!meta) throw new Error('daily-stars lang filter unavailable')
+    langFiltered = gainRows.filter((r) => (meta.get(r.fullName)?.language ?? '').toLowerCase() === language.toLowerCase())
+  }
+  const top = langFiltered.slice(0, 100)
+
+  if (top.length > 0) {
+    // 官方页并行抓:失败静默(主榜不依赖它),成功则拆成"同款标 + 新面孔"
+    const official = await fetchTrendingPage({ since: period, language })
+      .then((html) => parseTrendingHtml(html, period))
+      .catch(() => [])
+    const officialSet = new Set(official.map((o) => o.fullName))
+    // 语言分面行的主语言用 discover 元数据补(增量行本身没带语言)
+    const meta = language ? null : await readDiscoverMeta().catch(() => null)
+
+    const items: BoardItem[] = []
+    for (const row of top) {
+      const [owner, name] = row.fullName.split('/')
+      items.push({
+        id: hashFullName(row.fullName),
+        fullName: row.fullName,
+        owner: owner ?? '',
+        name: name ?? row.fullName,
+        htmlUrl: `https://github.com/${row.fullName}`,
+        avatarUrl: await resolveAvatarUrl(owner ?? 'github'),
+        desc: null,
+        stars: row.endStars,
+        forks: 0,
+        issues: 0,
+        language: meta?.get(row.fullName)?.language ?? null,
+        topics: [],
+        gained: row.gain,
+        sincePeriod: period,
+        officialTrending: officialSet.has(row.fullName) || undefined,
+      })
+    }
+
+    // 新面孔 = 官方有、本表(全语快照)没有。desc 取官方页自带的一句,零额外请求。
+    const newcomers: OfficialNewcomer[] = language
+      ? []
+      : await filterUnknownRepos(official.map((o) => o.fullName)).then((unknown) =>
+          official
+            .filter((o) => unknown.includes(o.fullName))
+            .map((o) => ({
+              fullName: o.fullName,
+              stars: o.stars,
+              gained: o.growth ?? 0,
+              desc: o.desc,
+              htmlUrl: `https://github.com/${o.fullName}`,
+            })),
+            )
+
+    return {
+      slug: period,
+      language,
+      items,
+      source: 'daily-stars',
+      officialNewcomers: newcomers.length > 0 ? newcomers : undefined,
+      gainWindowDays: days,
+      generatedAt: new Date().toISOString(),
+    }
+  }
+
+  // 星速层还没数据(建表初期/库不可用):退回官方页口径(原 15/21 条),再不行走搜索兜底。
   let firstError: unknown = null
   try {
     const html = await fetchTrendingPage({ since: period, language })
@@ -169,6 +243,7 @@ export async function getTrendingBoardData({ period, language }: TrendingParams)
       language,
       items,
       source: 'github-trending',
+      degraded: true,
       generatedAt: new Date().toISOString(),
     }
   } catch (error) {
@@ -177,7 +252,6 @@ export async function getTrendingBoardData({ period, language }: TrendingParams)
 
   // 降级口径：新建仓库按星数排序（与官方 trending 不同，页面会明确标注）
   try {
-    const days = period === 'weekly' ? 7 : 30
     const repos = await ghSearch(
       `created:>${isoDaysAgo(days)} stars:>100 fork:false${language ? ` language:${language}` : ''}`,
       { pages: 1 },

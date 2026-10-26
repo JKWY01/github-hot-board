@@ -15,10 +15,10 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
   },
   weekly: {
     name: 'Poussée de la semaine',
-    tagline: 'Les dépôts qui ont explosé cette semaine — en direct du Trending officiel.',
+    tagline: 'Top 100 des plus fortes hausses d’étoiles sur sept jours, mesurées par nos captures.',
     metricLabel: 'Stars cette semaine',
-    metricHint: 'gain sur 7 j',
-    desc: 'Les données sont lues directement depuis la page hebdomadaire officielle de GitHub Trending. L’ordre suit la page officielle ; le chiffre de droite est le vrai delta « stars cette semaine ».',
+    metricHint: 'mesuré, fenêtre de 7 jours',
+    desc: 'Classement établi à partir de nos captures toutes les 6 heures : la différence d’étoiles entre la première et la dernière capture de la semaine. Les dépôts également présents sur le Trending officiel portent un badge « officiel » ; ceux pas encore collectés figurent en bas de page.',
     faqs: [
       { q: 'Les chiffres divergent parfois de la page officielle ?', a: 'Les résultats récupérés restent jusqu’à ~6 heures en cache pendant que les chiffres officiels continuent de bouger. Un rafraîchissement remet tout d’accord.' },
       { q: 'Que se passe-t-il si le crawl échoue ?', a: 'GitHub ne fournit aucune API officielle pour Trending. En cas d’échec, ce tableau bascule temporairement sur « dépôts créés dans les 7 derniers jours, triés par stars », et le repli est clairement signalé sur la page.' },
@@ -258,7 +258,7 @@ export const frDict: Dict = {
   },
   history: {
     title: 'Machine à remonter le temps',
-    subtitle: 'Un cliché complet du tableau toutes les 6 heures — revenez par date pour voir le classement de ce moment.',
+    subtitle: 'Un snapshot complet toutes les 6 heures — revisitez le classement de chaque journée.',
     pickDate: 'Choisir une date',
     latest: 'dernier cliché',
     daysCount: 'jours archivés',

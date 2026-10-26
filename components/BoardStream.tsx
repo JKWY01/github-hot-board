@@ -74,9 +74,11 @@ export default async function BoardStream({
         <span className="rounded-full border-[0.5px] border-black/10 bg-white px-2.5 py-1 font-medium text-ink/75">
           {data.source === 'github-trending'
             ? dict.ui.sourceGithubTrending
-            : data.source === 'github-search-fallback'
-              ? dict.ui.sourceGithubSearch
-              : dict.ui.sourceGithubSearch}
+            : data.source === 'daily-stars'
+              ? (locale === 'zh' ? '本站快照实测' : 'measured by our snapshots')
+              : data.source === 'github-search-fallback'
+                ? dict.ui.sourceGithubSearch
+                : dict.ui.sourceGithubSearch}
         </span>
         {data.language && (
           <span className="rounded-full border-[0.5px] border-black/10 bg-white px-2.5 py-1 font-medium text-ink/75">
@@ -86,6 +88,11 @@ export default async function BoardStream({
         {data.source === 'github-trending' && (
           <span className="rounded-full bg-good/10 px-2.5 py-1 font-medium text-good">
             {locale === 'zh' ? '官方标注 · 真实增量' : 'official delta · real'}
+          </span>
+        )}
+        {data.source === 'daily-stars' && (
+          <span className="rounded-full bg-good/10 px-2.5 py-1 font-medium text-good">
+            {locale === 'zh' ? '官方同款已标记' : 'official overlap marked'}
           </span>
         )}
         <span className="sr-only">{copy.name}</span>
@@ -111,6 +118,35 @@ export default async function BoardStream({
         compact={compact}
         strings={strings}
       />
+
+      {(data.officialNewcomers?.length ?? 0) > 0 && (
+        <section className="mt-8 px-1">
+          <h2 className="text-[13px] font-semibold text-ink">
+            {locale === 'zh' ? '官方 Trending 新面孔' : 'New on official Trending'}
+            <span className="ml-2 text-[11.5px] font-normal text-sub">
+              {locale === 'zh' ? '官方已收录,本站快照尚未接到' : 'on the official list, not yet in our snapshots'}
+            </span>
+          </h2>
+          <ul className="card mt-3 divide-y-[0.5px] divide-black/6">
+            {data.officialNewcomers!.map((n) => (
+              <li key={n.fullName}>
+                <a
+                  href={n.htmlUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-black/[0.03] sm:px-5"
+                >
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[14.5px] font-medium text-ink">{n.fullName}</span>
+                    {n.desc && <span className="mt-0.5 block truncate text-[12px] text-sub">{n.desc}</span>}
+                  </span>
+                  <span className="shrink-0 text-[12px] font-medium text-good">+{n.gained}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </div>
   )
 }
