@@ -11,16 +11,16 @@
 
 | # | 项目 | 累计 Star | 本周新增 Star |
 |---|---|---|---|
-| 1 | [cloudflare/security-audit-skill](https://git.vaiox.xyz/zh/repo/cloudflare/security-audit-skill) | 46.2k | 12.7k |
-| 2 | [ruvnet/ruflo](https://git.vaiox.xyz/zh/repo/ruvnet/ruflo) | 79.2k | 3.2k |
-| 3 | [anthropics/knowledge-work-plugins](https://git.vaiox.xyz/zh/repo/anthropics/knowledge-work-plugins) | 32.9k | 2.6k |
-| 4 | [anomalyco/opencode](https://git.vaiox.xyz/zh/repo/anomalyco/opencode) | 221.4k | 6.9k |
-| 5 | [stablyai/orca](https://git.vaiox.xyz/zh/repo/stablyai/orca) | 105.5k | 9.8k |
-| 6 | [heygen-com/hyperframes](https://git.vaiox.xyz/zh/repo/heygen-com/hyperframes) | 71.9k | 5.6k |
-| 7 | [android/skills](https://git.vaiox.xyz/zh/repo/android/skills) | 9.7k | 1.3k |
-| 8 | [Graphify-Labs/graphify](https://git.vaiox.xyz/zh/repo/Graphify-Labs/graphify) | 134.9k | 6.9k |
-| 9 | [akitaonrails/ai-memory](https://git.vaiox.xyz/zh/repo/akitaonrails/ai-memory) | 13.4k | 3.5k |
-| 10 | [Comfy-Org/ComfyUI](https://git.vaiox.xyz/zh/repo/Comfy-Org/ComfyUI) | 142.8k | 4.6k |
+| 1 | [cloudflare/security-audit-skill](https://git.vaiox.xyz/zh/repo/cloudflare/security-audit-skill) | 47.2k | 15.1k |
+| 2 | [ruvnet/ruflo](https://git.vaiox.xyz/zh/repo/ruvnet/ruflo) | 79.3k | 3.0k |
+| 3 | [anthropics/knowledge-work-plugins](https://git.vaiox.xyz/zh/repo/anthropics/knowledge-work-plugins) | 33.0k | 2.8k |
+| 4 | [anomalyco/opencode](https://git.vaiox.xyz/zh/repo/anomalyco/opencode) | 221.6k | 5.9k |
+| 5 | [stablyai/orca](https://git.vaiox.xyz/zh/repo/stablyai/orca) | 106.1k | 9.6k |
+| 6 | [heygen-com/hyperframes](https://git.vaiox.xyz/zh/repo/heygen-com/hyperframes) | 72.3k | 5.6k |
+| 7 | [android/skills](https://git.vaiox.xyz/zh/repo/android/skills) | 9.7k | 1.1k |
+| 8 | [Graphify-Labs/graphify](https://git.vaiox.xyz/zh/repo/Graphify-Labs/graphify) | 135.4k | 6.9k |
+| 9 | [akitaonrails/ai-memory](https://git.vaiox.xyz/zh/repo/akitaonrails/ai-memory) | 13.6k | 3.3k |
+| 10 | [Comfy-Org/ComfyUI](https://git.vaiox.xyz/zh/repo/Comfy-Org/ComfyUI) | 143.0k | 4.8k |
 
 **本月飙升 Top 10** · [打开完整榜单 →](https://git.vaiox.xyz/zh/boards/monthly)
 
@@ -42,12 +42,12 @@
 | # | 项目 | 累计 Star | 新增 |
 |---|---|---|---|
 | 1 | [codecrafters-io/build-your-own-x](https://git.vaiox.xyz/zh/repo/codecrafters-io/build-your-own-x) | 556.2k | — |
-| 2 | [sindresorhus/awesome](https://git.vaiox.xyz/zh/repo/sindresorhus/awesome) | 524.6k | — |
-| 3 | [public-apis/public-apis](https://git.vaiox.xyz/zh/repo/public-apis/public-apis) | 492.1k | — |
+| 2 | [sindresorhus/awesome](https://git.vaiox.xyz/zh/repo/sindresorhus/awesome) | 524.7k | — |
+| 3 | [public-apis/public-apis](https://git.vaiox.xyz/zh/repo/public-apis/public-apis) | 492.2k | — |
 | 4 | [freeCodeCamp/freeCodeCamp](https://git.vaiox.xyz/zh/repo/freeCodeCamp/freeCodeCamp) | 457.9k | — |
 | 5 | [EbookFoundation/free-programming-books](https://git.vaiox.xyz/zh/repo/EbookFoundation/free-programming-books) | 400.1k | — |
-| 6 | [openclaw/openclaw](https://git.vaiox.xyz/zh/repo/openclaw/openclaw) | 393.0k | — |
-| 7 | [morluto/rea](https://git.vaiox.xyz/zh/repo/morluto/rea) | 384.0k | — |
+| 6 | [openclaw/openclaw](https://git.vaiox.xyz/zh/repo/openclaw/openclaw) | 393.1k | — |
+| 7 | [morluto/rea](https://git.vaiox.xyz/zh/repo/morluto/rea) | 385.8k | — |
 | 8 | [donnemartin/system-design-primer](https://git.vaiox.xyz/zh/repo/donnemartin/system-design-primer) | 375.6k | — |
 | 9 | [nilbuild/developer-roadmap](https://git.vaiox.xyz/zh/repo/nilbuild/developer-roadmap) | 370.4k | — |
 | 10 | [jwasham/coding-interview-university](https://git.vaiox.xyz/zh/repo/jwasham/coding-interview-university) | 363.4k | — |

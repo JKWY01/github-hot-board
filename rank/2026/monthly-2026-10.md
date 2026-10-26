@@ -1,6 +1,6 @@
 # GitHub 月榜快照 · 2026-10
 
-> 由 [GitHub 火线榜](https://git.vaiox.xyz/zh) 于 2026-10-25 自动刻录。口径:官方 Trending 月页,看长趋势。
+> 由 [GitHub 火线榜](https://git.vaiox.xyz/zh) 于 2026-10-26 自动刻录。口径:官方 Trending 月页,看长趋势。
 > 完整榜单、语言分榜与每个项目的 30 天名次曲线:[https://git.vaiox.xyz/zh/boards/monthly](https://git.vaiox.xyz/zh/boards/monthly)
 
 | # | 项目 | 累计 Star | 本月新增 Star | 简介 |
