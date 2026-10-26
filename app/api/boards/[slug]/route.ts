@@ -39,7 +39,9 @@ export async function GET(
       items: data.items,
       generatedAt: data.generatedAt,
       degraded: data.degraded,
-      ...(data.error ? { error: { code: data.error.code } } : {}),
+      // 换芯后的新面:source(daily-stars 等)与官方新面孔栏必须透传,MCP/JSON 消费方才看得见
+      source: data.source,
+      ...(data.officialNewcomers ? { officialNewcomers: data.officialNewcomers } : {}),
     }
     return Response.json(patch, { headers: { 'Cache-Control': 'no-store' } })
   } catch (error) {

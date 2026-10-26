@@ -76,5 +76,7 @@ export interface LivePatch {
   items: BoardItem[]
   generatedAt: string
   degraded?: boolean
+  source?: BoardSource
+  officialNewcomers?: OfficialNewcomer[]
   error?: { code: 'rate-limited' | 'upstream' | 'unknown'; message?: string }
 }
