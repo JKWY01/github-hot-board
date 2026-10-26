@@ -60,6 +60,11 @@ export interface Dict {
     heroKicker: string
     heroTitleTop: string
     heroTitleGradient: string
+    /** 主标语轮播的第二、三句(每句 [上半, 渐变下半]);SSR 首画只用主句 */
+    heroAlt1Top: string
+    heroAlt1Gradient: string
+    heroAlt2Top: string
+    heroAlt2Gradient: string
     heroSub: string
     heroStatRepos: string
     heroStatStars: string

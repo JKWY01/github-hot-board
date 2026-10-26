@@ -7,6 +7,7 @@ import { getDict, isLocale } from './dictionaries'
 import { LOCALES, altLangs } from '@/lib/locales'
 import type { Locale } from '@/lib/types'
 import BoardStream from '@/components/BoardStream'
+import HeroRotator from '@/components/hero-rotator'
 import Reveal from '@/components/Reveal'
 import { fmtNum } from '@/lib/format'
 import { guideFor } from '@/lib/guide'
@@ -62,10 +63,13 @@ export default async function HomePage({
           <p className="kicker rise" style={{ '--rise-delay': '40ms' } as React.CSSProperties}>
             {dict.home.heroKicker}
           </p>
-          <h1 className="hero-title rise mt-3" style={{ '--rise-delay': '120ms' } as React.CSSProperties}>
-            {dict.home.heroTitleTop}
-            <span className="gradient-text">{dict.home.heroTitleGradient}</span>
-          </h1>
+          <HeroRotator
+            lines={[
+              [dict.home.heroTitleTop, dict.home.heroTitleGradient],
+              [dict.home.heroAlt1Top, dict.home.heroAlt1Gradient],
+              [dict.home.heroAlt2Top, dict.home.heroAlt2Gradient],
+            ]}
+          />
           <p
             className="rise mx-auto mt-5 max-w-2xl text-[17px] leading-relaxed text-sub"
             style={{ '--rise-delay': '220ms' } as React.CSSProperties}
