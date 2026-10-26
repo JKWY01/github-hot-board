@@ -39,6 +39,10 @@ jobs:
         run: |
           cp -r public .next/standalone/public
           cp -r .next/static .next/standalone/.next/static
+          # 预建 use cache 的落盘目录:缺它时容器内每次写增量缓存 mkdir ENOENT
+          #(2026-10-26 实测 24h 报错 1.4 万条、内存从基线 67MB 抬到 ~270MB)
+          mkdir -p .next/standalone/.next/cache
+          chmod -R 0777 .next/standalone/.next/cache
           tar -czf /tmp/release.tgz -C .next/standalone .
 
       - name: 上传 HK 并切换重启
