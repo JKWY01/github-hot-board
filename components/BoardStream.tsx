@@ -103,7 +103,11 @@ export default async function BoardStream({
         slug={slug}
         locale={locale}
         currentLanguage={language}
-        initialItems={data.items}
+        // SSR 载荷只带前 100 行(实测 500 行全量让 RSC Flight 膨胀到 300KB+,跨境 TTFB 秒级劣化);
+        // initialTruncated 通知列表挂载后立即静默补全,60s 轮询照旧。爬虫 SEO 信号由
+        // ItemList JSON-LD(500 条全量)承担,不依赖 DOM 行数。
+        initialItems={data.items.slice(0, 100)}
+        initialTruncated={data.items.length > 100}
         initialGeneratedAt={data.generatedAt}
         initialDegraded={data.degraded}
         metric={config.metric}

@@ -19,6 +19,8 @@ export interface LiveBoardListProps {
   locale: Locale
   currentLanguage?: string
   initialItems: BoardItem[]
+  /** SSR 载荷被截断过(只带了首屏批):挂载后立即静默拉一次全集,不等首个 60s 轮询 */
+  initialTruncated?: boolean
   initialGeneratedAt: string
   initialDegraded?: boolean
   metric: 'stars' | 'gained' | 'slope' | 'forks' | 'score' | 'gap'
@@ -116,6 +118,7 @@ export default function LiveBoardList({
   locale,
   currentLanguage,
   initialItems,
+  initialTruncated,
   initialGeneratedAt,
   initialDegraded,
   metric,
@@ -415,6 +418,9 @@ export default function LiveBoardList({
       if (document.visibilityState !== 'visible') return
       void poll()
     }
+    // SSR 载荷被截断(首屏 100 行):挂载后立即补全全集,让筛选/搜索的范围尽快恢复;
+    // 不等 60s 首轮。SSR 行数与补全后不一致不触发 FLIP(同一 generatedAt 分支只刷字段)。
+    if (initialTruncated && document.visibilityState === 'visible') void poll()
     const interval = window.setInterval(tick, pollMs)
     const onVisibility = () => {
       if (document.visibilityState === 'visible' && Date.now() - lastPollRef.current > 10_000) {

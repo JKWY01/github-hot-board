@@ -1,7 +1,7 @@
 import { BOARD_META, BOARD_ORDER, getBoardData } from './boards'
 import type { BoardSlug } from './boards'
 import { prefillRepoDescs } from './descfill'
-import { FACET_LANGUAGES } from './facet'
+import { BOARD_SLUGS, FACET_LANGUAGES } from './facet'
 import { sendMilestonePushes } from './push'
 import { savePersistedBoard } from './persist'
 import { isRepoFullName } from './reposhape'
@@ -173,24 +173,28 @@ export async function syncAllBoards(
   return { total: targets.length, ok, failed, itemsWritten: ok, pruned, durationMs: Date.now() - started, descPrefill }
 }
 
-/** IndexNow 提交:host/key/keyLocation + urlList(≤100)。 */
+/** IndexNow 提交:host/key/keyLocation + urlList(≤100)。
+ * 覆盖面:双主语种首页 + 今日往日榜(每榜当天页,日更新鲜度信号)+ 近 35 分钟在榜仓
+ * 的 en/zh 双口径档案页。档案页 cap 收窄到 40 给往日榜留位(总 ≤100 硬上限)。 */
 async function pingIndexNow(): Promise<void> {
   const key = (process.env.INDEXNOW_KEY ?? '').trim()
   const base = (process.env.NEXT_PUBLIC_SITE_URL ?? '').replace(/\/+$/, '')
   if (!key || !base) return
   const { readRecentRepos } = await import('./snapshot')
-  const repos = (await readRecentRepos(35, 90)).filter(isRepoFullName)
-  const urlList: string[] = []
-  urlList.push(`${base}/en`, `${base}/zh`)
-  for (const r of repos) urlList.push(`${base}/en/repo/${r}`)
-  if (urlList.length < 3) return
+  const repos = (await readRecentRepos(35, 40)).filter(isRepoFullName)
+  const urlList: string[] = [`${base}/en`, `${base}/zh`]
+  const today = new Date().toISOString().slice(0, 10)
+  for (const slug of BOARD_SLUGS) urlList.push(`${base}/en/history/${slug}/${today}`)
+  for (const r of repos) urlList.push(`${base}/en/repo/${r}`, `${base}/zh/repo/${r}`)
+  const batch = urlList.slice(0, 100)
+  if (batch.length < 3) return
   const res = await fetch('https://api.indexnow.org/indexnow', {
     method: 'POST',
     headers: { 'content-type': 'application/json; charset=utf-8' },
-    body: JSON.stringify({ host: base.replace(/^https?:\/\//, ''), key, keyLocation: `${base}/indexnow-key.txt`, urlList }),
+    body: JSON.stringify({ host: base.replace(/^https?:\/\//, ''), key, keyLocation: `${base}/indexnow-key.txt`, urlList: batch }),
     signal: AbortSignal.timeout(12_000),
   })
-  console.error(`[indexnow] submitted=${urlList.length} http=${res.status}`)
+  console.error(`[indexnow] submitted=${batch.length} http=${res.status}`)
 }
 
 /** 百度推送去重:进程内 25h TTL(Vercel 实例的内存态,尽力而为;重复推送顶多浪费小配额)。 */
