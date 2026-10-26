@@ -365,12 +365,14 @@ export async function writeDailyStars(rows: Array<{ repo: string; takenAt: Date;
   })) ?? 0
 }
 
-/** 近 N 天增量榜:每仓取窗口内首尾两个收盘日,差值排序。首日即末日的仓(当天新进,
- * 只有一个收盘价)无基线 → 不入榜,由"官方新面孔"栏接住 —— 不给伪零。
- * day 窗口按 UTC 日期,与 writeDailyStars 同一切口。 */
+/** 近 N 天增量榜(带增速):绝对增量 + 相对增速(增量÷窗口首日星数)。小仓爆发
+ *  靠百分比才显形(同涨 1,000 星,500 星仓是 200%,10 万星仓是 1%)—— 竞品
+ *  RepoFOMO 的 Movers 榜即此口径。首尾同日的仓不入(无基线,不给伪零)。
+ *  day 窗口按 UTC 日期,与 writeDailyStars 同一切口。 */
 export interface DailyGainRow {
   fullName: string
   gain: number
+  pct: number
   startStars: number
   endStars: number
   startDay: string
@@ -392,21 +394,57 @@ export async function readDailyGains(days: number, limit = 100): Promise<DailyGa
         FROM ends
       )
       SELECT e.repo, e.stars AS end_stars, e.day AS end_day,
-             s.stars AS start_stars, s.day AS start_day
+             s.stars AS start_stars, s.day AS start_day,
+             (e.stars - s.stars)::numeric / GREATEST(s.stars, 1) AS pct
       FROM ends e
       JOIN start_stars s ON s.repo = e.repo AND s.rn_asc = 1
       WHERE e.rn_desc = 1 AND s.day < e.day
       ORDER BY (e.stars - s.stars) DESC
       LIMIT ${limit}`
-    return (rows as unknown as Array<{
-      repo: string; end_stars: string | number; end_day: string; start_stars: string | number; start_day: string
-    }>).map((r) => ({
-      fullName: r.repo,
+    return rows.map((r) => ({
+      fullName: String(r.repo),
       gain: Number(r.end_stars) - Number(r.start_stars),
+      pct: Math.round(Number(r.pct) * 1000) / 10,
       startStars: Number(r.start_stars),
       endStars: Number(r.end_stars),
-      startDay: r.start_day,
-      endDay: r.end_day,
+      startDay: String(r.start_day),
+      endDay: String(r.end_day),
+    }))
+  })) ?? []
+}
+
+/** 近 N 天增速榜(百分比排序):Movers 口径。窗口首日星数 <10 的仓剔除
+ *  (分母太小,1 颗星就是 100%,噪音榜);仍要求首尾不同日(有基线)。 */
+export async function readDailyGainsPct(days: number, limit = 100, minStartStars = 10): Promise<DailyGainRow[]> {
+  return (await withDb(async (sql) => {
+    const rows = await sql`
+      WITH ends AS (
+        SELECT repo, day, stars,
+               row_number() OVER (PARTITION BY repo ORDER BY day DESC) AS rn_desc
+        FROM repo_daily_stars
+        WHERE day > (CURRENT_DATE - (${days} || ' days')::interval)
+      ),
+      start_stars AS (
+        SELECT repo, day, stars,
+               row_number() OVER (PARTITION BY repo ORDER BY day ASC) AS rn_asc
+        FROM ends
+      )
+      SELECT e.repo, e.stars AS end_stars, e.day AS end_day,
+             s.stars AS start_stars, s.day AS start_day,
+             (e.stars - s.stars)::numeric / GREATEST(s.stars, 1) AS pct
+      FROM ends e
+      JOIN start_stars s ON s.repo = e.repo AND s.rn_asc = 1
+      WHERE e.rn_desc = 1 AND s.day < e.day AND s.stars >= ${minStartStars}
+      ORDER BY pct DESC
+      LIMIT ${limit}`
+    return rows.map((r) => ({
+      fullName: String(r.repo),
+      gain: Number(r.end_stars) - Number(r.start_stars),
+      pct: Math.round(Number(r.pct) * 1000) / 10,
+      startStars: Number(r.start_stars),
+      endStars: Number(r.end_stars),
+      startDay: String(r.start_day),
+      endDay: String(r.end_day),
     }))
   })) ?? []
 }

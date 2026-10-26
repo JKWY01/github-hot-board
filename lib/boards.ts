@@ -2,7 +2,7 @@ import { cacheLife, cacheTag } from 'next/cache'
 
 import { RateLimitError, fetchTrendingPage, ghSearch, resolveAvatarUrl } from './github'
 import { appendHistory, readPersistedBoard, savePersistedBoard } from './persist'
-import { filterUnknownRepos, readBoardHead, readDailyGains, readDiscoverMeta } from './snapshot'
+import { filterUnknownRepos, readBoardHead, readDailyGains, readDiscoverMeta, readDailyGainsPct } from './snapshot'
 import { cleanDesc, parseTrendingHtml } from './parse'
 import type { BoardData, BoardItem, OfficialNewcomer } from './types'
 
@@ -285,21 +285,91 @@ export async function getAnnualData(): Promise<BoardData> {
 }
 
 export async function getRisingData(): Promise<BoardData> {
-  // 候选池先按星数取 90 天新仓的前 300(Search 3 页、1000 条上限下的实际工作集),
-  // 再按斜率重排 —— 这是 Search API 口径的固有前置筛选,页面口径文案里已如实披露。
+  // 主口径(2026-10-26 换芯):近 7 天真实星增 Top 300(星速层自算,不管仓库多老——
+  // "本周涨得最多的 300 个仓"直给;旧"开榜以来日均"口径误导性大,外部审查实锤)。
+  // 每行带 pct(增速百分比),前台可见。星速层不可用才退 Search 斜率口径(degraded 标注)。
+  const gains = await readDailyGains(7, 300)
+  if (gains.length >= 30) {
+    const meta = await readDiscoverMeta().catch(() => null)
+    const items: BoardItem[] = []
+    for (const row of gains) {
+      const [owner, name] = row.fullName.split('/')
+      items.push({
+        id: hashFullName(row.fullName),
+        fullName: row.fullName,
+        owner: owner ?? '',
+        name: name ?? row.fullName,
+        htmlUrl: `https://github.com/${row.fullName}`,
+        avatarUrl: await resolveAvatarUrl(owner ?? 'github'),
+        desc: null,
+        stars: row.endStars,
+        forks: 0,
+        issues: 0,
+        language: meta?.get(row.fullName)?.language ?? null,
+        topics: [],
+        gained: row.gain,
+        sincePeriod: 'weekly',
+        score: row.pct,
+      })
+    }
+    return {
+      slug: 'rising',
+      items,
+      source: 'daily-stars',
+      generatedAt: new Date().toISOString(),
+    }
+  }
+
+  // 兜底口径(星速层空):90 天新仓按"开榜以来日均"排(Search 3 页工作集)。
   const repos = await ghSearch(`created:>${isoDaysAgo(90)} stars:>10 fork:false`, { pages: 3 })
   repos.sort((a, b) => (slopeStarsPerDay(b as PoolRepo) ?? 0) - (slopeStarsPerDay(a as PoolRepo) ?? 0))
   return {
     slug: 'rising',
     items: toItems(repos).slice(0, 300),
     source: 'github-search',
+    degraded: true,
     generatedAt: new Date().toISOString(),
   }
 }
 
 export async function getDarkData(): Promise<BoardData> {
-  // 独立一口径：90 天内新建、30–1500 星，取斜率最高者（不复用 rising 的前 100 切片，
-  // 否则过滤后经常为空——斜率排序天然偏向全新小仓库）。
+  // 主口径(2026-10-26 换芯):近 7 天增速百分比 Top 100(Movers 口径,竞品验证过)——
+  // 同涨 1,000 星,500 星仓 +200% 排在 10 万星仓 +1% 前面,小仓黑马才显形。
+  // 窗口首日 <10 星的仓剔除(1 颗星=100% 的噪音)。原"90 天新仓 30–1500 星日均王"
+  // 降为兜底(星速层不可用时),degraded 标注。
+  const movers = await readDailyGainsPct(7, 100)
+  if (movers.length >= 30) {
+    const meta = await readDiscoverMeta().catch(() => null)
+    const items: BoardItem[] = []
+    for (const row of movers) {
+      const [owner, name] = row.fullName.split('/')
+      items.push({
+        id: hashFullName(row.fullName),
+        fullName: row.fullName,
+        owner: owner ?? '',
+        name: name ?? row.fullName,
+        htmlUrl: `https://github.com/${row.fullName}`,
+        avatarUrl: await resolveAvatarUrl(owner ?? 'github'),
+        desc: null,
+        stars: row.endStars,
+        forks: 0,
+        issues: 0,
+        language: meta?.get(row.fullName)?.language ?? null,
+        topics: [],
+        gained: row.gain,
+        sincePeriod: 'weekly',
+        score: row.pct,
+      })
+    }
+    return {
+      slug: 'dark',
+      items,
+      source: 'daily-stars',
+      generatedAt: new Date().toISOString(),
+    }
+  }
+
+  // 兜底口径:90 天内新建、30–1500 星,日均最高。
   // 取数失败必须抛:同步层据以判失败并保留上一拍(吞掉会把"上游抖动"伪装成"真的没项目",
   // 空榜覆盖好榜进库 —— 2026-10-26 外部审查实锤)。"取数成功但筛完为空"才允许 degraded。
   const repos = await ghSearch(`created:>${isoDaysAgo(90)} stars:30..1500 fork:false`, { pages: 3 })
