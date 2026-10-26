@@ -24,6 +24,11 @@ const AI_AGENTS = [
 
 /** robots.txt 动态产出:sitemap 分片数量跟着库里"历史上过榜"的仓库数走,
  * 仓库再多也不会出现指向不存在分片的死链。 */
+/** 爬虫禁入的工具页:发现页 noindex 且不进 sitemap(工具语义,不参与排名),
+ * 但实测 Googlebot/ClaudeBot 对 16 语 discover 反复深抓(6 天 5 万+ 次),
+ * 白烧抓取预算 —— robots 明示禁入,预算让给榜单/档案页。真人访问不受影响。 */
+const BOT_DISALLOW = ['/api/', '/discover']
+
 export default async function robots(): Promise<MetadataRoute.Robots> {
   let fragmentCount = 0
   try {
@@ -42,14 +47,14 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
       {
         userAgent: '*',
         allow: '/',
-        disallow: ['/api/'],
+        disallow: BOT_DISALLOW,
       },
       // AI 爬虫明文段:点名欢迎;/api/ 只对能拿走"榜单 JSON"的这一条口子开放
       //(/api/boards 是缓存烘焙的确定性数据,给得起;search/watch 带配额或个人语义,继续对爬虫关)。
       ...AI_AGENTS.map((agent) => ({
         userAgent: agent,
         allow: ['/', '/api/boards/'],
-        disallow: ['/api/'],
+        disallow: BOT_DISALLOW,
       })),
     ],
     sitemap: sitemaps,

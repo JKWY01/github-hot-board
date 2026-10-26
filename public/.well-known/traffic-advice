@@ -1,0 +1,18 @@
+{
+  "googlebot": {
+    "allow-high-frequency-crawling": true,
+    "allow-full-caching": true
+  },
+  "Google-Extended": {
+    "allow-high-frequency-crawling": true,
+    "allow-full-caching": true
+  },
+  "GoogleOther": {
+    "allow-high-frequency-crawling": true,
+    "allow-full-caching": true
+  },
+  "Google-InspectionTool": {
+    "allow-high-frequency-crawling": true,
+    "allow-full-caching": true
+  }
+}

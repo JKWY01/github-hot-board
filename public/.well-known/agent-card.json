@@ -1,0 +1,16 @@
+{
+  "name": "GitHub Hot Board",
+  "description": "Real-time GitHub trending leaderboard: 10 boards x 16 languages, hourly snapshots since 2026-10-18. Board JSON is open at /api/boards/{slug}; full MCP server at /api/mcp (six tools, no auth). Site guide for agents: /llms.txt.",
+  "url": "https://git.vaiox.xyz",
+  "provider": {
+    "name": "GitHub Hot Board",
+    "url": "https://git.vaiox.xyz"
+  },
+  "api": {
+    "type": "mcp",
+    "url": "https://git.vaiox.xyz/api/mcp",
+    "version": "2026-07-28",
+    "auth": { "type": "none" }
+  },
+  "security": "safe"
+}

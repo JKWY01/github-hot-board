@@ -39,6 +39,14 @@ const nextConfig: NextConfig = {
   experimental: {
     useCacheTimeout: 180,
   },
+  // 老牌爬虫的惯例入口:/sitemap.xml → /sitemap-index.xml(308,永久)。
+  // 走 config redirects 而非 app/sitemap.xml/route.ts:Next 里 sitemap.xml
+  // 与元数据路由冲突(dev 实测 "Conflicting route and metadata at /sitemap.xml")。
+  async redirects() {
+    return [
+      { source: '/sitemap.xml', destination: '/sitemap-index.xml', permanent: true },
+    ]
+  },
   async headers() {
     return [
       {
