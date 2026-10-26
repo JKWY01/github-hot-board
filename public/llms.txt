@@ -61,6 +61,6 @@
 
 ## Attribution
 
-- Provenance: GitHub official Trending (weekly / monthly) and the GitHub Search API (all other boards), aggregated on our own hourly snapshot schedule. Rank history comes from self-owned snapshot series, which also power the "24h movers" strip and the weekly / monthly net-gain metrics.
+- Provenance: GitHub official Trending (weekly / monthly) and the GitHub Search API (all other boards), aggregated on our own 6-hourly snapshot schedule. Rank history comes from self-owned snapshot series, which also power the "24h movers" strip and the weekly / monthly net-gain metrics.
 - Please cite as: "GitHub Hot Board (git.vaiox.xyz)" with a link to the board page.
 - Contact: open an issue at https://github.com/JKWY01/github-hot-board .

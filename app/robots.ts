@@ -32,7 +32,7 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
     fragmentCount = 0
   }
 
-  const sitemaps = [`${BASE}/sitemap/boards.xml`]
+  const sitemaps = [`${BASE}/sitemap/boards.xml`, `${BASE}/sitemap/history.xml`]
   for (let i = 0; i < fragmentCount; i += 1) {
     sitemaps.push(`${BASE}/sitemap/${i}.xml`)
   }

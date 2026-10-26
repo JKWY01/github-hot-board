@@ -67,17 +67,22 @@ async function discoverFiltered(f: DiscoverFilters): Promise<DiscoverRow[]> {
     topicCond = ` AND topics @> jsonb_build_array($${params.length}::text)`
   }
   const order = f.sort === 'gain' ? 'COALESCE(gain7, -1) DESC, stars DESC' : 'stars DESC'
-  // 条件段来自白名单常量 + 参数化占位,无注入面
+  // 去重必须先于 LIMIT(2026-10-26 外部审查实锤):同一仓库会出现在多个 board_head 行里,
+  // 不归并会占满 60 个名额并挤出别的仓库。DISTINCT ON 保任一条(星数以最新快照为准)。
+  // gain7 伪零修正:l.stars 有而 p.stars 无 = 历史基线不足,必须真 NULL(页面显示"—"),
+  // 不得落 COALESCE 兜成 0 —— 0 是"六天里真的没涨",与"没法算"是两种事实。
   const rows = await withDb(async (sql) =>
     sql.unsafe(`
       WITH meta AS (
-        SELECT it->>'fullName' AS full_name,
+        SELECT DISTINCT ON (it->>'fullName')
+               it->>'fullName' AS full_name,
                (it->>'stars')::bigint AS stars,
                it->>'language' AS lang,
                COALESCE(it->'topics', '[]'::jsonb) AS topics,
                (it->>'createdAt')::timestamptz AS created_at
         FROM board_head, jsonb_array_elements(payload->'items') AS it
         WHERE item_count > 0 AND it->>'fullName' IS NOT NULL
+        ORDER BY it->>'fullName', (it->>'stars')::bigint DESC
       ),
       latest AS (
         SELECT DISTINCT ON (repo) repo, stars FROM board_snapshots
@@ -90,7 +95,8 @@ async function discoverFiltered(f: DiscoverFilters): Promise<DiscoverRow[]> {
       ),
       joined AS (
         SELECT m.full_name, COALESCE(l.stars, m.stars) AS stars,
-               l.stars - COALESCE(p.stars, l.stars) AS gain7,
+               CASE WHEN p.stars IS NOT NULL AND l.stars IS NOT NULL
+                    THEN l.stars - p.stars END AS gain7,
                m.lang, m.topics, m.created_at
         FROM meta m
         LEFT JOIN latest l ON l.repo = m.full_name

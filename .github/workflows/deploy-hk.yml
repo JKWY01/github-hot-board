@@ -28,6 +28,9 @@ jobs:
       - name: 安装依赖
         run: npm ci
 
+      - name: 单测门禁(78 例,失败不部署)
+        run: npm test
+
       - name: 构建(standalone)
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
@@ -58,3 +61,24 @@ jobs:
           # 全部 ENOENT,预渲染缓存更新失败 → 每语首渲染 500;tmpfs/volumes-from
           # 都不能叠在 ro bind 上,唯一解是可写层)。
           ssh -p 4492 -o StrictHostKeyChecking=accept-new -o BatchMode=yes -i /tmp/dk root@45.197.146.227 "set -e; mkdir -p /opt/ghb/app/releases/$SHA; tar xzf /opt/ghb/app/incoming.tgz -C /opt/ghb/app/releases/$SHA; ln -sfn /opt/ghb/app/releases/$SHA /opt/ghb/app/current; rm -f /opt/ghb/app/incoming.tgz; docker rm -f ghb-web >/dev/null 2>&1 || true; docker run -d --name ghb-web --network host --restart unless-stopped --memory 384m --memory-swap 384m --log-opt max-size=10m --log-opt max-file=3 --env-file /opt/ghb/app/.env -e HOSTNAME=127.0.0.1 -e PORT=3000 -e NODE_OPTIONS=--max-old-space-size=256 --health-cmd 'wget -qO- http://127.0.0.1:3000/api/boards/overall >/dev/null || exit 1' --health-interval 60s --health-timeout 15s --health-retries 3 --health-start-period 120s -v /opt/ghb/app/current:/src:ro -w /app node:20-alpine sh -c 'cp -a /src/. /app/ && exec node server.js'; sleep 12; curl -sf -o /dev/null http://127.0.0.1:3000/api/boards/overall && echo DEPLOY_OK; ls -1dt /opt/ghb/app/releases/* | tail -n +4 | xargs -r rm -rf"
+
+      - name: 部署后冒烟(公网全链,两次生产-only 断流都靠人肉 curl 才发现——固化为流水线步骤)
+        run: |
+          set -e
+          sleep 30
+          for path in "/zh" "/zh/boards/overall" "/zh/repo/vercel/next.js" "/zh/discover" "/api/boards/overall"; do
+            for try in 1 2; do
+              code=$(curl -sk --compressed -m 45 -o /tmp/smoke.html -w '%{http_code}' -A "Mozilla/5.0 (compatible; smoke/1.0)" "https://git.vaiox.xyz${path}")
+              size=$(wc -c < /tmp/smoke.html | tr -d ' ')
+              if [ "$code" = "200" ] && [ "$size" -gt 2000 ]; then
+                echo "OK ${path} ${code} ${size}B"
+                break
+              fi
+              if [ "$try" = "2" ]; then
+                echo "SMOKE_FAIL ${path} http=${code} size=${size}B"
+                exit 1
+              fi
+              sleep 20
+            done
+          done
+          echo "SMOKE_ALL_OK"
