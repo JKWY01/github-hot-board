@@ -162,8 +162,6 @@ async function quotaSlot(label: string): Promise<void> {
  * 浏览器加载一次之后全部命中磁盘,轮询零重复下载。
  * 进程内缓存 6 小时;解析失败回退 .png 形态,同步节奏不受影响。 */
 type AvatarEntry = { url: string; at: number }
-const avatarCache = new Map<string, AvatarEntry>()
-const AVATAR_TTL_MS = 6 * 3600_000
 
 /** 头像 URL:github.com/{owner}.png?size=96 是 GitHub 恒定 302 到 avatars CDN 的
  *  官方短链(实测 2026-10-27)——不再打 Users API。此前每 owner 一次 API+配额节流

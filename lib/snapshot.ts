@@ -193,7 +193,7 @@ export function withPrevRanks<T extends { fullName: string }>(
 ): Array<T & { prevRank?: number }> {
   const prevOrder = new Map<string, number>()
   prevItems.forEach((it, i) => prevOrder.set(it.fullName, i))
-  return items.map((item, index) => {
+  return items.map((item) => {
     const prev = prevOrder.get(item.fullName)
     if (prev === undefined) return item
     return { ...item, prevRank: prev }
