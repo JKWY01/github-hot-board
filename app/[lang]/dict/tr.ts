@@ -28,11 +28,10 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     name: 'Aylık Dalga',
     tagline: 'Otuz günlük pencere; bu ayın gerçek kazananları.',
     metricLabel: 'Bu ay eklenen Star',
-    metricHint: '30 günlük artış',
-    desc: 'Veri doğrudan resmi GitHub Trending aylık sayfasından okunur. Sıralama resmi sayfayla aynıdır; sağdaki sayı, gerçekten “bu ay kazanılan Star” farkıdır.',
+    metricHint: 'ölçüldü, 30 günlük pencere',
+    desc: 'Haftalık panodaki yöntemin aynısı: penceredeki ilk ve son görüntü arasındaki yıldız farkı. Görüntüler 22 Ekim’de başladı; 30 günlük pencere kasım sonunda dolar — o ana kadar sayı, kapsanan dönemdeki ölçülen artışı gösterir.',
     faqs: [
-      { q: 'Listede neden eski projeler var?', a: 'Aylık fark, oluşum tarihini değil “bu ay ne olduğunu” izler — yeniden tutuşan eski bir proje de buraya girer.' },
-      { q: 'Tarama engellendiyse?', a: 'Haftalık listedekiyle aynı yedek: son 30 günde oluşturulan repoları Star sayısına göre sıralayan yöntem, açıkça etiketlenir.' },
+      { q: 'Sayılar tam bir aydan küçük neden?', a: 'Görüntüler 22 Ekim’de başladı, 30 günlük pencere henüz dolmadı — sayı yalnızca ölçülen günleri kapsar.' },
     ],
   },
   annual: {

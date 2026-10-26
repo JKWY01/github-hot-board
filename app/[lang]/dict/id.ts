@@ -28,11 +28,10 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     name: 'Gelombang Bulanan',
     tagline: 'Jendela 30 hari untuk melihat pemenang sejati bulan ini.',
     metricLabel: 'Star bulan ini',
-    metricHint: 'tambah 30 hari',
-    desc: 'Data dibaca langsung dari halaman Trending bulanan resmi GitHub. Urutan mengikuti halaman resmi; angka di kanan adalah selisih “Star bulan ini” yang sebenarnya.',
+    metricHint: 'terukur, jendela 30 hari',
+    desc: 'Metode sama dengan papan mingguan: selisih bintang antara potongan pertama dan terakhir di jendela. Snapshot mulai 22 Oktober; jendela 30 hari penuh akhir November — sampai saat itu angka berarti kenaikan terukur pada periode yang tercakup.',
     faqs: [
-      { q: 'Kenapa ada proyek lama di sini?', a: 'Delta bulanan melacak apa yang terjadi bulan ini, apa pun tanggal pembuatan — proyek lama yang bangkit lagi juga masuk.' },
-      { q: 'Crawl terblokir?', a: 'Sama seperti papan mingguan: beralih ke “repo baru dalam 30 hari, diperingkat berdasarkan Star”, ditandai dengan jelas.' },
+      { q: 'Mengapa angkanya lebih kecil dari satu bulan penuh?', a: 'Snapshot mulai 22 Oktober, jendela 30 hari belum penuh — angka hanya mencakup hari yang terukur.' },
     ],
   },
   annual: {

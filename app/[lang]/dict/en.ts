@@ -28,11 +28,10 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     name: 'Monthly Wave',
     tagline: 'A 30-day window on the real winners of this month.',
     metricLabel: 'Stars this month',
-    metricHint: '30d gain',
-    desc: 'Data is read directly from the official GitHub Trending monthly page. Order follows the official page; the number on the right is the real “stars this month” delta.',
+    metricHint: 'measured, 30-day window',
+    desc: 'Same method as the weekly board: star difference between the first and latest snapshot in the window. Snapshots started on Oct 22, so the 30-day window fills out in late November — until then the number means the measured gain over the window covered so far.',
     faqs: [
-      { q: 'Why do old projects appear here?', a: 'Monthly deltas track what happened this month, regardless of creation date — a comeback story qualifies too.' },
-      { q: 'Crawl blocked?', a: 'Same fallback as the weekly board: newest repos created in 30 days ranked by stars, clearly labeled.' },
+      { q: 'Why are the numbers smaller than a real month?', a: 'Snapshots started Oct 22, so the 30-day window is not full yet — the number covers the days measured so far.' },
     ],
   },
   annual: {

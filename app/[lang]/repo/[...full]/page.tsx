@@ -5,7 +5,7 @@ import { isLocale } from '@/app/[lang]/dictionaries'
 import { LOCALES } from '@/lib/locales'
 import { fetchRepoReadme } from '@/lib/github'
 import { getRepoArchiveCached, isRepoFullName } from '@/lib/repoarchive'
-import { readBoardNeighbors, readRepoDescs, readDiscoverMeta, readRepoStatusFacts, readTopicPeers } from '@/lib/snapshot'
+import { readBoardNeighbors, readRepoDescs, readDiscoverMeta, readRepoStatusFacts, readSiblingRepos, readTopicPeers } from '@/lib/snapshot'
 import { borrowRepoDocFetch, readRepoDoc } from '@/lib/repodocs'
 import RepoArchiveView, { repoArchiveMetadata } from '@/components/repo-archive'
 
@@ -112,6 +112,9 @@ export default async function RepoPage({
     ? await withTimeout(readBoardNeighbors(primary.board, fullName), 9000).catch(() => [])
     : []
 
+  // 同作者其他上榜仓(内链网第二层):repo_seen 小表前缀查,失败静默。
+  const siblings = (await withTimeout(readSiblingRepos(fullName), 4500).catch(() => [] as string[])) ?? []
+
   // README 正文(repo_docs 快照,抽屉与档案页共用一份):命中零上游;
   // 未命中单飞实弹取一次(≤4s),入库后爬虫与访客下访直接吃到正文。服务端夜批还会预填。
   const cachedDoc = await withTimeout(readRepoDoc(fullName, lang), 9000)
@@ -127,6 +130,7 @@ export default async function RepoPage({
       descText={descText}
       related={related ?? undefined}
       relatedBoard={primary?.board}
+      siblings={siblings.length > 1 ? siblings : undefined}
       statusFacts={statusFacts ?? undefined}
       topicPeers={topicPeers ?? undefined}
       readmeHtml={readmeHtml}

@@ -28,11 +28,10 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     name: 'Fala miesiąca',
     tagline: '30-dniowe okno na prawdziwych zwycięzców tego miesiąca.',
     metricLabel: 'Gwiazdki w tym miesiącu',
-    metricHint: 'przyrost 30 dni',
-    desc: 'Dane czytamy wprost z oficjalnej strony GitHub Trending (miesiąc). Kolejność zgodna z oficjalną; liczba po prawej to prawdziwa delta gwiazdek w tym miesiącu.',
+    metricHint: 'zmierzone, okno 30 dni',
+    desc: 'Ta sama metoda co w tablicy tygodniowej: różnica gwiazdek między pierwszą a ostatnią migawką okna. Migawki ruszyły 22 października; okno 30 dni wypełni się pod koniec listopada — do tego czasu liczba to zmierzony przyrost w objętym okresie.',
     faqs: [
-      { q: 'Dlaczego na liście miesięcznej bywają stare projekty?', a: 'Miesięczna delta opowiada o tym, co wydarzyło się w tym miesiącu, a nie o dacie założenia — powrót na scenę też ma wstęp.' },
-      { q: 'Scraping zablokowany?', a: 'Ten sam awaryjny plan co w liście tygodniowym: repozytoria utworzone w ciągu 30 dni po gwiazdkach, z wyraźną adnotacją na stronie.' },
+      { q: 'Dlaczego liczby są mniejsze niż cały miesiąc?', a: 'Migawki ruszyły 22 października, okno 30 dni nie jest jeszcze pełne — liczba obejmuje tylko zmierzone dni.' },
     ],
   },
   annual: {

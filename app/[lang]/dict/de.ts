@@ -28,11 +28,10 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     name: 'Monatswelle',
     tagline: 'Ein 30-Tage-Fenster auf die echten Gewinner dieses Monats.',
     metricLabel: 'Sterne diesen Monat',
-    metricHint: '30-Tage-Zuwachs',
-    desc: 'Die Daten werden direkt von der offiziellen Trending-Monatsseite gelesen. Die Reihenfolge entspricht der offiziellen Seite; die Zahl rechts ist das echte „Sterne diesen Monat“-Delta.',
+    metricHint: 'gemessen, 30-Tage-Fenster',
+    desc: 'Gleiche Methode wie beim Wochenboard: Sterne-Differenz zwischen erstem und letztem Snapshot im Fenster. Snapshots starten am 22. Oktober, das 30-Tage-Fenster füllt sich erst Ende November — bis dahin bedeutet die Zahl den gemessenen Zuwachs des bisher abgedeckten Zeitraums.',
     faqs: [
-      { q: 'Warum tauchen hier alte Projekte auf?', a: 'Monatsdeltas zeigen, was in diesem Monat passiert ist – egal wann das Repo erstellt wurde. Auch eine Comeback-Story kommt rein.' },
-      { q: 'Crawling blockiert?', a: 'Derselbe Fallback wie beim Wochenboard: neueste Repos der letzten 30 Tage, sortiert nach Sternen, klar gekennzeichnet.' },
+      { q: 'Warum sind die Zahlen kleiner als ein ganzer Monat?', a: 'Snapshots starten am 22. Oktober, das 30-Tage-Fenster ist noch nicht voll — die Zahl deckt nur die gemessenen Tage ab.' },
     ],
   },
   annual: {

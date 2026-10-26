@@ -28,11 +28,10 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     name: 'Vague mensuelle',
     tagline: 'Un prisme de 30 jours sur les vrais gagnants du mois.',
     metricLabel: 'Stars ce mois-ci',
-    metricHint: 'gain sur 30 j',
-    desc: 'Les données sont lues directement depuis la page mensuelle officielle de GitHub Trending. L’ordre suit la page officielle ; le chiffre de droite est le vrai delta « stars ce mois-ci ».',
+    metricHint: 'mesuré, fenêtre de 30 jours',
+    desc: 'Même méthode que le classement hebdomadaire : l’écart d’étoiles entre la première et la dernière capture de la fenêtre. Les captures ont commencé le 22 octobre ; la fenêtre de 30 jours sera complète fin novembre — d’ici là, le chiffre correspond à la hausse mesurée sur la période couverte.',
     faqs: [
-      { q: 'Pourquoi d’anciens projets pointent-ils ici ?', a: 'Les deltas mensuels mesurent ce qui s’est passé ce mois-ci, quelle que soit la date de création — un retour remarqué a sa place aussi.' },
-      { q: 'Crawl bloqué ?', a: 'Même repli que le tableau hebdo : dépôts créés dans les 30 derniers jours, triés par stars, clairement signalés.' },
+      { q: 'Pourquoi les chiffres sont-ils plus petits qu’un mois complet ?', a: 'Les captures ont commencé le 22 octobre ; la fenêtre de 30 jours n’est pas encore pleine — le chiffre couvre les jours mesurés.' },
     ],
   },
   annual: {

@@ -28,11 +28,10 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     name: 'Sóng Hằng Tháng',
     tagline: 'Cửa sổ 30 ngày để xem ai mới là người thắng thật sự của tháng này.',
     metricLabel: 'Star tháng này',
-    metricHint: 'tăng 30 ngày',
-    desc: 'Dữ liệu đọc trực tiếp từ trang Trending hàng tháng chính thức của GitHub. Thứ tự theo đúng trang chính thức; số bên phải là mức tăng Star thật của tháng này.',
+    metricHint: 'đo thực tế, cửa sổ 30 ngày',
+    desc: 'Cùng cách với bảng tuần: chênh lệch sao giữa ảnh đầu và ảnh mới nhất của cửa sổ. Ảnh chụp bắt đầu từ 22/10, cửa sổ 30 ngày sẽ đầy vào cuối tháng 11 — trước đó con số là mức tăng đo được trong khoảng đã phủ.',
     faqs: [
-      { q: 'Tại sao có dự án cũ trong bảng?', a: 'Delta tháng đo “tháng này có gì xảy ra”, không phụ thuộc ngày tạo — dự án cũ hồi sinh lại cũng đủ điều kiện vào bảng.' },
-      { q: 'Crawl bị chặn thì sao?', a: 'Giống hệt bảng tuần: chuyển tạm sang “repo mới tạo trong 30 ngày xếp theo Star”, chú thích rõ ràng.' },
+      { q: 'Vì sao số nhỏ hơn một tháng đầy đủ?', a: 'Ảnh chụp bắt đầu từ 22/10 nên cửa sổ 30 ngày chưa đầy — con số chỉ phủ những ngày đã đo.' },
     ],
   },
   annual: {

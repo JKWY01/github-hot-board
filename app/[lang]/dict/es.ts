@@ -28,11 +28,10 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     name: 'La ola del mes',
     tagline: 'Mirada de 30 días sobre los verdaderos ganadores de este mes.',
     metricLabel: 'Star este mes',
-    metricHint: 'ganancia 30 d',
-    desc: 'Los datos se leen directamente de la página mensual del GitHub Trending. El orden sigue a la página oficial; el número de la derecha es el delta real de Star del mes.',
+    metricHint: 'medido, ventana de 30 días',
+    desc: 'Mismo método que el tablero semanal: diferencia de estrellas entre la primera y la última instantánea de la ventana. Las instantáneas empezaron el 22 de octubre; la ventana de 30 días se completa a finales de noviembre — hasta entonces, el número es la ganancia medida en el período cubierto.',
     faqs: [
-      { q: '¿Por qué salen aquí proyectos veteranos?', a: 'Los deltas mensuales hablan de lo que pasó este mes, sin importar la fecha de creación — un proyecto que vuelve con fuerza también tiene sitio.' },
-      { q: '¿La captura está bloqueada?', a: 'Mismo respaldo que el semanal: repos creados en los últimos 30 días, ordenados por Star, con el cambio bien señalado.' },
+      { q: '¿Por qué los números son menores que un mes completo?', a: 'Las instantáneas empezaron el 22 de octubre; la ventana de 30 días aún no está llena — el número cubre los días medidos.' },
     ],
   },
   annual: {

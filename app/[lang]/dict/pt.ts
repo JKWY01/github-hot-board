@@ -28,11 +28,10 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     name: 'A onda do mês',
     tagline: 'Uma janela de 30 dias sobre os verdadeiros vencedores do mês.',
     metricLabel: 'Star neste mês',
-    metricHint: 'ganho 30 d',
-    desc: 'Os dados vêm direto da página mensal do GitHub Trending. A ordem segue a página oficial; o número à direita é o ganho real de Star do mês.',
+    metricHint: 'medido, janela de 30 dias',
+    desc: 'Mesmo método do quadro semanal: diferença de estrelas entre a primeira e a última captura da janela. As capturas começaram em 22 de outubro; a janela de 30 dias se completa no fim de novembro — até lá, o número é o ganho medido no período coberto.',
     faqs: [
-      { q: 'Por que aparecem projetos antigos aqui?', a: 'O ganho mensal mede o que aconteceu neste mês, sem olhar a data de criação — um projeto que volta com força também entra na conta.' },
-      { q: 'A coleta foi bloqueada?', a: 'Mesmo fallback da semanal: repos criados nos últimos 30 dias, ordenados por Star, com o aviso bem à vista.' },
+      { q: 'Por que os números são menores que um mês cheio?', a: 'As capturas começaram em 22 de outubro; a janela de 30 dias ainda não está cheia — o número cobre os dias medidos.' },
     ],
   },
   annual: {
