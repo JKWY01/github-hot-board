@@ -36,6 +36,8 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           GITHUB_TOKENS: ${{ secrets.GH_TOKENS }}
           NEXT_PUBLIC_SITE_URL: 'https://git.vaiox.xyz'
+          # HK 自托管线关 @vercel/analytics(非 Vercel 运行时 beacon 全 404,见 layout 注释)
+          NEXT_PUBLIC_ANALYTICS: 'off'
         run: npm run build
 
       - name: 打包

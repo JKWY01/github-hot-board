@@ -56,8 +56,10 @@ export default async function RootLayout({
         <main className="min-h-[70vh]">{children}</main>
         <Footer dict={dict} />
         <BackToTop />
-        {/* 匿名页面访问统计(Vercel 托管、免 Cookie、不收个人信息)—— 验证周期的眼睛 */}
-        <Analytics />
+        {/* 匿名页面访问统计(Vercel 托管、免 Cookie、不收个人信息)—— 验证周期的眼睛。
+            HK 自托管线(NEXT_PUBLIC_ANALYTICS=off,deploy-hk 构建时注入)不加载:
+            非 Vercel 运行时 beacon 全部 404(实测 6 天 9800+ 次空转),access.log 才是权威。 */}
+        {process.env.NEXT_PUBLIC_ANALYTICS !== 'off' && <Analytics />}
       </body>
     </html>
   )
