@@ -17,7 +17,7 @@ export async function GET(): Promise<Response> {
     { slug: 'monthly', title: 'Monthly wave', home: '/en/boards/monthly' },
     { slug: 'overall', title: 'All-time greats', home: '/en/boards/overall' },
   ]
-  const items: Array<{ title: string; link: string; pubDate: string }> = []
+  const items: Array<{ title: string; link: string; pubDate: string; desc: string }> = []
   let latest = new Date(0)
   for (const f of feeds) {
     const head = await readBoardHead(dbKey(f.slug))
@@ -26,10 +26,14 @@ export async function GET(): Promise<Response> {
     const at = new Date(stamp)
     if (at > latest) latest = at
     for (const [idx, it] of head.data.items.slice(0, 5).entries()) {
+      // 净增有则带上:订阅者一眼看到"为什么它在榜"(纯数字,不做解读)
+      const gain = (it as { gained?: number }).gained
+      const gainNote = typeof gain === 'number' && gain > 0 ? ` +${gain} in window` : ''
       items.push({
         title: `#${idx + 1} ${it.fullName} · ${it.stars}☆ · ${f.title}`,
         link: `${BASE}/en/repo/${it.fullName}`,
         pubDate: at.toUTCString(),
+        desc: `${it.desc ?? ''}${gainNote} — rank #${idx + 1} on ${f.title} (GitHub Hot Board)`,
       })
     }
   }
@@ -40,7 +44,7 @@ export async function GET(): Promise<Response> {
 <description>Fresh open-source momentum snapshots: weekly / monthly / all-time top movers. Full per-repo archives on the site.</description>
 <language>en</language>
 <lastBuildDate>${latest.toUTCString()}</lastBuildDate>
-${items.map((i) => `<item><title>${xmlEscape(i.title)}</title><link>${xmlEscape(i.link)}</link><guid>${xmlEscape(i.link)}</guid><pubDate>${xmlEscape(i.pubDate)}</pubDate></item>`).join('\n')}
+${items.map((i) => `<item><title>${xmlEscape(i.title)}</title><link>${xmlEscape(i.link)}</link><guid>${xmlEscape(i.link)}</guid><pubDate>${xmlEscape(i.pubDate)}</pubDate><description>${xmlEscape(i.desc)}</description></item>`).join('\n')}
 </channel></rss>`
   return new Response(xml, {
     headers: { 'content-type': 'application/rss+xml; charset=utf-8', 'cache-control': 'max-age=600' },
