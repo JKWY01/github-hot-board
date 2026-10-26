@@ -66,10 +66,12 @@
   }
 
   .hero-title {
-    font-size: clamp(2.6rem, 6.4vw, 4.6rem);
-    line-height: 1.04;
+    /* 三句轮播后文案变长(原"今天,谁在燃烧"仅 7 字,现 10-14 字):
+       收一档字号保两行内放得下,行高放宽避免换行挤压 */
+    font-size: clamp(2rem, 4.6vw, 3.4rem);
+    line-height: 1.18;
     font-weight: 650;
-    letter-spacing: -0.028em;
+    letter-spacing: -0.024em;
   }
 
   .hero-title-en {
