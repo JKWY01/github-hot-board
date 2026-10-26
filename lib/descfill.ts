@@ -51,13 +51,18 @@ const FILL_CONCURRENCY = 3
 
 async function fillQueue(fullNames: string[], viewer: Locale): Promise<void> {
   // 先滤掉在途与退避中的,再切批并占位 —— 否则排头的失败仓库会把名额占死,后面的仓库永远轮不上。
+  // 顺手清扫过期失败记录(六轮审查):长驻进程下 Map 只进不出会无界增长。
+  const now = Date.now()
+  if (failedAt.size > 256) {
+    for (const [k, t] of failedAt) if (now - t >= FAIL_BACKOFF_MS) failedAt.delete(k)
+  }
   const pending: string[] = []
   for (const full of fullNames) {
     if (pending.length >= FILL_BATCH) break
     const id = `${full}|${viewer}`
     if (inFlight.has(id)) continue
     const failed = failedAt.get(id)
-    if (failed && Date.now() - failed < FAIL_BACKOFF_MS) continue
+    if (failed && now - failed < FAIL_BACKOFF_MS) continue
     inFlight.add(id)
     pending.push(full)
   }

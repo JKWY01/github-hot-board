@@ -13,7 +13,7 @@
 ## Board pages (pattern: /{ui-language}/boards/{slug} — /en/ shown below)
 
 - /en/boards/overall — All-Time Champions: top 500 repositories by total stars.
-- /en/boards/weekly — Weekly Surge: repositories by net stars gained over the last 7 days (built on GitHub Trending).
+- /en/boards/weekly — Weekly Surge: repositories by net stars gained over the last 7 days (computed from our own 6-hourly snapshot deltas; GitHub official Trending weekly serves as cross-verification).
 - /en/boards/monthly — Monthly Wave: net stars gained over the last 30 days.
 - /en/boards/annual — Fresh of the Year: repositories created this year, ranked by total stars.
 - /en/boards/rising — Rising Slope: stars per day over the last 90 days. Candidates are first limited to the top 300 ninety-day repos by stars (the Search API working set), then re-ranked by slope.

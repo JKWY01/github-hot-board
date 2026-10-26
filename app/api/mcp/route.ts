@@ -431,17 +431,20 @@ async function callTool(name: string, args: Record<string, unknown>): Promise<To
       const rankOf = new Map<string, number>()
       headItems.forEach((it, i) => rankOf.set(it.fullName, i + 1))
       const pat = `%${q.replace(/[%_\\]/g, (m) => `\\${m}`)}%`
-      // 库内两路:全名命中优先,关键词扫 16 语描述(字面 IN 链,免 jsonb 类型比较坑)
+      // 库内两路:全名命中优先,关键词扫 16 语描述(字面 IN 链,免 jsonb 类型比较坑)。
+      // INNER JOIN repo_seen(六轮审查):搜索兜底会把任意 GitHub 仓写进 repo_desc,
+      // 不过滤=返回从未上榜的仓库+指向 404 档案页的链接,与工具描述 "library-only" 矛盾。
       const rows = await sql<{ full_name: string; payload: Record<string, unknown> }[]>`
-        SELECT full_name, payload FROM repo_desc
-        WHERE lower(full_name) = lower(${q})
-           OR full_name ILIKE ${pat}
+        SELECT d.full_name, d.payload FROM repo_desc d
+        JOIN repo_seen s ON s.repo = d.full_name
+        WHERE lower(d.full_name) = lower(${q})
+           OR d.full_name ILIKE ${pat}
            OR EXISTS (
-             SELECT 1 FROM jsonb_each_text(payload) AS e(k, v)
+             SELECT 1 FROM jsonb_each_text(d.payload) AS e(k, v)
              WHERE e.k IN ('en','zh','zh-TW','ja','ko','de','fr','es','pt','it','ru','uk','pl','tr','vi','id','__gh')
                AND e.v ILIKE ${pat}
            )
-        ORDER BY (lower(full_name) = lower(${q})) DESC, (payload->>'stars')::bigint DESC NULLS LAST
+        ORDER BY (lower(d.full_name) = lower(${q})) DESC, (d.payload->>'stars')::bigint DESC NULLS LAST
         LIMIT ${limit}`
       return rows.map((r) => {
         const p = r.payload ?? {}

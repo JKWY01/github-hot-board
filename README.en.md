@@ -15,8 +15,8 @@ Three things up front, no fine print:
 | # | Board | Source | Method |
 |---|---|---|---|
 | 1 | All-time · strongest ever | Search API | Lifetime stars, descending (forks excluded) |
-| 2 | Weekly · igniting now | Official Trending, weekly | Official order + officially reported weekly star gain |
-| 3 | Monthly · trend of the month | Official Trending, monthly | Same, monthly window |
+| 2 | Weekly · igniting now | Own snapshot deltas + official Trending cross-check | Net stars gained over the last 7 days (from our 6-hourly snapshots); repos also on the official page get an "official" tag, official-only entries listed separately |
+| 3 | Monthly · trend of the month | Own snapshot deltas + official Trending cross-check | Same as weekly, monthly window |
 | 4 | Fresh · debuts of the year | Search API | Created this year, ranked by total stars |
 | 5 | Rising · 90-day slope | Search API | Created within 90 days, ranked by stars/day |
 | 6 | Dark horses | Search API | Rising pool, sliced where total stars are still under 1,500 |

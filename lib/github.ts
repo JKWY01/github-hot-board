@@ -168,6 +168,11 @@ const AVATAR_TTL_MS = 6 * 3600_000
 export async function resolveAvatarUrl(owner: string): Promise<string> {
   const key = (owner || 'github').toLowerCase()
   const fallbackUrl = `https://github.com/${owner || 'github'}.png`
+  // 过期条目顺手清(六轮审查):Map 只进不出会随仓库数无界增长
+  if (avatarCache.size > 2048) {
+    const now = Date.now()
+    for (const [k, v] of avatarCache) if (now - v.at >= AVATAR_TTL_MS) avatarCache.delete(k)
+  }
   const hit = avatarCache.get(key)
   if (hit && Date.now() - hit.at < AVATAR_TTL_MS) return hit.url
   try {
