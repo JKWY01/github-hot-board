@@ -5,21 +5,31 @@
 
 | # | 项目 | 累计 Star | 本周新增 Star | 简介 |
 |---|---|---|---|---|
-| 1 | [cloudflare/security-audit-skill](https://git.vaiox.xyz/zh/repo/cloudflare/security-audit-skill) | 47.9k | 15.1k | A coding-agent skill for multi-phase security audits with in… |
-| 2 | [anthropics/knowledge-work-plugins](https://git.vaiox.xyz/zh/repo/anthropics/knowledge-work-plugins) | 33.1k | 2.8k | Open source repository of plugins primarily intended for kno… |
-| 3 | [ruvnet/ruflo](https://git.vaiox.xyz/zh/repo/ruvnet/ruflo) | 79.4k | 3.0k | The original agent harness. Deploy intelligent multi-player … |
-| 4 | [anomalyco/opencode](https://git.vaiox.xyz/zh/repo/anomalyco/opencode) | 221.8k | 5.9k | The open source coding agent. |
-| 5 | [stablyai/orca](https://git.vaiox.xyz/zh/repo/stablyai/orca) | 106.5k | 9.6k | Orca is the place for working with a fleet of agents (e.g. G… |
-| 6 | [Graphify-Labs/graphify](https://git.vaiox.xyz/zh/repo/Graphify-Labs/graphify) | 135.8k | 6.9k | Turn any codebase, with its docs, SQL schemas, configs, and … |
-| 7 | [android/skills](https://git.vaiox.xyz/zh/repo/android/skills) | 9.8k | 1.1k |  |
-| 8 | [akitaonrails/ai-memory](https://git.vaiox.xyz/zh/repo/akitaonrails/ai-memory) | 13.7k | 3.3k | Solution for long term memory for agent coding CLIs and to f… |
-| 9 | [multica-ai/andrej-karpathy-skills](https://git.vaiox.xyz/zh/repo/multica-ai/andrej-karpathy-skills) | 224.2k | 2.9k | A single CLAUDE.md file to improve Claude Code behavior, der… |
-| 10 | [TauricResearch/TradingAgents](https://git.vaiox.xyz/zh/repo/TauricResearch/TradingAgents) | 115.3k | 2.5k | TradingAgents: Multi-Agents LLM Financial Trading Framework |
-| 11 | [wshobson/agents](https://git.vaiox.xyz/zh/repo/wshobson/agents) | 41.7k | 726 | Multi-harness agentic plugin marketplace for Claude Code, Co… |
-| 12 | [heygen-com/hyperframes](https://git.vaiox.xyz/zh/repo/heygen-com/hyperframes) | 72.6k | 5.6k | Write HTML. Render video. Built for agents. |
-| 13 | [AgriciDaniel/claude-seo](https://git.vaiox.xyz/zh/repo/AgriciDaniel/claude-seo) | 21.8k | 2.5k | Universal SEO skill for Claude Code. 26 sub-skills + 19 sub-… |
-| 14 | [Comfy-Org/ComfyUI](https://git.vaiox.xyz/zh/repo/Comfy-Org/ComfyUI) | 143.1k | 4.8k | The most powerful and modular diffusion model GUI, api and b… |
-| 15 | [pingdotgg/t3code](https://git.vaiox.xyz/zh/repo/pingdotgg/t3code) | 30.4k | 1.8k |  |
+| 1 | [morluto/rea](https://git.vaiox.xyz/zh/repo/morluto/rea) | 391.2k | 25.4k |  |
+| 2 | [Gathin23/cleanyourtv](https://git.vaiox.xyz/zh/repo/Gathin23/cleanyourtv) | 37.6k | 13.7k |  |
+| 3 | [peach-mitao/peach](https://git.vaiox.xyz/zh/repo/peach-mitao/peach) | 12.0k | 9.8k |  |
+| 4 | [cloudflare/security-audit-skill](https://git.vaiox.xyz/zh/repo/cloudflare/security-audit-skill) | 47.9k | 8.5k |  |
+| 5 | [Ebony-Vinyl/dsh-our-free-model](https://git.vaiox.xyz/zh/repo/Ebony-Vinyl/dsh-our-free-model) | 44.2k | 7.5k |  |
+| 6 | [debpalash/VoiceStudio](https://git.vaiox.xyz/zh/repo/debpalash/VoiceStudio) | 89.0k | 7.4k |  |
+| 7 | [Zagitta/gpu-unlock](https://git.vaiox.xyz/zh/repo/Zagitta/gpu-unlock) | 8.5k | 5.6k |  |
+| 8 | [Nutlope/hallmark](https://git.vaiox.xyz/zh/repo/Nutlope/hallmark) | 35.2k | 4.5k |  |
+| 9 | [deepseek-ai/deepseek-harness](https://git.vaiox.xyz/zh/repo/deepseek-ai/deepseek-harness) | 262.5k | 4.4k |  |
+| 10 | [stablyai/orca](https://git.vaiox.xyz/zh/repo/stablyai/orca) | 107.0k | 4.3k |  |
+| 11 | [elayadesign/ai-design-skills](https://git.vaiox.xyz/zh/repo/elayadesign/ai-design-skills) | 7.1k | 4.3k |  |
+| 12 | [pbakaus/impeccable](https://git.vaiox.xyz/zh/repo/pbakaus/impeccable) | 89.1k | 4.1k |  |
+| 13 | [DietrichGebert/ponytail](https://git.vaiox.xyz/zh/repo/DietrichGebert/ponytail) | 177.1k | 3.7k |  |
+| 14 | [seedds/nxnative](https://git.vaiox.xyz/zh/repo/seedds/nxnative) | 5.1k | 3.7k |  |
+| 15 | [affaan-m/ECC](https://git.vaiox.xyz/zh/repo/affaan-m/ECC) | 289.8k | 3.3k |  |
+| 16 | [Graphify-Labs/graphify](https://git.vaiox.xyz/zh/repo/Graphify-Labs/graphify) | 136.1k | 3.2k |  |
+| 17 | [mattpocock/skills](https://git.vaiox.xyz/zh/repo/mattpocock/skills) | 304.0k | 3.2k |  |
+| 18 | [heygen-com/hyperframes](https://git.vaiox.xyz/zh/repo/heygen-com/hyperframes) | 73.0k | 3.0k |  |
+| 19 | [deepseek-ai/DeepInfer](https://git.vaiox.xyz/zh/repo/deepseek-ai/DeepInfer) | 22.8k | 3.0k |  |
+| 20 | [TauricResearch/TradingAgents](https://git.vaiox.xyz/zh/repo/TauricResearch/TradingAgents) | 116.0k | 3.0k |  |
+| 21 | [hugohe3/ppt-master](https://git.vaiox.xyz/zh/repo/hugohe3/ppt-master) | 68.9k | 2.9k |  |
+| 22 | [ai-job-search-dev/ai-job-search](https://git.vaiox.xyz/zh/repo/ai-job-search-dev/ai-job-search) | 66.3k | 2.8k |  |
+| 23 | [pengchujin/aerial-tv](https://git.vaiox.xyz/zh/repo/pengchujin/aerial-tv) | 5.8k | 2.8k |  |
+| 24 | [yetone/magpie](https://git.vaiox.xyz/zh/repo/yetone/magpie) | 22.3k | 2.8k |  |
+| 25 | [Niko1221/Strata](https://git.vaiox.xyz/zh/repo/Niko1221/Strata) | 33.3k | 2.7k |  |
 
 ---
 
