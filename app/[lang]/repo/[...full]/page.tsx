@@ -9,19 +9,26 @@ import { readBoardNeighbors, readRepoDescs, readDiscoverMeta, readRepoStatusFact
 import { borrowRepoDocFetch, readRepoDoc } from '@/lib/repodocs'
 import RepoArchiveView, { repoArchiveMetadata } from '@/components/repo-archive'
 
-/** 首屏限时借取:文档落库前别把页面吊死在 GitHub 上 —— 赶不上就先出页,落库后下访自然出现。 */
-function withTimeout<T>(p: Promise<T>, ms: number): Promise<T | null> {
+/** 超时哨兵(2026-10-26 六轮审查):超时/出错 resolve TIMEOUT,与"仓库不存在"(null)可区分 ——
+ *  慢查询把在榜仓库当不存在打成 404,是收录面最怕的死链来源。 */
+const TIMEOUT = Symbol('timeout')
+function withTimeout<T>(p: Promise<T>, ms: number): Promise<T | null | typeof TIMEOUT> {
   return new Promise((resolve) => {
     let done = false
     const timer = setTimeout(() => {
-      if (!done) { done = true; resolve(null) }
+      if (!done) { done = true; resolve(TIMEOUT) }
     }, ms)
     p.then((v) => {
       if (!done) { done = true; clearTimeout(timer); resolve(v) }
     }).catch(() => {
-      if (!done) { done = true; clearTimeout(timer); resolve(null) }
+      if (!done) { done = true; clearTimeout(timer); resolve(TIMEOUT) }
     })
   })
+}
+
+/** 把 TIMEOUT 哨兵收敛成 null(消费端只分两态:有值/无值),超时与"真没有"统一走降级。 */
+function unTimeout<T>(v: T | null | typeof TIMEOUT): T | null {
+  return v === TIMEOUT ? null : (v ?? null)
 }
 
 /** 仓库档案页:/{lang}/repo/{owner}/{repo}
@@ -75,14 +82,18 @@ export default async function RepoPage({
   // 档案与描述两读无依赖,并行省一次跨境往返串行(冷访 1.7s→约减半)。
   // 所有库读一律限时(catch 只接 reject 接不住"挂住"):主链 9s,挂住就降级,
   // 绝不拖到 maxDuration 被掐成 200 空体(504 案的形态)。
-  const [archive, descsMap] = await Promise.all([
+  const [archiveRes, descsMap] = await Promise.all([
     withTimeout(getRepoArchiveCached(fullName), 9000),
     withTimeout(readRepoDescs([fullName]), 9000),
   ])
+  // 超时 ≠ 不存在:库慢时抛 5xx(爬虫稍后重试),只有确认查无此仓(null)才 404 ——
+  // 慢查询给在榜仓库打 404 会被 Search Console 收成死链(六轮审查 P1)
+  if (archiveRes === TIMEOUT) throw new Error('repo archive timeout (db slow)')
+  const archive = archiveRes
   if (!archive) notFound()
 
   // 状态三件套(license/push/issues,2026-10-25 起随拍采集)+ 同类项目(主题邻居)
-  const [statusFacts, topicPeers] = await Promise.all([
+  const [statusFactsRaw, topicPeersRaw] = await Promise.all([
     withTimeout(readRepoStatusFacts(fullName), 9000)
       .catch(() => ({ license: null, pushedAt: null, issues: null })),
     // 同类邻居是锦上添花:4.5s 上限(部署后首渲染=函数冷启动+洞冷,3.5s 实测常输一拍),
@@ -96,9 +107,11 @@ export default async function RepoPage({
       4500,
     ).catch(() => []),
   ])
+  const statusFacts = unTimeout(statusFactsRaw)
+  const topicPeers = unTimeout(topicPeersRaw)
 
   // 视角语言描述合并在缓存外(与榜单洞同一纪律):zh 页面用 zh 描述,缺翻译回落 en 原文。
-  const descs = descsMap?.get(fullName)
+  const descs = unTimeout(descsMap)?.get(fullName)
   const descText = descs?.[lang] ?? descs?.en ?? null
 
   // 同榜近邻(内链网):读现成 board_head payload,零新查询;失败静默,别拖档案页。
@@ -109,19 +122,19 @@ export default async function RepoPage({
     archive.appearances.find((a) => a.language === '') ??
     archive.appearances[0]
   const related = primary
-    ? await withTimeout(readBoardNeighbors(primary.board, fullName), 9000).catch(() => [])
+    ? unTimeout(await withTimeout(readBoardNeighbors(primary.board, fullName), 9000).catch(() => [])) ?? []
     : []
 
   // 同作者其他上榜仓(内链网第二层):repo_seen 小表前缀查,失败静默。
-  const siblings = (await withTimeout(readSiblingRepos(fullName), 4500).catch(() => [] as string[])) ?? []
+  const siblings = unTimeout(await withTimeout(readSiblingRepos(fullName), 4500).catch(() => [] as string[])) ?? []
 
   // README 正文(repo_docs 快照,抽屉与档案页共用一份):命中零上游;
   // 未命中单飞实弹取一次(≤4s),入库后爬虫与访客下访直接吃到正文。服务端夜批还会预填。
-  const cachedDoc = await withTimeout(readRepoDoc(fullName, lang), 9000)
-  const readmeHtml = cachedDoc ?? (await withTimeout(
+  const cachedDoc = unTimeout(await withTimeout(readRepoDoc(fullName, lang), 9000))
+  const readmeHtml = cachedDoc ?? (unTimeout(await withTimeout(
     borrowRepoDocFetch(fullName, lang, () => fetchRepoReadme(fullName, lang)),
     4000,
-  ))
+  )) ?? null)
 
   return (
     <RepoArchiveView

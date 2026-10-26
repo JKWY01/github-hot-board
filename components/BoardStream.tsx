@@ -159,10 +159,10 @@ function itemListJsonLd(
   locale: Locale,
   slug: string,
   language?: string,
-): string {
+) {
   const base = (process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000').replace(/\/+$/, '')
   const path = language ? `/${locale}/boards/${slug}/${language}` : `/${locale}/boards/${slug}`
-  return JSON.stringify({
+  return {
     '@context': 'https://schema.org',
     '@type': 'ItemList',
     '@id': `${base}${path}#items`,
@@ -174,7 +174,7 @@ function itemListJsonLd(
       url: `${base}/${locale}/repo/${it.fullName}`,
       name: `${it.fullName} · #${index + 1} · ${it.stars}`,
     })),
-  })
+  }
 }
 
 function BoardErrorCard({

@@ -54,11 +54,11 @@ describe('isLocalRequest', () => {
     expect(isLocalRequest(new Request('http://127.0.0.1:3000/x'))).toBe(true)
     expect(isLocalRequest(new Request('https://git.vaiox.xyz/x'))).toBe(false)
   })
-  it('XFF 首段私网地址判定(自托管反代场景)', () => {
+  it('XFF 头不参与判定(可伪造,信任 URL 主机名)', () => {
     const h = (ip: string) => new Request('https://git.vaiox.xyz/x', { headers: { 'x-forwarded-for': ip } })
-    expect(isLocalRequest(h('192.168.1.10'))).toBe(true)
-    expect(isLocalRequest(h('10.0.0.3, 1.2.3.4'))).toBe(true)
-    expect(isLocalRequest(h('172.16.0.9'))).toBe(true)
+    expect(isLocalRequest(h('192.168.1.10'))).toBe(false)
+    expect(isLocalRequest(h('10.0.0.3, 1.2.3.4'))).toBe(false)
+    expect(isLocalRequest(h('172.16.0.9'))).toBe(false)
     expect(isLocalRequest(h('8.8.8.8'))).toBe(false)
   })
 })

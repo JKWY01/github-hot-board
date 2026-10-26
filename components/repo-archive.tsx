@@ -450,9 +450,9 @@ function dailyGroups(archive: RepoArchive): Array<[BoardSlug, DayPoint[]]> {
 }
 
 /** 面向爬虫的结构化数据。数字与页面上可见内容一致。 */
-function softwareJsonLd(archive: RepoArchive, locale: Locale, descText: string | null): string {
+function softwareJsonLd(archive: RepoArchive, locale: Locale, descText: string | null) {
   const base = (process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000').replace(/\/+$/, '')
-  return JSON.stringify({
+  return {
     '@context': 'https://schema.org',
     '@type': 'SoftwareSourceCode',
     '@id': `${base}/${locale}/repo/${archive.fullName}#software`,
@@ -462,20 +462,20 @@ function softwareJsonLd(archive: RepoArchive, locale: Locale, descText: string |
     codeRepository: archive.htmlUrl,
     inLanguage: locale,
     ...(archive.updatedAt ? { dateModified: archive.updatedAt } : {}),
-  })
+  }
 }
 
-function breadcrumbJsonLd(archive: RepoArchive, locale: Locale): string {
+function breadcrumbJsonLd(archive: RepoArchive, locale: Locale) {
   const base = (process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000').replace(/\/+$/, '')
   const dict = getDict(locale)
-  return JSON.stringify({
+  return {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
       { '@type': 'ListItem', position: 1, name: dict.meta.siteName, item: `${base}/${locale}` },
       { '@type': 'ListItem', position: 2, name: archive.fullName, item: `${base}/${locale}/repo/${archive.fullName}` },
     ],
-  })
+  }
 }
 
 export function repoArchiveMetadata(lang: Locale, archive: RepoArchive): Metadata {
