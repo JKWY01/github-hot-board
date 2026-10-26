@@ -20,6 +20,15 @@ const AI_AGENTS = [
   'Amazonbot',
   'Bytespider',
   'Meta-ExternalAgent',
+  // 2026-10-26 扩容:生态里确证的后续家族(企业 RAG / 搜索聚合 / 训练采集)
+  'Google-CloudVertexBot',
+  'MistralAI-User',
+  'MistralAI-Training',
+  'DeepSeekBot',
+  'ImagesiftBot',
+  'FacebookBot',
+  'PanguBot',
+  'Timpibot',
 ]
 
 /** robots.txt 动态产出:sitemap 分片数量跟着库里"历史上过榜"的仓库数走,

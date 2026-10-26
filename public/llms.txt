@@ -23,6 +23,7 @@
 - /en/boards/forks — King of Forks: all-time most forked repositories.
 - /en/boards/milestone — Live Milestones: repositories sprinting toward the 1k / 10k / 50k / 100k star lines, with distance to the next line.
 - Language facets for overall / weekly / monthly: /en/boards/{slug}/{language-slug}.
+- Daily archives: /en/history/{slug} (latest) and /en/history/{slug}/{YYYY-MM-DD} — the full board as captured on that day. Every page carries ItemList structured data (top 150 entries with rank, position and archive URLs) so ranked content is parseable without rendering.
 
 ## Per-repo pages
 
@@ -47,6 +48,10 @@
   - `items[].prevRank` (0-based) is the repo's rank in the previous batch — the up/down signal, also rendered as badges on the pages.
 - robots.txt explicitly allows AI crawlers on `/api/boards/*`; the other `/api/*` endpoints stay closed to crawlers.
 - Please fetch `/api/boards` instead of scraping the HTML pages — it is exactly the data the pages render.
+
+## Agent discovery
+
+- `/.well-known/agent-card.json` — machine-readable site card: name, description, MCP endpoint, auth (none), safety flag.
 
 ## Sitemaps
 
