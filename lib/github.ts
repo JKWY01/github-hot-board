@@ -165,39 +165,13 @@ type AvatarEntry = { url: string; at: number }
 const avatarCache = new Map<string, AvatarEntry>()
 const AVATAR_TTL_MS = 6 * 3600_000
 
+/** 头像 URL:github.com/{owner}.png?size=96 是 GitHub 恒定 302 到 avatars CDN 的
+ *  官方短链(实测 2026-10-27)——不再打 Users API。此前每 owner 一次 API+配额节流
+ *  (无 token 时 6.2s/发),100 个新面孔的榜单要等 10 分钟,是周月榜/潜力榜换芯后
+ *  取数超时的真因。恒定 URL 语义等价、零上游、永不失败。 */
 export async function resolveAvatarUrl(owner: string): Promise<string> {
   const key = (owner || 'github').toLowerCase()
-  const fallbackUrl = `https://github.com/${owner || 'github'}.png`
-  // 过期条目顺手清(六轮审查):Map 只进不出会随仓库数无界增长
-  if (avatarCache.size > 2048) {
-    const now = Date.now()
-    for (const [k, v] of avatarCache) if (now - v.at >= AVATAR_TTL_MS) avatarCache.delete(k)
-  }
-  const hit = avatarCache.get(key)
-  if (hit && Date.now() - hit.at < AVATAR_TTL_MS) return hit.url
-  try {
-    await quotaSlot(`avatars:${key}`)
-    const res = await fetch(`https://api.github.com/users/${owner}`, {
-      headers: githubHeaders(),
-      signal: AbortSignal.timeout(TIME_BUDGET_MS),
-      next: { revalidate: 3600 },
-    })
-    if (res.ok) {
-      const json = (await res.json()) as { avatar_url?: string }
-      const cdn = json?.avatar_url
-      if (cdn && cdn.includes('avatars.githubusercontent.com')) {
-        const url = `${cdn}${cdn.includes('?') ? '&' : '?'}s=96`
-        avatarCache.set(key, { url, at: Date.now() })
-        return url
-      }
-    }
-  } catch {
-    // 解析失败不阻塞榜单;10 分钟后可重试,避免每拍钉着打
-    avatarCache.set(key, { url: fallbackUrl, at: Date.now() - AVATAR_TTL_MS + 10 * 60_000 })
-    return fallbackUrl
-  }
-  avatarCache.set(key, { url: fallbackUrl, at: Date.now() - AVATAR_TTL_MS + 10 * 60_000 })
-  return fallbackUrl
+  return `https://github.com/${key}.png?size=96`
 }
 
 /** 行点击抽屉:读取 GitHub 官方渲染的 README HTML(Accept: html+json)。
