@@ -5,20 +5,21 @@
 
 | # | 项目 | 累计 Star | 本周新增 Star | 简介 |
 |---|---|---|---|---|
-| 1 | [cloudflare/security-audit-skill](https://git.vaiox.xyz/zh/repo/cloudflare/security-audit-skill) | 47.2k | 15.1k | A coding-agent skill for multi-phase security audits with in… |
-| 2 | [ruvnet/ruflo](https://git.vaiox.xyz/zh/repo/ruvnet/ruflo) | 79.3k | 3.0k | The original agent harness. Deploy intelligent multi-player … |
-| 3 | [anthropics/knowledge-work-plugins](https://git.vaiox.xyz/zh/repo/anthropics/knowledge-work-plugins) | 33.0k | 2.8k | Open source repository of plugins primarily intended for kno… |
-| 4 | [anomalyco/opencode](https://git.vaiox.xyz/zh/repo/anomalyco/opencode) | 221.6k | 5.9k | The open source coding agent. |
-| 5 | [stablyai/orca](https://git.vaiox.xyz/zh/repo/stablyai/orca) | 106.1k | 9.6k | Orca is the place for working with a fleet of agents (e.g. G… |
-| 6 | [heygen-com/hyperframes](https://git.vaiox.xyz/zh/repo/heygen-com/hyperframes) | 72.3k | 5.6k | Write HTML. Render video. Built for agents. |
-| 7 | [android/skills](https://git.vaiox.xyz/zh/repo/android/skills) | 9.7k | 1.1k |  |
-| 8 | [Graphify-Labs/graphify](https://git.vaiox.xyz/zh/repo/Graphify-Labs/graphify) | 135.4k | 6.9k | Turn any codebase, with its docs, SQL schemas, configs, and … |
-| 9 | [akitaonrails/ai-memory](https://git.vaiox.xyz/zh/repo/akitaonrails/ai-memory) | 13.6k | 3.3k | Solution for long term memory for agent coding CLIs and to f… |
-| 10 | [Comfy-Org/ComfyUI](https://git.vaiox.xyz/zh/repo/Comfy-Org/ComfyUI) | 143.0k | 4.8k | The most powerful and modular diffusion model GUI, api and b… |
-| 11 | [anthropics/claude-plugins-official](https://git.vaiox.xyz/zh/repo/anthropics/claude-plugins-official) | 44.6k | 2.2k | Official, Anthropic-managed directory of high quality Claude… |
-| 12 | [vllm-project/vllm](https://git.vaiox.xyz/zh/repo/vllm-project/vllm) | 95.5k | 1.4k | A high-throughput and memory-efficient inference and serving… |
-| 13 | [multica-ai/andrej-karpathy-skills](https://git.vaiox.xyz/zh/repo/multica-ai/andrej-karpathy-skills) | 223.9k | 2.9k | A single CLAUDE.md file to improve Claude Code behavior, der… |
-| 14 | [pingdotgg/t3code](https://git.vaiox.xyz/zh/repo/pingdotgg/t3code) | 30.2k | 1.8k |  |
+| 1 | [cloudflare/security-audit-skill](https://git.vaiox.xyz/zh/repo/cloudflare/security-audit-skill) | 47.9k | 15.1k | A coding-agent skill for multi-phase security audits with in… |
+| 2 | [anthropics/knowledge-work-plugins](https://git.vaiox.xyz/zh/repo/anthropics/knowledge-work-plugins) | 33.1k | 2.8k | Open source repository of plugins primarily intended for kno… |
+| 3 | [ruvnet/ruflo](https://git.vaiox.xyz/zh/repo/ruvnet/ruflo) | 79.4k | 3.0k | The original agent harness. Deploy intelligent multi-player … |
+| 4 | [anomalyco/opencode](https://git.vaiox.xyz/zh/repo/anomalyco/opencode) | 221.8k | 5.9k | The open source coding agent. |
+| 5 | [stablyai/orca](https://git.vaiox.xyz/zh/repo/stablyai/orca) | 106.5k | 9.6k | Orca is the place for working with a fleet of agents (e.g. G… |
+| 6 | [Graphify-Labs/graphify](https://git.vaiox.xyz/zh/repo/Graphify-Labs/graphify) | 135.8k | 6.9k | Turn any codebase, with its docs, SQL schemas, configs, and … |
+| 7 | [android/skills](https://git.vaiox.xyz/zh/repo/android/skills) | 9.8k | 1.1k |  |
+| 8 | [akitaonrails/ai-memory](https://git.vaiox.xyz/zh/repo/akitaonrails/ai-memory) | 13.7k | 3.3k | Solution for long term memory for agent coding CLIs and to f… |
+| 9 | [multica-ai/andrej-karpathy-skills](https://git.vaiox.xyz/zh/repo/multica-ai/andrej-karpathy-skills) | 224.2k | 2.9k | A single CLAUDE.md file to improve Claude Code behavior, der… |
+| 10 | [TauricResearch/TradingAgents](https://git.vaiox.xyz/zh/repo/TauricResearch/TradingAgents) | 115.3k | 2.5k | TradingAgents: Multi-Agents LLM Financial Trading Framework |
+| 11 | [wshobson/agents](https://git.vaiox.xyz/zh/repo/wshobson/agents) | 41.7k | 726 | Multi-harness agentic plugin marketplace for Claude Code, Co… |
+| 12 | [heygen-com/hyperframes](https://git.vaiox.xyz/zh/repo/heygen-com/hyperframes) | 72.6k | 5.6k | Write HTML. Render video. Built for agents. |
+| 13 | [AgriciDaniel/claude-seo](https://git.vaiox.xyz/zh/repo/AgriciDaniel/claude-seo) | 21.8k | 2.5k | Universal SEO skill for Claude Code. 26 sub-skills + 19 sub-… |
+| 14 | [Comfy-Org/ComfyUI](https://git.vaiox.xyz/zh/repo/Comfy-Org/ComfyUI) | 143.1k | 4.8k | The most powerful and modular diffusion model GUI, api and b… |
+| 15 | [pingdotgg/t3code](https://git.vaiox.xyz/zh/repo/pingdotgg/t3code) | 30.4k | 1.8k |  |
 
 ---
 

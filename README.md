@@ -11,45 +11,45 @@
 
 | # | 项目 | 累计 Star | 本周新增 Star |
 |---|---|---|---|
-| 1 | [cloudflare/security-audit-skill](https://git.vaiox.xyz/zh/repo/cloudflare/security-audit-skill) | 47.2k | 15.1k |
-| 2 | [ruvnet/ruflo](https://git.vaiox.xyz/zh/repo/ruvnet/ruflo) | 79.3k | 3.0k |
-| 3 | [anthropics/knowledge-work-plugins](https://git.vaiox.xyz/zh/repo/anthropics/knowledge-work-plugins) | 33.0k | 2.8k |
-| 4 | [anomalyco/opencode](https://git.vaiox.xyz/zh/repo/anomalyco/opencode) | 221.6k | 5.9k |
-| 5 | [stablyai/orca](https://git.vaiox.xyz/zh/repo/stablyai/orca) | 106.1k | 9.6k |
-| 6 | [heygen-com/hyperframes](https://git.vaiox.xyz/zh/repo/heygen-com/hyperframes) | 72.3k | 5.6k |
-| 7 | [android/skills](https://git.vaiox.xyz/zh/repo/android/skills) | 9.7k | 1.1k |
-| 8 | [Graphify-Labs/graphify](https://git.vaiox.xyz/zh/repo/Graphify-Labs/graphify) | 135.4k | 6.9k |
-| 9 | [akitaonrails/ai-memory](https://git.vaiox.xyz/zh/repo/akitaonrails/ai-memory) | 13.6k | 3.3k |
-| 10 | [Comfy-Org/ComfyUI](https://git.vaiox.xyz/zh/repo/Comfy-Org/ComfyUI) | 143.0k | 4.8k |
+| 1 | [cloudflare/security-audit-skill](https://git.vaiox.xyz/zh/repo/cloudflare/security-audit-skill) | 47.9k | 15.1k |
+| 2 | [anthropics/knowledge-work-plugins](https://git.vaiox.xyz/zh/repo/anthropics/knowledge-work-plugins) | 33.1k | 2.8k |
+| 3 | [ruvnet/ruflo](https://git.vaiox.xyz/zh/repo/ruvnet/ruflo) | 79.4k | 3.0k |
+| 4 | [anomalyco/opencode](https://git.vaiox.xyz/zh/repo/anomalyco/opencode) | 221.8k | 5.9k |
+| 5 | [stablyai/orca](https://git.vaiox.xyz/zh/repo/stablyai/orca) | 106.5k | 9.6k |
+| 6 | [Graphify-Labs/graphify](https://git.vaiox.xyz/zh/repo/Graphify-Labs/graphify) | 135.8k | 6.9k |
+| 7 | [android/skills](https://git.vaiox.xyz/zh/repo/android/skills) | 9.8k | 1.1k |
+| 8 | [akitaonrails/ai-memory](https://git.vaiox.xyz/zh/repo/akitaonrails/ai-memory) | 13.7k | 3.3k |
+| 9 | [multica-ai/andrej-karpathy-skills](https://git.vaiox.xyz/zh/repo/multica-ai/andrej-karpathy-skills) | 224.2k | 2.9k |
+| 10 | [TauricResearch/TradingAgents](https://git.vaiox.xyz/zh/repo/TauricResearch/TradingAgents) | 115.3k | 2.5k |
 
 **本月飙升 Top 10** · [打开完整榜单 →](https://git.vaiox.xyz/zh/boards/monthly)
 
 | # | 项目 | 累计 Star | 本月新增 Star |
 |---|---|---|---|
-| 1 | [heygen-com/hyperframes](https://git.vaiox.xyz/zh/repo/heygen-com/hyperframes) | 72.1k | 18.8k |
-| 2 | [debpalash/VoiceStudio](https://git.vaiox.xyz/zh/repo/debpalash/VoiceStudio) | 86.5k | 49.8k |
-| 3 | [cloudflare/security-audit-skill](https://git.vaiox.xyz/zh/repo/cloudflare/security-audit-skill) | 46.6k | 22.2k |
-| 4 | [anthropics/knowledge-work-plugins](https://git.vaiox.xyz/zh/repo/anthropics/knowledge-work-plugins) | 32.9k | 7.1k |
-| 5 | [paperclipai/paperclip](https://git.vaiox.xyz/zh/repo/paperclipai/paperclip) | 107.3k | 25.7k |
-| 6 | [NVIDIA/OpenShell](https://git.vaiox.xyz/zh/repo/NVIDIA/OpenShell) | 19.8k | 10.5k |
-| 7 | [mksglu/context-mode](https://git.vaiox.xyz/zh/repo/mksglu/context-mode) | 32.2k | 8.3k |
-| 8 | [cursor/plugins](https://git.vaiox.xyz/zh/repo/cursor/plugins) | 14.0k | 5.4k |
-| 9 | [vectorize-io/hindsight](https://git.vaiox.xyz/zh/repo/vectorize-io/hindsight) | 53.7k | 26.8k |
-| 10 | [anthropics/claude-plugins-official](https://git.vaiox.xyz/zh/repo/anthropics/claude-plugins-official) | 44.5k | 7.8k |
+| 1 | [heygen-com/hyperframes](https://git.vaiox.xyz/zh/repo/heygen-com/hyperframes) | 72.7k | 19.2k |
+| 2 | [cloudflare/security-audit-skill](https://git.vaiox.xyz/zh/repo/cloudflare/security-audit-skill) | 47.9k | 24.6k |
+| 3 | [debpalash/VoiceStudio](https://git.vaiox.xyz/zh/repo/debpalash/VoiceStudio) | 88.0k | 51.0k |
+| 4 | [anthropics/knowledge-work-plugins](https://git.vaiox.xyz/zh/repo/anthropics/knowledge-work-plugins) | 33.1k | 7.4k |
+| 5 | [mksglu/context-mode](https://git.vaiox.xyz/zh/repo/mksglu/context-mode) | 32.4k | 8.3k |
+| 6 | [cursor/plugins](https://git.vaiox.xyz/zh/repo/cursor/plugins) | 14.1k | 5.4k |
+| 7 | [pbakaus/impeccable](https://git.vaiox.xyz/zh/repo/pbakaus/impeccable) | 88.5k | 16.5k |
+| 8 | [anthropics/claude-plugins-official](https://git.vaiox.xyz/zh/repo/anthropics/claude-plugins-official) | 44.7k | 7.9k |
+| 9 | [NVIDIA/OpenShell](https://git.vaiox.xyz/zh/repo/NVIDIA/OpenShell) | 20.0k | 11.1k |
+| 10 | [earthtojake/text-to-cad](https://git.vaiox.xyz/zh/repo/earthtojake/text-to-cad) | 23.2k | 6.8k |
 
 **累计 Star Top 10** · [打开完整榜单 →](https://git.vaiox.xyz/zh/boards/overall)
 
 | # | 项目 | 累计 Star | 新增 |
 |---|---|---|---|
-| 1 | [codecrafters-io/build-your-own-x](https://git.vaiox.xyz/zh/repo/codecrafters-io/build-your-own-x) | 556.2k | — |
-| 2 | [sindresorhus/awesome](https://git.vaiox.xyz/zh/repo/sindresorhus/awesome) | 524.7k | — |
-| 3 | [public-apis/public-apis](https://git.vaiox.xyz/zh/repo/public-apis/public-apis) | 492.2k | — |
-| 4 | [freeCodeCamp/freeCodeCamp](https://git.vaiox.xyz/zh/repo/freeCodeCamp/freeCodeCamp) | 457.9k | — |
-| 5 | [EbookFoundation/free-programming-books](https://git.vaiox.xyz/zh/repo/EbookFoundation/free-programming-books) | 400.1k | — |
+| 1 | [codecrafters-io/build-your-own-x](https://git.vaiox.xyz/zh/repo/codecrafters-io/build-your-own-x) | 556.3k | — |
+| 2 | [sindresorhus/awesome](https://git.vaiox.xyz/zh/repo/sindresorhus/awesome) | 524.9k | — |
+| 3 | [public-apis/public-apis](https://git.vaiox.xyz/zh/repo/public-apis/public-apis) | 492.3k | — |
+| 4 | [freeCodeCamp/freeCodeCamp](https://git.vaiox.xyz/zh/repo/freeCodeCamp/freeCodeCamp) | 458.0k | — |
+| 5 | [EbookFoundation/free-programming-books](https://git.vaiox.xyz/zh/repo/EbookFoundation/free-programming-books) | 400.2k | — |
 | 6 | [openclaw/openclaw](https://git.vaiox.xyz/zh/repo/openclaw/openclaw) | 393.1k | — |
-| 7 | [morluto/rea](https://git.vaiox.xyz/zh/repo/morluto/rea) | 385.8k | — |
+| 7 | [morluto/rea](https://git.vaiox.xyz/zh/repo/morluto/rea) | 388.5k | — |
 | 8 | [donnemartin/system-design-primer](https://git.vaiox.xyz/zh/repo/donnemartin/system-design-primer) | 375.6k | — |
-| 9 | [nilbuild/developer-roadmap](https://git.vaiox.xyz/zh/repo/nilbuild/developer-roadmap) | 370.4k | — |
+| 9 | [nilbuild/developer-roadmap](https://git.vaiox.xyz/zh/repo/nilbuild/developer-roadmap) | 370.5k | — |
 | 10 | [jwasham/coding-interview-university](https://git.vaiox.xyz/zh/repo/jwasham/coding-interview-university) | 363.4k | — |
 
 <!-- GHB:AUTO:END -->
