@@ -97,7 +97,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     metricHint: 'lifetime',
     desc: 'Ranked by lifetime fork count. A fork means “I’m taking this code to change it” — a different channel of open source influence.',
     faqs: [
-      { q: 'Why doesn’t the fork list mirror the top-stars list?', a: 'Learning-style collections often accumulate many forks while their star count stays moderate. The two dimensions do not collapse into one.' },
+      { q: 'Why doesn’t the fork list mirror the top-stars list?', a: 'Learning-style collections often accumulate many forks while their star count stays moderate. The two lists often crown different winners.' },
     ],
   },
   milestone: {
@@ -117,8 +117,8 @@ export const enDict: Dict = {
   locale: 'en',
   meta: {
     siteName: 'GitHub Hot Board',
-    homeTitle: 'GitHub Hot Board · Find projects early, ride the surge, act on the information gap (All-time / Weekly / Monthly / Dark horses)',
-    homeDescription: 'The information gap, laid out in plain sight. Live GitHub leaderboards for all-time champions, weekly and monthly surges, 90-day risers, dark horses and live milestone tracking. Find your next project, side hustle or product idea in three minutes. Transparent methodology, auto-refreshed.',
+    homeTitle: 'GitHub Hot Board · Find projects early, ride the surge, see them before the crowd (All-time / Weekly / Monthly / Dark horses)',
+    homeDescription: 'See what is climbing before it peaks. Live GitHub leaderboards for all-time champions, weekly and monthly surges, 90-day risers, dark horses and live milestone tracking. Find your next project, side hustle or product idea in three minutes. Every ranking rule is public, auto-refreshed.',
     homeKeywords: 'GitHub leaderboard, trending repos, find projects early, side hustle ideas, make money with open source, information gap, rising projects, open source rankings, weekly stars, underrated repos',
   },
   nav: {
@@ -127,11 +127,11 @@ export const enDict: Dict = {
     srcNote: 'Data from official GitHub',
   },
   home: {
-    valueTitle: 'The information gap is hiding in plain sight',
+    valueTitle: 'The same leaderboard, seen one step earlier',
     valueSub: 'Same GitHub, one layer deeper. Find projects, move first, follow the real momentum — the boards turn star curves into three quick reads.',
     brickOneTitle: 'Find projects without drowning',
     brickOneDesc: 'Ten boards, ten filters: the all-time chart frames the field, weekly and monthly set the pace, dark horses flag what you have not heard of yet.',
-    brickTwoTitle: 'Turn the information gap into the first move',
+    brickTwoTitle: 'Watch the trend, not just the rank',
     brickTwoDesc: 'Snapshots every 6 hours: dark horses before they break out, comebacks while they heal. Whoever sees first, moves first.',
     brickThreeTitle: 'Follow real star curves, follow real momentum',
     brickThreeDesc: 'Side hustles, product bets or plain inspiration — trends built from real star history beat whatever shouts loudest today.',
