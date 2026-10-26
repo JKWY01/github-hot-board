@@ -91,6 +91,21 @@ function notFound404(lang: string, pathname: string): NextResponse {
   )
 }
 
+
+/** 公共榜面/档案页的 CDN 缓存语义(2026-10-27 调研实锤):这些路由全是阻塞渲染
+ * (instant=false / connection()),Next 会给它们发 private, no-store —— 谷歌官方
+ * crawl-budget 文档明确说"支持 304/HTTP 缓存能让爬虫读更多内容"。全站无登录无
+ * 个人化,内容公共且 'use cache' 5 分钟刷新,发 public s-maxage 是纯收益。
+ * 只改写 Cache-Control,不碰 Next 内部 ISR 语义(x-nextjs-cache 照常工作)。 */
+function publicCache(request: NextRequest): NextResponse {
+  const res = NextResponse.next()
+  res.headers.set(
+    'cache-control',
+    'public, max-age=0, s-maxage=300, stale-while-revalidate=3300',
+  )
+  return res
+}
+
 /** Next 16 的 proxy.ts(旧称 middleware)。
  * 1) 根路径按 Accept-Language 跳 zh/en;
  * 2) 语言分面旧链接归一:'+'/'#'/百分号编码在路由匹配层就会失败(404 且被 ISR 缓存),
@@ -115,7 +130,7 @@ export async function proxy(request: NextRequest) {
     if (!(BOARD_SLUGS as readonly string[]).includes(seg[3])) {
       return notFound404(seg[1], request.nextUrl.pathname)
     }
-    return // 已是预渲染榜单,放行走静态
+    return publicCache(request) // 已是预渲染榜单,放行走静态
   }
 
   // /{lang}/boards/{slug}/{language}
@@ -145,7 +160,7 @@ export async function proxy(request: NextRequest) {
     }
     const canonical = facetLangSlug(language)
     if (seg[4] === canonical) {
-      return // 标准 slug,放行走预取页面
+      return publicCache(request) // 标准 slug,放行预取页面走预取页面
     }
     const url = request.nextUrl.clone()
     url.pathname = `/${seg[1]}/boards/${seg[3]}/${canonical}`
@@ -162,7 +177,7 @@ export async function proxy(request: NextRequest) {
     }
     const known = await repoWasOnBoard(seg[3], seg[4])
     if (known === false) return notFound404(seg[1], request.nextUrl.pathname)
-    return // 名单内有,或名单临时拿不到(降级放行,由页内 notFound 兜底)
+    return publicCache(request) // 名单内有,或名单临时拿不到(降级放行,由页内 notFound 兜底)
   }
 
   // /{lang}/history/{slug} 与 /{lang}/history/{slug}/{date}:未知榜 slug 与非法日期格式
@@ -171,7 +186,7 @@ export async function proxy(request: NextRequest) {
     if (!(BOARD_SLUGS as readonly string[]).includes(seg[3])) {
       return notFound404(seg[1], request.nextUrl.pathname)
     }
-    return
+    return publicCache(request)
   }
   if (seg.length === 5 && langIsLocale && seg[2] === 'history') {
     if (!(BOARD_SLUGS as readonly string[]).includes(seg[3])) {
@@ -187,7 +202,7 @@ export async function proxy(request: NextRequest) {
     if (day < '2026-10-18' || day > today) {
       return notFound404(seg[1], request.nextUrl.pathname)
     }
-    return // 放行;日期语义(确实有档案与否)由页内判定
+    return publicCache(request) // 放行;日期语义(确实有档案与否)由页内判定
   }
 
   if (request.nextUrl.pathname !== '/') return

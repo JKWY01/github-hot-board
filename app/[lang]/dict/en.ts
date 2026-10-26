@@ -188,6 +188,7 @@ export const enDict: Dict = {
     searchAllBtn: 'Search all of GitHub',
     moversTitle: '24h movers',
     moversEmpty: 'No rank changes in the last 24h',
+    fullRoster: 'Full roster',
     watchTitle: 'My watchlist',
     watchOwn: 'Your projects',
     watchSee: 'Watched projects',

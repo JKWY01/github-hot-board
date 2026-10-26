@@ -188,6 +188,7 @@ export const viDict: Dict = {
     searchAllBtn: 'Tìm trên toàn GitHub',
     moversTitle: 'Chuyển động 24 giờ',
     moversEmpty: 'Không có thay đổi thứ hạng trong 24 giờ',
+    fullRoster: 'Danh sách đầy đủ',
     watchTitle: 'Danh sách theo dõi',
     watchOwn: 'Dự án của bạn',
     watchSee: 'Dự án đang theo dõi',

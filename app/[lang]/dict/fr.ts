@@ -189,6 +189,7 @@ export const frDict: Dict = {
     searchAllBtn: 'Chercher dans tout GitHub',
     moversTitle: 'Mouvements 24h',
     moversEmpty: 'Aucun changement de rang en 24h',
+    fullRoster: 'Liste complète',
     watchTitle: 'Ma liste de suivi',
     watchOwn: 'Vos projets',
     watchSee: 'Projets suivis',

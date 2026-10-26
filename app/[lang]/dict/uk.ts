@@ -188,6 +188,7 @@ export const ukDict: Dict = {
     searchAllBtn: 'Шукати в усьому GitHub',
     moversTitle: 'Рух за 24 год',
     moversEmpty: 'За 24 години позиції не змінювалися',
+    fullRoster: 'Повний список',
     watchTitle: 'Мій список спостережень',
     watchOwn: 'Ваші проєкти',
     watchSee: 'Проєкти у спостереженні',

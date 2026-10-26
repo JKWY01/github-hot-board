@@ -188,6 +188,7 @@ export const deDict: Dict = {
     searchAllBtn: 'Ganz GitHub durchsuchen',
     moversTitle: '24h-Bewegungen',
     moversEmpty: 'Keine Rangänderungen in 24h',
+    fullRoster: 'Vollständige Liste',
     watchTitle: 'Meine Merkliste',
     watchOwn: 'Deine Projekte',
     watchSee: 'Beobachtete Projekte',

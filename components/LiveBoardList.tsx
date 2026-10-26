@@ -21,6 +21,8 @@ export interface LiveBoardListProps {
   initialItems: BoardItem[]
   /** SSR 载荷被截断过(只带了首屏批):挂载后立即静默拉一次全集,不等首个 60s 轮询 */
   initialTruncated?: boolean
+  /** 完整名录(首屏之外的全量行,SSR 纯链接输出):榜单→档案内链的收录通道 */
+  roster?: BoardItem[]
   initialGeneratedAt: string
   initialDegraded?: boolean
   metric: 'stars' | 'gained' | 'slope' | 'forks' | 'score' | 'gap'
@@ -119,6 +121,7 @@ export default function LiveBoardList({
   currentLanguage,
   initialItems,
   initialTruncated,
+  roster,
   initialGeneratedAt,
   initialDegraded,
   metric,
@@ -1011,6 +1014,32 @@ export default function LiveBoardList({
 
       {/* 渐进渲染:还有未挂载的行 → 哨兵(IntersectionObserver 见尾自动续批) */}
       {view.length > visibleCount && <div ref={sentinelRef} aria-hidden="true" className="h-px" />}
+
+      {/* 完整名录(SSR 输出首屏之外的纯链接,默认折叠):首屏行数截断到 100 后,榜单→档案
+          的内链从 500 掉到 100 —— 档案页的收录发现靠这些内链(GSC 实证档案页是点击主力)。
+          纯 <a> 名单 14KB/gzip 1KB,爬虫读得到;真人默认收起不扰视线。轮询到货后 items
+          变全集,此节与榜行补全共存不冲突(roster 是 SSR 静态集,union 去重交给 key)。 */}
+      {(roster?.length ?? 0) > 0 && (
+        <nav aria-label={strings.fullRoster} className="mt-6 px-1">
+          <details className="card px-4 py-3 sm:px-5">
+            <summary className="cursor-pointer text-[13px] font-medium text-sub select-none">
+              {strings.fullRoster} · {roster!.length}
+            </summary>
+            <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5">
+              {roster!.map((item, index) => (
+                <li key={`roster-${item.fullName}`} className="min-w-0">
+                  <a
+                    href={`/${locale}/repo/${item.fullName}`}
+                    className="text-[12px] text-ink/60 hover:text-accent-strong hover:underline"
+                  >
+                    {index + 101}. {item.fullName}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </details>
+        </nav>
+      )}
       {/* 档位/搜索过滤后为空:一句人话,不晾一个空卡(真·空榜仍走错误卡路径) */}
       {custom && view.length === 0 && items.length > 0 && (
         <p className="px-1 py-10 text-center text-[13px] text-sub">{strings.filterEmpty}</p>

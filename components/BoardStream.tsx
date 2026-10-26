@@ -111,6 +111,8 @@ export default async function BoardStream({
         // ItemList JSON-LD(500 条全量)承担,不依赖 DOM 行数。
         initialItems={data.items.slice(0, 100)}
         initialTruncated={data.items.length > 100}
+        // 名录只给全榜页:limit 型 compact 榜(首页三小卡)不需要 394 条内链
+        roster={!limit && data.items.length > 100 ? data.items.slice(100) : undefined}
         initialGeneratedAt={data.generatedAt}
         initialDegraded={data.degraded}
         metric={config.metric}

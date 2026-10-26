@@ -188,6 +188,7 @@ export const ruDict: Dict = {
     searchAllBtn: 'Искать во всём GitHub',
     moversTitle: 'Движение за 24 ч',
     moversEmpty: 'За 24 часа позиции не менялись',
+    fullRoster: 'Полный список',
     watchTitle: 'Мои отслеживания',
     watchOwn: 'Ваши проекты',
     watchSee: 'Отслеживаемые проекты',

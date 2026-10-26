@@ -188,6 +188,7 @@ export const zhTWDict: Dict = {
     searchAllBtn: '搜 GitHub 全站',
     moversTitle: '24 小時爬動',
     moversEmpty: '24 小時內名次無變化',
+    fullRoster: '完整名單',
     watchTitle: '我的關注',
     watchOwn: '你的專案',
     watchSee: '關注的專案',

@@ -189,6 +189,7 @@ export const jaDict: Dict = {
     searchAllBtn: 'GitHub 全体を検索',
     moversTitle: '24時間の順位変動',
     moversEmpty: '24時間以内に順位変動なし',
+    fullRoster: '全リスト',
     watchTitle: 'ウォッチリスト',
     watchOwn: 'あなたのプロジェクト',
     watchSee: 'ウォッチ中のプロジェクト',

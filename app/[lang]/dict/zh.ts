@@ -189,6 +189,7 @@ export const zhDict: Dict = {
     searchAllBtn: '搜 GitHub 全站',
     moversTitle: '24 小时爬动',
     moversEmpty: '24 小时内名次无变化',
+    fullRoster: '完整名录',
     watchTitle: '我的关注',
     watchOwn: '你的项目',
     watchSee: '关注的项目',

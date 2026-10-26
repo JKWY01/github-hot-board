@@ -189,6 +189,7 @@ export const trDict: Dict = {
     searchAllBtn: 'GitHub genelinde ara',
     moversTitle: '24s hareket',
     moversEmpty: '24 saatte sıralama değişmedi',
+    fullRoster: 'Tam liste',
     watchTitle: 'Takip listem',
     watchOwn: 'Projeleriniz',
     watchSee: 'Takip edilen projeler',

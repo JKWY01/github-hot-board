@@ -153,6 +153,7 @@ export interface Dict {
     searchAllBtn: string
     moversTitle: string
     moversEmpty: string
+    fullRoster: string
     watchTitle: string
     watchOwn: string
     watchSee: string
@@ -248,6 +249,7 @@ export function liveStrings(locale: Locale) {
     searchAllBtn: d.ui.searchAllBtn,
     moversTitle: d.ui.moversTitle,
     moversEmpty: d.ui.moversEmpty,
+    fullRoster: d.ui.fullRoster,
     watchTitle: d.ui.watchTitle,
     watchOwn: d.ui.watchOwn,
     watchSee: d.ui.watchSee,

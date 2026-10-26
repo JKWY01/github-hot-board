@@ -188,6 +188,7 @@ export const idDict: Dict = {
     searchAllBtn: 'Cari di seluruh GitHub',
     moversTitle: 'Gerakan 24 jam',
     moversEmpty: 'Tidak ada perubahan peringkat dalam 24 jam',
+    fullRoster: 'Daftar lengkap',
     watchTitle: 'Daftar pantauan saya',
     watchOwn: 'Proyek Anda',
     watchSee: 'Proyek yang dipantau',

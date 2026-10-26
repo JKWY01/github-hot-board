@@ -188,6 +188,7 @@ export const esDict: Dict = {
     searchAllBtn: 'Buscar en todo GitHub',
     moversTitle: 'Movimientos de 24h',
     moversEmpty: 'Sin cambios de puesto en 24h',
+    fullRoster: 'Lista completa',
     watchTitle: 'Mi lista de seguimiento',
     watchOwn: 'Tus proyectos',
     watchSee: 'Proyectos seguidos',

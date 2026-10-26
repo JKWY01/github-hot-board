@@ -189,6 +189,7 @@ export const koDict: Dict = {
     searchAllBtn: 'GitHub 전체 검색',
     moversTitle: '24시간 순위 변동',
     moversEmpty: '24시간 내 순위 변동 없음',
+    fullRoster: '전체 목록',
     watchTitle: '내 관심 목록',
     watchOwn: '내 프로젝트',
     watchSee: '관심 프로젝트',
