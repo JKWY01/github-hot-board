@@ -4,6 +4,7 @@ import { isLocale, getDict } from '@/app/[lang]/dictionaries'
 import { isBoardSlug } from '@/lib/boards'
 import type { HistoryDay, HistorySnapshot } from '@/lib/snapshot'
 import { GithubIcon } from './Icons'
+import { jsonLdScript } from '@/lib/jsonld'
 
 const nf = (n: number) => new Intl.NumberFormat('en-US', { notation: n >= 10000 ? 'compact' : 'standard', maximumFractionDigits: 1 }).format(n)
 
@@ -44,8 +45,30 @@ export function HistoryView({
   const h = dict.history
   const copy = dict.boards[slug]
 
+  const base = (process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000').replace(/\/+$/, '')
+  const pagePath = `/${lang}/history/${slug}${activeDay ? `/${activeDay}` : ''}`
   return (
     <div>
+      {snapshot && activeDay && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: jsonLdScript({
+              '@context': 'https://schema.org',
+              '@type': 'ItemList',
+              '@id': `${base}${pagePath}#items`,
+              name: `${copy.name} · ${activeDay}`,
+              numberOfItems: snapshot.rows.length,
+              itemListElement: snapshot.rows.slice(0, 150).map((r, i) => ({
+                '@type': 'ListItem',
+                position: i + 1,
+                url: `${base}/${lang}/repo/${r.repo}`,
+                name: `${r.repo} · #${r.rank}`,
+              })),
+            }),
+          }}
+        />
+      )}
       <section className="mx-auto max-w-6xl px-5 pb-8 pt-14 sm:px-6 sm:pt-20">
         <p className="kicker">{dict.meta.siteName}</p>
         <h1 className="mt-3 text-4xl font-black leading-[1.08] tracking-tight text-ink sm:text-5xl">
@@ -124,9 +147,13 @@ export function HistoryView({
                     <span className="tabular-nums text-[13px] font-semibold text-ink/40">{String(r.rank).padStart(2, '0')}</span>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="truncate text-[15px] font-semibold text-ink">
+                        <Link
+                          href={`/${lang}/repo/${r.repo}`}
+                          prefetch={false}
+                          className="truncate text-[15px] font-semibold text-ink transition-colors hover:text-accent-strong"
+                        >
                           {r.repo}
-                        </span>
+                        </Link>
                         <a
                           href={`https://github.com/${r.repo}`}
                           target="_blank"
