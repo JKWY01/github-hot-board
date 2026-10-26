@@ -18,8 +18,8 @@ Three things up front, no fine print:
 | 2 | Weekly · igniting now | Own snapshot deltas + official Trending cross-check | Net stars gained over the last 7 days (from our 6-hourly snapshots); repos also on the official page get an "official" tag, official-only entries listed separately |
 | 3 | Monthly · trend of the month | Own snapshot deltas + official Trending cross-check | Same as weekly, monthly window |
 | 4 | Fresh · debuts of the year | Search API | Created this year, ranked by total stars |
-| 5 | Rising · 90-day slope | Search API | Created within 90 days, ranked by stars/day |
-| 6 | Dark horses | Search API | Rising pool, sliced where total stars are still under 1,500 |
+| 5 | Rising · Real weekly gains | Own snapshot deltas | Top 300 repos by net stars gained over the last 7 days (any age), with growth percent per row; legacy slope method remains as marked-degraded fallback |
+| 6 | Dark horses · Velocity leaders | Own snapshot deltas | Top 100 by 7-day growth percent (repos under 10 starting stars excluded) |
 | 7 | Underrated · active, cold | Search API | Pushed continuously for 30 days, stars 100–800, ascending |
 | 8 | Controversy index | Search API derived | (Forks×2 + Issues) ÷ Stars, extremes only. A structured heuristic, not sentiment |
 | 9 | Fork kings | Search API | Lifetime forks, descending |
@@ -125,7 +125,7 @@ One platform fact worth keeping (established 2026-10): GitHub has removed the RE
 - Trending numbers can lag the official page by up to one sync cycle (≤30 min).
 - Search caps at 1,000 results per query; the all-time board shows the top 500 pool, which covers the entire front page story.
 - The controversy board is a structural heuristic (fork/issue ratios), clearly labeled as such. Its candidate pool is the all-time top-300 board filtered to ≥3000 stars — a comparison inside the hall of fame, not a platform-wide scan. `open_issues` includes PRs (that is the GitHub field's semantics, stated on the page).
-- The rising board (90-day slope) first narrows to the top 300 ninety-day repos by stars (the Search API working set), then re-ranks by slope; the slope itself favors younger repos.
+- The rising/dark boards are computed from our own snapshot layer (7-day star deltas and velocity percent). The legacy 90-day slope method remains as a fallback and is marked degraded when active.
 - The dark-horse board keeps the top 100 by slope (page copy says the same).
 - Milestone crossings are detected while a page is open; the server keeps no state. For "who crossed 1k historically", give Time Machine a few days to accumulate.
 - Time Machine stores the base-language pool only. Facet taps exist in the database but have no page entrance yet.

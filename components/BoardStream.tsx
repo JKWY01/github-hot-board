@@ -22,8 +22,11 @@ const METRIC_BY_BOARD: Record<BoardSlug, MetricConfig> = {
   weekly: { metric: 'gained', secondary: 'stars' },
   monthly: { metric: 'gained', secondary: 'stars' },
   annual: { metric: 'stars', secondary: 'none', showSlope: true },
-  rising: { metric: 'slope', secondary: 'stars', showSlope: false, showPushed: true },
-  dark: { metric: 'slope', secondary: 'stars', showPushed: true },
+  // 换芯后主指标=score(增速百分比):rising=近 7 天绝对增量榜,dark=近 7 天增速榜,
+  // 行数据来自星速层(无 slope 字段)。兜底口径(Search 日均)时 score 缺省,右列显示 0
+  // 属可接受的降级形态(metricLabel 已随字典换新)。
+  rising: { metric: 'score', secondary: 'stars', showSlope: false, showPushed: true },
+  dark: { metric: 'score', secondary: 'stars', showPushed: true },
   overlooked: { metric: 'stars', secondary: 'none', showIssues: true, showPushed: true },
   controversial: { metric: 'score', secondary: 'none', showIssues: true },
   forks: { metric: 'forks', secondary: 'stars' },

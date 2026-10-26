@@ -46,14 +46,13 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     ],
   },
   rising: {
-    name: 'Yükselen Eğim',
-    tagline: 'Son 90 günde günde kaç Star — yeni yeteneklerin en geniş havuzu.',
-    metricLabel: 'Star / gün',
-    metricHint: 'eğim',
-    desc: 'Son 90 gün içinde oluşturulan depolar, ortalama günde kazanılan Star sayısına göre sıralanır (yaşam boyu Star ÷ repo yaşı). Eğim, çıkış tarihini normalleştirir; güncel momentumu yansıtır. Adaylar önce yıldız sayısına göre en çok yıldızlı 300 adet 90 günlük depoya (Search API çalışma kümesi) sınırlandırılır, sonra eğime göre yeniden sıralanır.',
+    name: 'Yükseliş · Gerçek haftalık artış',
+    tagline: 'Yedi günde en çok yıldız kazanan 300 depo — kendi görüntülerimizle ölçüldü, yeni eski herkes.',
+    metricLabel: 'Bu haftanın yıldızı',
+    metricHint: 'ölçüldü, 7 günlük pencere',
+    desc: 'Kendi görüntülerimizden hesaplandı: haftanın ilk ve son görüntüsü arasındaki yıldız farkı, büyüme yüzdesiyle. «Kuruluştan beri ortalama» tek seferlik patlamaları abartıyordu — kaldırıldı.',
     faqs: [
-      { q: 'Eğim kısa vadeli patlamalarla şişebilir mi?', a: 'Evet. Kısa vadeli sıçramalar ortalamayı bozabilir; bu nedenle düşük mutlak Star şartı koyan Kara Atlar listesiyle birlikte okuyun.' },
-      { q: 'Yılın Yenileri’nden farkı ne?', a: 'Yıllık liste, bu yıl oluşturulanları toplam Star’a göre dizer; bu liste 90 günle sınırlar ve günlük eğime bakar — pencere daha kısa, ivme daha belirleyici.' },
+      { q: 'Metodoloji neden değişti?', a: 'Eski «kuruluştan beri ortalama», bir kez patlayıp duran depoları ödüllendiriyordu. Gerçek haftalık artış, «yükseliş»in anlamı olmalı — ve kamuya açık görüntülerden yeniden hesaplanabilir.' },
     ],
   },
   dark: {

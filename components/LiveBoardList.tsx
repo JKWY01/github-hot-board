@@ -533,7 +533,8 @@ export default function LiveBoardList({
         case 'slope':
           return fmtSlope(n)
         case 'score':
-          return n.toFixed(2)
+          // 换芯后 score=增速百分比(rising 绝对增量榜新行 score 也走这,black 兜底形态同)
+          return `${n.toFixed(1)}%`
         case 'gap':
           return fmtNum(Math.max(0, n), locale)
         default:

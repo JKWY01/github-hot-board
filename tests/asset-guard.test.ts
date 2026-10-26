@@ -55,3 +55,26 @@ describe('GitHub 配额记账(403 预警)', () => {
     expect(body).not.toMatch(/current\.token|TOKENS\[tokenIdx/)
   })
 })
+
+describe('潜力/黑马榜换芯(近 7 天真增量口径)', () => {
+  it('rising 主口径走星速层 readDailyGains,兜底必须带 degraded', async () => {
+    const fs = await import('node:fs')
+    const src = fs.readFileSync(new URL('../lib/boards.ts', import.meta.url), 'utf8')
+    const body = src.slice(src.indexOf('export async function getRisingData'), src.indexOf('export async function getDarkData'))
+    expect(body).toMatch(/readDailyGains\(7, 300\)/)
+    expect(body).toMatch(/degraded: true/)
+  })
+  it('dark 主口径走增速百分比 readDailyGainsPct,兜底必须带 degraded', async () => {
+    const fs = await import('node:fs')
+    const src = fs.readFileSync(new URL('../lib/boards.ts', import.meta.url), 'utf8')
+    const body = src.slice(src.indexOf('export async function getDarkData'))
+    expect(body).toMatch(/readDailyGainsPct\(7, 100\)/)
+    expect(body).toMatch(/degraded: true/)
+  })
+  it('行渲染 rising/dark 主指标=score(星速层行无 slope,metric=slope 会全显示 0)', async () => {
+    const fs = await import('node:fs')
+    const src = fs.readFileSync(new URL('../components/BoardStream.tsx', import.meta.url), 'utf8')
+    expect(src).toMatch(/rising: \{ metric: 'score'/)
+    expect(src).toMatch(/dark: \{ metric: 'score'/)
+  })
+})

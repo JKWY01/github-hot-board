@@ -46,14 +46,13 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     ],
   },
   rising: {
-    name: 'Độ Dốc Tăng Trưởng',
-    tagline: '90 ngày qua, trung bình Star mỗi ngày — vườn ươm lớn nhất cho gương mặt mới.',
-    metricLabel: 'Star / ngày',
-    metricHint: 'độ dốc',
-    desc: 'Repo tạo trong 90 ngày, xếp theo số Star trung bình mỗi ngày (tổng Star ÷ tuổi repo). Độ dốc chuẩn hóa thời điểm ra mắt, phản ánh đà tăng hiện tại rõ hơn số tổng. Ứng viên trước tiên bị giới hạn trong 300 repo 90 ngày nhiều Star nhất (tập làm việc của Search API), rồi xếp lại theo độ dốc.',
+    name: 'Tăng tốc · Tăng thật trong tuần',
+    tagline: 'Top 300 tăng sao thật trong bảy ngày — đo từ ảnh chụp, mới cũ như nhau.',
+    metricLabel: 'Sao tuần này',
+    metricHint: 'đo thực tế, cửa sổ 7 ngày',
+    desc: 'Tính từ ảnh chụp của chúng tôi: chênh lệch sao giữa ảnh đầu và ảnh mới nhất trong tuần, kèm phần trăm tăng. «Trung bình từ khi tạo» phóng đại repo chỉ có một cú sốc — đã bỏ.',
     faqs: [
-      { q: 'Độ dốc có bị lợi dụng không?', a: 'Có — cơn sốt ngắn hạn làm méo trung bình; một repo mới tung ra vài ngày rồi ầm ầm vác ngàn Star là độ dốc rất cao. Nên đọc chéo với bảng Ngựa Ô, nơi bắt buộc tổng Star thấp.' },
-      { q: 'Khác gì với Gương Mặt Mới Của Năm?', a: 'Bảng năm giới hạn ngày tạo trong năm nay và xếp theo tổng số; bảng này giới hạn 90 ngày và xếp theo độ dốc mỗi ngày.' },
+      { q: 'Vì sao đổi phương pháp?', a: 'Cách «trung bình từ khi tạo» cũ thưởng cho repo chỉ có một cú sốc. Lượng tăng thật trong tuần mới là ý nghĩa đúng của «tăng tốc» — và tính lại được từ ảnh chụp công khai.' },
     ],
   },
   dark: {
@@ -63,8 +62,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     metricHint: 'độ dốc',
     desc: 'Repo tạo trong 90 ngày qua, tổng Star 30–1500 và độ dốc dương, xếp theo Star mỗi ngày — top 100. Những dự án này thường chưa được ai để mắt tới: ứng cử viên bùng nổ bị “vùi”.',
     faqs: [
-      { q: 'Tại sao truy vấn riêng thay vì lọc từ bảng Độ Dốc?', a: 'Phương pháp khác nhau: lọc theo dải Star (30–1500) trước, rồi mới xếp theo độ dốc. Nếu lấy top-100 của bảng Độ Dốc rồi lọc lại, đỉnh bảng sẽ thành chỗ của các repo siêu nhỏ mới ra mắt và chôn vùi những ứng viên bùng nổ thật.' },
-      { q: 'Vì sao là mốc 30 và 1500?', a: 'Dưới 30 Star độ dốc chủ yếu là nhiễu (vài bạn bè điểm Star là được 10 Star/ngày); trên 1500 đã được đông người chú ý. Ở giữa là vùng ngọt: có lực hút thật nhưng chưa bị phát hiện.' },
+      { q: 'Vì sao dùng phần trăm chứ không phải lượng tăng tuyệt đối?', a: 'Bản chất ngựa ô là tốc độ: +200% trên repo nhỏ là tín hiệu mạnh hơn +1% trên gã khổng lồ. Lượng tăng tuyệt đối thuộc về bảng Tăng tốc.' },
     ],
   },
   overlooked: {

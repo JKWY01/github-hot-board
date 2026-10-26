@@ -46,14 +46,13 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     ],
   },
   rising: {
-    name: 'Pente ascendante',
-    tagline: 'Stars par jour sur les 90 derniers jours — le plus grand vivier de nouveaux talents.',
-    metricLabel: 'Stars / jour',
-    metricHint: 'pente',
-    desc: 'Dépôts créés au cours des 90 derniers jours, triés selon les stars moyennes gagnées par jour (stars cumulées ÷ ancienneté). La pente neutralise la date de lancement et reflète la dynamique actuelle. Les candidats sont limités en premier lieu aux 300 dépôts de 90 jours les plus étoilés (jeu de travail de la Search API), puis reclassés par pente.',
+    name: 'Montée · Vraies hausses hebdo',
+    tagline: 'Top 300 par étoiles réellement gagnées en sept jours — mesuré par nos captures, petits et grands confondus.',
+    metricLabel: 'Étoiles cette semaine',
+    metricHint: 'mesuré, fenêtre de 7 jours',
+    desc: 'Calculé depuis nos captures : l’écart d’étoiles entre la première et la dernière capture de la semaine, avec le pourcentage de croissance. La « moyenne depuis la création » surestimait les repos à pics uniques — abandonnée.',
     faqs: [
-      { q: 'La pente peut-elle être gonflée artificiellement ?', a: 'Oui, un pic à court terme biaise la moyenne. Lisez-le en parallèle du tableau Outsiders, qui exige un nombre de stars absolu plus faible.' },
-      { q: 'Différence avec les « Révélations de l’année » ?', a: 'Le classement annuel plafonne la création à l’année en cours et trie au cumul ; celui-ci plafonne à 90 jours et trie selon la pente journalière — fenêtre plus courte, regard sur l’élan.' },
+      { q: 'Pourquoi un changement de méthode ?', a: 'L’ancienne « moyenne depuis la création » récompensait les dépôts à pic unique. Le gain hebdomadaire réel est ce que « montée » devrait signifier — et se recalcule depuis les captures publiques.' },
     ],
   },
   dark: {

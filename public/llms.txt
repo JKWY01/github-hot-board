@@ -16,8 +16,8 @@
 - /en/boards/weekly — Weekly Surge: repositories by net stars gained over the last 7 days (computed from our own 6-hourly snapshot deltas; GitHub official Trending weekly serves as cross-verification).
 - /en/boards/monthly — Monthly Wave: net stars gained over the last 30 days.
 - /en/boards/annual — Fresh of the Year: repositories created this year, ranked by total stars.
-- /en/boards/rising — Rising Slope: stars per day over the last 90 days. Candidates are first limited to the top 300 ninety-day repos by stars (the Search API working set), then re-ranked by slope.
-- /en/boards/dark — Dark Horses: repos under 90 days old with 30–1500 total stars and a positive slope, top 100 by stars-per-day.
+- /en/boards/rising — Rising · Real weekly gains: top 300 repos by net stars gained over the last 7 days (computed from our own 6-hourly snapshot deltas, any repo age). Each row carries a growth percent. Falls back to the legacy 90-day slope method (marked degraded) if the snapshot layer is unavailable.
+- /en/boards/dark — Dark Horses · Velocity leaders: top 100 repos by 7-day growth percent (gained ÷ window-start stars; repos under 10 starting stars excluded to avoid noise). Small repos explode here first. Falls back to the legacy method (marked degraded) if the snapshot layer is unavailable.
 - /en/boards/overlooked — Underappreciated Gems: actively maintained for 30+ days, 100–800 stars (ascending by stars).
 - /en/boards/controversial — Controversy Index: (forks×2 + open issues) ÷ stars, extremes among the all-time top 500 filtered to ≥3000 stars. Open issues include PRs (GitHub field semantics). A heuristic, not sentiment analysis.
 - /en/boards/forks — King of Forks: all-time most forked repositories.
