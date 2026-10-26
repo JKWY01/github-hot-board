@@ -226,12 +226,9 @@ export async function getRisingData(): Promise<BoardData> {
 export async function getDarkData(): Promise<BoardData> {
   // 独立一口径：90 天内新建、30–1500 星，取斜率最高者（不复用 rising 的前 100 切片，
   // 否则过滤后经常为空——斜率排序天然偏向全新小仓库）。
-  let repos: PoolRepo[] = []
-  try {
-    repos = await ghSearch(`created:>${isoDaysAgo(90)} stars:30..1500 fork:false`, { pages: 3 })
-  } catch {
-    repos = []
-  }
+  // 取数失败必须抛:同步层据以判失败并保留上一拍(吞掉会把"上游抖动"伪装成"真的没项目",
+  // 空榜覆盖好榜进库 —— 2026-10-26 外部审查实锤)。"取数成功但筛完为空"才允许 degraded。
+  const repos = await ghSearch(`created:>${isoDaysAgo(90)} stars:30..1500 fork:false`, { pages: 3 })
   const filtered = repos
     .filter((repo) => repo.stars >= 30 && repo.stars <= 1500 && (slopeStarsPerDay(repo) ?? 0) > 0)
     .sort((a, b) => (slopeStarsPerDay(b) ?? 0) - (slopeStarsPerDay(a) ?? 0))
@@ -333,6 +330,10 @@ export async function getMilestoneData(): Promise<BoardData> {
     const anyRate = errors.some((e) => e instanceof RateLimitError)
     throw anyRate ? errors.find((e) => e instanceof RateLimitError) : errors[0]
   }
+  // 部分档位失败:照常出榜但必须标 degraded,否则读者会以为四档都完整覆盖(数据诚实口径)
+  const failedThresholds = settled
+    .map((r, i) => (r.status === 'rejected' ? MILESTONE_THRESHOLDS[i] : null))
+    .filter((t): t is (typeof MILESTONE_THRESHOLDS)[number] => t !== null)
 
   items.sort((a, b) => remainingToTarget(a) - remainingToTarget(b))
   return {
@@ -340,6 +341,7 @@ export async function getMilestoneData(): Promise<BoardData> {
     items: items.slice(0, 200),
     source: 'github-search',
     generatedAt: new Date().toISOString(),
+    degraded: failedThresholds.length > 0 ? true : undefined,
   }
 }
 

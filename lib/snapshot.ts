@@ -194,56 +194,60 @@ export async function writeHeadAndRows(slug: string, language: string | undefine
   const takenAt = data.generatedAt ? new Date(data.generatedAt) : new Date()
   const key = dbKey(slug, language)
   return (await withDb(async (sql) => {
-    const rows = await sql`SELECT payload FROM board_head WHERE key = ${key} LIMIT 1`
-    const prevItems = (rows[0] as { payload?: BoardData } | undefined)?.payload?.items ?? []
-    const written: BoardData = { ...data, items: withPrevRanks(data.items, prevItems) }
+    // 真事务(2026-10-26 外部审查实锤"注释自称大事务实际没开"):三张表要么同拍全落,
+    // 要么全回滚 —— 榜头更新而快照/过榜名单失败会造成页面、历史、档案入口三处口径分裂
+    return (await sql.begin(async (tx) => {
+      const rows = await tx`SELECT payload FROM board_head WHERE key = ${key} LIMIT 1`
+      const prevItems = (rows[0] as { payload?: BoardData } | undefined)?.payload?.items ?? []
+      const written: BoardData = { ...data, items: withPrevRanks(data.items, prevItems) }
 
-    await sql`
-      INSERT INTO board_head (key, board, language, source, degraded, item_count, generated_at, taken_at, payload)
-      VALUES (${key}, ${slug}, ${language ?? ''}, ${written.source}, ${written.degraded ?? false}, ${written.items.length},
-              ${takenAt}, ${takenAt}, ${sql.json(written as unknown as Parameters<typeof sql.json>[0])})
-      ON CONFLICT (key) DO UPDATE SET
-        board = EXCLUDED.board, language = EXCLUDED.language, source = EXCLUDED.source,
-        degraded = EXCLUDED.degraded, item_count = EXCLUDED.item_count,
-        generated_at = EXCLUDED.generated_at, taken_at = EXCLUDED.taken_at, payload = EXCLUDED.payload
-      WHERE board_head.taken_at <= EXCLUDED.taken_at`
+      await tx`
+        INSERT INTO board_head (key, board, language, source, degraded, item_count, generated_at, taken_at, payload)
+        VALUES (${key}, ${slug}, ${language ?? ''}, ${written.source}, ${written.degraded ?? false}, ${written.items.length},
+                ${takenAt}, ${takenAt}, ${tx.json(written as unknown as Parameters<typeof tx.json>[0])})
+        ON CONFLICT (key) DO UPDATE SET
+          board = EXCLUDED.board, language = EXCLUDED.language, source = EXCLUDED.source,
+          degraded = EXCLUDED.degraded, item_count = EXCLUDED.item_count,
+          generated_at = EXCLUDED.generated_at, taken_at = EXCLUDED.taken_at, payload = EXCLUDED.payload
+        WHERE board_head.taken_at <= EXCLUDED.taken_at`
 
-    const values = data.items.map((item, index) => ({
-      taken_at: takenAt,
-      board: slug,
-      language: language ?? '',
-      source: data.source,
-      degraded: data.degraded ?? false,
-      rank: index + 1,
-      repo: item.fullName,
-      stars: item.stars,
-      forks: item.forks,
-      metric:
-        typeof item.slope === 'number'
-          ? item.slope
-          : typeof item.score === 'number'
-            ? item.score
-            : (item.gained ?? item.stars),
-      repo_created_at: item.createdAt ? new Date(item.createdAt) : null,
-      license: item.license ?? null,
-      pushed_at: item.pushedAt ?? null,
-      issues: typeof item.issues === 'number' ? item.issues : null,
-    }))
-    if (values.length) {
-      await sql`
-        INSERT INTO board_snapshots ${sql(
-          values,
-          'taken_at', 'board', 'language', 'source', 'degraded', 'rank', 'repo', 'stars', 'forks', 'metric', 'repo_created_at', 'license', 'pushed_at', 'issues',
-        )}`
-      // 过榜名单随拍更新(主键 upsert,几万行小表,毫秒级)
-      await sql`
-        INSERT INTO repo_seen ${sql(
-          values.map((v) => ({ repo: v.repo, last_seen: v.taken_at })),
-          'repo', 'last_seen',
-        )}
-        ON CONFLICT (repo) DO UPDATE SET last_seen = EXCLUDED.last_seen`
-    }
-    return true
+      const values = data.items.map((item, index) => ({
+        taken_at: takenAt,
+        board: slug,
+        language: language ?? '',
+        source: data.source,
+        degraded: data.degraded ?? false,
+        rank: index + 1,
+        repo: item.fullName,
+        stars: item.stars,
+        forks: item.forks,
+        metric:
+          typeof item.slope === 'number'
+            ? item.slope
+            : typeof item.score === 'number'
+              ? item.score
+              : (item.gained ?? item.stars),
+        repo_created_at: item.createdAt ? new Date(item.createdAt) : null,
+        license: item.license ?? null,
+        pushed_at: item.pushedAt ?? null,
+        issues: typeof item.issues === 'number' ? item.issues : null,
+      }))
+      if (values.length) {
+        await tx`
+          INSERT INTO board_snapshots ${tx(
+            values,
+            'taken_at', 'board', 'language', 'source', 'degraded', 'rank', 'repo', 'stars', 'forks', 'metric', 'repo_created_at', 'license', 'pushed_at', 'issues',
+          )}`
+        // 过榜名单随拍更新(主键 upsert,几万行小表,毫秒级)
+        await tx`
+          INSERT INTO repo_seen ${tx(
+            values.map((v) => ({ repo: v.repo, last_seen: v.taken_at })),
+            'repo', 'last_seen',
+          )}
+          ON CONFLICT (repo) DO UPDATE SET last_seen = EXCLUDED.last_seen`
+      }
+      return true
+    })) === true
   })) === true
 }
 
