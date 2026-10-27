@@ -16,6 +16,8 @@ import {
 const fakeCache = new Map<string, string>()
 // 定向抛错集(评审七轮):SELECT 命中这些 full|lang 键时直接 throw,模拟真·数据库异常
 const failSelectFor = new Set<string>()
+// 行写入时间标记:'recent' = 1h 内(防覆盖生效),缺省 = 过期(可覆盖)
+const fakeFetchedAt = new Map<string, 'recent'>()
 let selectCalls = 0
 const executed: Array<{ key: string; html: string }> = []
 
@@ -49,8 +51,21 @@ vi.mock('../lib/snapshot', () => ({
         const full = String(vals[0] ?? '')
         const key = String(vals[1] ?? '')
         const html = String(vals[2] ?? '')
+        // ON CONFLICT WHERE 语义镜像(评审八轮):1h 防覆盖 + 「已确认历史兜底行」例外
+        // (非 en 键且现值与 en 行全文一致 → 允许即时替换);en 键照旧只走防覆盖
+        const cacheKey = `${full}|${key}`
+        const existing = fakeCache.get(cacheKey)
+        if (existing !== undefined) {
+          const fetchedRecently = fakeFetchedAt.get(cacheKey) === 'recent'
+          const isLegacyFallback = key !== 'en' && existing === fakeCache.get(`${full}|en`)
+          if (fetchedRecently && !isLegacyFallback) {
+            executed.push({ key: `${key}(blocked-1h)`, html })
+            return Promise.resolve()
+          }
+        }
         executed.push({ key, html })
-        fakeCache.set(`${full}|${key}`, html)
+        fakeCache.set(cacheKey, html)
+        fakeFetchedAt.set(cacheKey, 'recent')
       }
       return Promise.resolve()
     }),
@@ -66,6 +81,7 @@ const localizedMock = vi.mocked(fetchLocalizedReadme)
 beforeEach(() => {
   fakeCache.clear()
   failSelectFor.clear()
+  fakeFetchedAt.clear()
   executed.length = 0
   selectCalls = 0
   localizedMock.mockReset()
@@ -240,6 +256,48 @@ describe('serveRepoDoc 统一读序(评审五轮:上游失败时英文缓存兜�
     expect(localizedMock).toHaveBeenCalledTimes(1)
     // 唯一入库的是上游拿到的真翻译(合法写入),异常路径没有产生伪装数据
     expect(fakeCache.get('s/j|zh')).toBe('<p>zh real</p>')
+  })
+
+  it('K:zh 键=en 键(历史兜底)→ 必须打上游拿真翻译并替换旧副本(评审八轮核心)', async () => {
+    // 旧污染形态:zh 键存的是英文原文(与 en 一致),且刚被更新过(1h 防覆盖窗内)
+    fakeCache.set('s/k|zh', '<p>old english copy</p>')
+    fakeCache.set('s/k|en', '<p>old english copy</p>')
+    fakeFetchedAt.set('s/k|zh', 'recent')
+    localizedMock.mockResolvedValue({ html: '<p>真中文来了</p>', localized: true })
+    const r = await serveRepoDoc('s/k', 'zh')
+    // ① 真的调了上游(历史兜底不再挡路)
+    expect(localizedMock).toHaveBeenCalledTimes(1)
+    // ② 返回真翻译
+    expect(r).toEqual({ html: '<p>真中文来了</p>', fallback: false, cached: false })
+    // ③ 防覆盖窗内仍完成替换(历史兜底行例外生效)
+    expect(fakeCache.get('s/k|zh')).toBe('<p>真中文来了</p>')
+  })
+
+  it('L:zh 键=en 键(历史兜底)且上游失败 → 返回英文降级 fallback:true', async () => {
+    fakeCache.set('s/l|zh', '<p>old english</p>')
+    fakeCache.set('s/l|en', '<p>old english</p>')
+    localizedMock.mockRejectedValue(new Error('upstream down'))
+    const r = await serveRepoDoc('s/l', 'zh')
+    expect(r).toEqual({ html: '<p>old english</p>', fallback: true, cached: true })
+  })
+
+  it('M:正常真翻译缓存近期更新过 → 1h 防覆盖照常拦截新写(例外不击穿有效缓存)', async () => {
+    // zh 是合法真翻译(≠en),刚更新过:上游又来一次同仓内容,写入应被防覆盖拦下
+    fakeCache.set('s/m|zh', '<p>真翻译 v1</p>')
+    fakeCache.set('s/m|en', '<p>english</p>')
+    fakeFetchedAt.set('s/m|zh', 'recent')
+    await storeRepoDoc('s/m', 'zh', '<p>真翻译 v2</p>', true)
+    expect(fakeCache.get('s/m|zh')).toBe('<p>真翻译 v1</p>')
+    expect(executed.some((e) => e.key === 'zh(blocked-1h)')).toBe(true)
+  })
+
+  it('SQL 契约:storeRepoDoc 的 ON CONFLICT 含历史兜底替换例外(评审八轮,防误删)', async () => {
+    // 静态契约:真 SQL 必须保留「1h 防覆盖 OR (非en键 且 内容= en 行)」——
+    // mock 镜像了行为,但真 SQL 才是线上语义;删掉例外=真翻译又替换不了旧副本
+    const src = await import('node:fs').then((fs) => fs.readFileSync('lib/repodocs.ts', 'utf8'))
+    expect(src).toContain("WHERE repo_docs.fetched_at < now() - interval '1 hour'")
+    expect(src).toContain("md5(repo_docs.html) IS NOT DISTINCT FROM")
+    expect(src).toContain("${key} <> 'en'")
   })
 
   it('J2:en 降级读取也抛错 → 返回空结果,不伪装(异常路径完整覆盖)', async () => {

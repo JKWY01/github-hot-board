@@ -16,9 +16,12 @@ import type { Locale } from './locales'
  * 英文兜底(仓库没有该语言 README 时显示的原文)可以正常返回给页面,
  * 但绝不冒充目标语言翻译写进目标语言键 —— 否则同一份英文正文会以十几个
  * 语种键各存一份(生产实测 22,346 行/3,405 仓/1,029MB 纯冗余)。
- * 读取顺序(serveRepoDoc,评审五/六轮定稿):目标语言缓存(带历史兜底识别)→
- * 上游语言探测(限时预算内;真翻译优先,英文兜底只展示不冒充)→
- * 上游失败/超时/异常 → 英文缓存降级(fallback: true;不写负缓存,可重试)。 */
+ * 读取顺序(serveRepoDoc,评审五/六/八轮定稿):
+ * ① 目标语缓存且为真翻译 → 直接返回(快速路径);
+ * ② 历史英文兜底副本不算命中 —— 仅作降级候选,继续上游语言探测(限时预算);
+ * ③ 上游真翻译 → 返回并可即时替换已确认的历史兜底行(见 storeRepoDoc 例外);
+ * ④ 上游失败/超时/异常 → 英文缓存降级 → 历史兜底候选 → 空结果
+ *   (fallback: true;不写负缓存,可重试)。 */
 
 let ready: Promise<void> | null = null
 
@@ -101,7 +104,11 @@ export async function readRepoDocWithFallback(
 
 /** 入库:一小时内不被覆盖(夜批与运行时谁先到谁为准,过期才续新)。
  * localized=false(英文兜底)只允许写 en 键 —— 请求方拿去展示可以,
- * 冒充目标语言翻译落目标语言键就是本次要修的污染。 */
+ * 冒充目标语言翻译落目标语言键就是本次要修的污染。
+ * 例外(评审八轮):已确认的历史兜底行(非 en 键且内容与 en 行全文一致)不设防 ——
+ * 真翻译一旦到手必须能即时替换它,否则旧英文副本靠 1h 防覆盖继续霸占目标语键;
+ * 正常有效翻译(内容≠en)的防覆盖语义原样保留,en 键自身也照旧(条件限定 key<>'en',
+ * 否则 en 行与自身比较恒真会击穿 en 键的防覆盖)。 */
 export async function storeRepoDoc(
   full: string,
   lang: string,
@@ -119,6 +126,12 @@ export async function storeRepoDoc(
       ON CONFLICT (full_name, lang) DO UPDATE
       SET html = EXCLUDED.html, bytes = EXCLUDED.bytes, fetched_at = now()
       WHERE repo_docs.fetched_at < now() - interval '1 hour'
+        OR (
+          ${key} <> 'en'
+          AND md5(repo_docs.html) IS NOT DISTINCT FROM
+              (SELECT md5(html) FROM repo_docs
+               WHERE full_name = ${full} AND lang = 'en')
+        )
     `
   })
 }
@@ -205,7 +218,13 @@ export async function serveRepoDoc(
   opts: { upstreamMs?: number } = {},
 ): Promise<ServedDoc> {
   const hit = await readRepoDocWithFallback(full, lang)
-  if (hit.html) return { html: hit.html, fallback: hit.fallback, cached: true }
+  // 真翻译缓存:快速路径直接返回。历史英文兜底副本(fallback:true)不算命中 ——
+  // 它只是降级候选:继续上游探测找真 README,否则旧英文副本会永久霸占目标语键
+  // (评审八轮:识别出污染却照常返回=半修复)。
+  if (hit.html && !hit.fallback) {
+    return { html: hit.html, fallback: false, cached: true }
+  }
+  const legacyCandidate = hit.html // 历史兜底内容(可能为 null),上游失败时兜底用
   // 只收敛「上游获取」的失败/超时/异常(评审六轮):会 reject 到这里的只剩上游网络/解析
   // 错误 —— 统一降级英文缓存。缓存写库异常在借取链内部已各自吞掉,不在这里二次吞;
   // 读库异常也不在此收敛(readRepoDoc 内部 catch 后按 miss 处理,仍走上游),
@@ -248,8 +267,10 @@ export async function serveRepoDoc(
       /* 非请求上下文(长驻进程/单测):进程存活,后台自会完成 */
     }
   }
-  // 上游失败/超时降级:库里的英文缓存(若有)比空页面对用户好得多;
-  // fallback: true 如实标注,不冒充目标语言
+  // 上游失败/超时降级(评审八轮补全):英文缓存优先;en 也缺时用历史兜底候选
+  // (内容本就是英文原文);两者都无才空手而归。所有降级 fallback: true,如实标注。
   const en = await readRepoDoc(full, 'en')
-  return { html: en, fallback: en !== null, cached: en !== null }
+  if (en) return { html: en, fallback: true, cached: true }
+  if (legacyCandidate) return { html: legacyCandidate, fallback: true, cached: true }
+  return { html: null, fallback: false, cached: false }
 }
