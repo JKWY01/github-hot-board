@@ -1,0 +1,42 @@
+# Vercel 部署线(2026-10-27 改节奏):打 v* 标签(或手动 dispatch)→ vercel CLI 构建
+# 并发布 production。此前 push main 由 Vercel Git 集成自动部署,现改为标签统一发版
+# (与 deploy-hk 同节奏):main 只攒代码,发版=打标签,两线同步。
+# 前提:Vercel 项目设置里已关 Git 集成的 main 自动部署(控制台 Git 菜单)。
+# 回滚 = vercel rollback 或重新给旧 commit 打标签再跑。
+name: vercel-deploy
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch: {}
+
+concurrency:
+  group: vercel-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: 安装依赖
+        run: npm ci
+
+      - name: 单测门禁(失败不发版)
+        run: npm test
+
+      - name: 部署到 Vercel production
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          npm i -g vercel@latest
+          vercel pull --yes --environment=production --token "$VERCEL_TOKEN" --scope jkwy01s-projects
+          vercel build --prod --token "$VERCEL_TOKEN" --scope jkwy01s-projects
+          vercel deploy --prebuilt --prod --yes --token "$VERCEL_TOKEN" --scope jkwy01s-projects

@@ -1,12 +1,13 @@
-# HK 自托管部署线(2026-10-25,Vercel 分流方案):push main → GitHub 构建 standalone
-# → 传 HK → 切软链 → 重启 ghb-web 容器 → 健康检查。快照自动提交带 [skip ci] 不触发。
+# HK 自托管部署线(2026-10-25,Vercel 分流方案):打 v* 标签(或手动 dispatch)→ 构建 standalone
+# → 传 HK → 切软链 → 重启 ghb-web 容器 → 健康检查。
+# 2026-10-27 改节奏:push main 只攒代码,不再自动部署 —— 发版=打标签(两线同步,详见 vercel-deploy 工作流)。
 # 与 Vercel 双线并存:两边读同一个库;反代决定谁接客(nginx: 爬虫→HK,真人→Vercel)。
 # 回滚 = 服务器上 ln -sfn 指回上一个 releases/<sha> 再 docker restart。
 name: deploy-hk
 
 on:
   push:
-    branches: [main]
+    tags: ['v*']
   workflow_dispatch: {}
 
 concurrency:
