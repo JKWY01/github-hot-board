@@ -92,7 +92,8 @@ export default async function RepoPage({
   if (!archive) notFound()
 
   // 状态三件套(license/push/issues,2026-10-25 起随拍采集)+ 同类项目(主题邻居)
-  const [statusFactsRaw, topicPeersRaw] = await Promise.all([
+  // discoverMeta 同时供英雄区 chips(语言/主题):取不到不渲染,不许编
+  const [statusFactsRaw, topicPeersRaw, metaRaw] = await Promise.all([
     withTimeout(readRepoStatusFacts(fullName), 9000)
       .catch(() => ({ license: null, pushedAt: null, issues: null })),
     // 同类邻居是锦上添花:4.5s 上限(部署后首渲染=函数冷启动+洞冷,3.5s 实测常输一拍),
@@ -105,9 +106,12 @@ export default async function RepoPage({
         }),
       4500,
     ).catch(() => []),
+    // chips 是锦上添花:超时给 null,英雄区退化为纯文字(原样)
+    withTimeout(readDiscoverMeta().then((m) => m.get(fullName) ?? null), 4500).catch(() => null),
   ])
   const statusFacts = unTimeout(statusFactsRaw)
   const topicPeers = unTimeout(topicPeersRaw)
+  const repoMeta = unTimeout(metaRaw)
 
   // 视角语言描述合并在缓存外(与榜单洞同一纪律):zh 页面用 zh 描述,缺翻译回落 en 原文。
   const descs = unTimeout(descsMap)?.get(fullName)
@@ -143,6 +147,7 @@ export default async function RepoPage({
       statusFacts={statusFacts ?? undefined}
       topicPeers={topicPeers ?? undefined}
       readmeHtml={readmeHtml}
+      repoMeta={repoMeta ? { language: repoMeta.language, topics: repoMeta.topics } : undefined}
     />
   )
 }
