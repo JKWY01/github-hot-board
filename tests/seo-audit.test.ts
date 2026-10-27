@@ -25,7 +25,7 @@ describe('seo-audit 脚本契约', () => {
       'unexpected-status', 'http-status',      // 状态码/异常重定向
       'missing-title', 'missing-description', 'missing-h1', 'duplicate-title', // title/desc/H1
       'canonical-mismatch',                     // canonical
-      'hreflang-incomplete', 'hreflang-missing-self', 'hreflang-duplicate', // hreflang
+      'hreflang-incomplete', 'hreflang-missing-self', 'hreflang-duplicate', 'hreflang-missing-x-default', 'hreflang-wrong-target', // hreflang 精确断言
       'sitemap-unreachable', 'sitemap-dead-url', 'sitemap-vs-robots-conflict', // sitemap
       'unexpected-noindex', 'expected-noindex-missing', // noindex 有意/意外
       'ld+json-unparsable', 'ld+json-not-object', // 结构化数据
@@ -58,6 +58,21 @@ describe('seo-audit 脚本契约', () => {
   it('只读纪律:脚本不含任何写库/部署/POST 动作', () => {
     expect(/method:\s*['"]POST/i.test(src)).toBe(false)
     expect(src.includes('withDb')).toBe(false)
+  })
+
+  it('hreflang 期望集合与 lib/locales LOCALES 同步(16 语清单)', () => {
+    const m = /const EXPECTED_LANGS = \[([^\]]+)\]/.exec(src)
+    expect(m).toBeTruthy()
+    const langs = m![1].split(',').map((x) => x.trim().replace(/'/g, ''))
+    // 从 dictionaries 侧拿真源核对(经 dict 文件数量即 16 语)
+    expect(langs).toHaveLength(16)
+    expect(langs).toContain('zh-TW')
+    expect(langs).not.toContain('x-default') // x-default 单独判断,不在 16 语枚举里
+  })
+
+  it('体积口径 = Buffer.byteLength utf8(非 body.length)', () => {
+    expect(src.includes("Buffer.byteLength(body, 'utf8')")).toBe(true)
+    expect(src.includes('bytes: body.length')).toBe(false)
   })
 
   it('跨语言同 title(repo)降 P2、同语言保持 P1', () => {

@@ -160,14 +160,25 @@ function checkPage(sample, r) {
     if (canonical !== want) issues.push({ url, type: 'canonical-mismatch', sev: 'P1', detail: `canonical=${canonical} want=${want}` })
   }
 
-  // 4) hreflang:16 语 + x-default 应齐全且自指可访问(可达性抽查交给样本本身,这里查结构)
+  // 4) hreflang:精确断言(不是数数量)——16 语集合、x-default、重复码、目标 URL 形态、自指。
+  //    期望集合与 lib/locales.ts 的 LOCALES 同步(脚本独立于 TS,改语言路由时两处同改)。
+  const EXPECTED_LANGS = ['en', 'zh', 'zh-TW', 'ja', 'ko', 'de', 'fr', 'es', 'pt', 'it', 'ru', 'uk', 'pl', 'tr', 'vi', 'id']
   if (['home', 'board', 'facet', 'repo', 'history-index', 'guide'].includes(sample.kind)) {
     const langs = hreflangs.map((x) => x.lang)
-    if (langs.length < 17) issues.push({ url, type: 'hreflang-incomplete', sev: 'P1', detail: `${langs.length}/17 (need 16 + x-default)` })
-    const selfOk = hreflangs.some((x) => x.href === `${BASE}${sample.path}`)
-    if (!selfOk) issues.push({ url, type: 'hreflang-missing-self', sev: 'P1', detail: '' })
+    const missing = EXPECTED_LANGS.filter((l) => !langs.includes(l))
+    if (missing.length) issues.push({ url, type: 'hreflang-incomplete', sev: 'P1', detail: `missing: ${missing.join(',')}` })
+    if (!langs.includes('x-default')) issues.push({ url, type: 'hreflang-missing-x-default', sev: 'P1', detail: '' })
     const dupes = langs.filter((l, i) => langs.indexOf(l) !== i)
     if (dupes.length) issues.push({ url, type: 'hreflang-duplicate', sev: 'P2', detail: dupes.join(',') })
+    // 目标 URL 形态:每项必须是 /{lang}/<同一路径>(x-default → /en/...),跨语言链接错乱在此暴露
+    // 语言段剥离:'/zh/boards/x'→'/boards/x';纯语言首页 '/zh'→''(want=/en)
+    const wantPath = sample.path.replace(/^\/(?:[a-z]{2}(?:-[A-Z]{2})?)(?=\/|$)/, '')
+    for (const { lang, href } of hreflangs) {
+      const want = `${BASE}/${lang === 'x-default' ? 'en' : lang}${wantPath}`
+      if (href !== want) issues.push({ url, type: 'hreflang-wrong-target', sev: 'P1', detail: `${lang} → ${href} (want ${want})` })
+    }
+    const selfOk = hreflangs.some((x) => x.href === `${BASE}${sample.path}`)
+    if (!selfOk) issues.push({ url, type: 'hreflang-missing-self', sev: 'P1', detail: '' })
   }
 
   // 5) 结构化数据:JSON-LD 必须是可解析对象(双重转义回归 = 解析成 string)
