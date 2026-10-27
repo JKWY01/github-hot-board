@@ -15,6 +15,9 @@ import type { Locale } from '@/lib/types'
 
 export const instant = false
 
+/** 吸底条等处复用的发现页标题(16 语 T 表已有,不另开字典键)。 */
+export const discoverTitle = (lang: Locale) => T[lang].title
+
 const T: Record<Locale, Record<string, string>> = {
   en: { title: 'Discover', lead: 'Combine filters over our own library: language × topic × star band × age.', fLang: 'Language', fTopic: 'Topic', fStars: 'Stars', fAge: 'Created', fSort: 'Sort', all: 'All', a7: '≤ 7 days', a30: '≤ 30 days', a90: '≤ 90 days', ay: 'This year', sortStars: 'By total stars', sortGain: 'By 7-day gain', empty: 'No repos match these filters.', colRepo: 'Repo', colGain: '7-day gain', note: '7-day gain compares our own snapshots (collected since 2026-10-18); recently indexed repos show “—”. This page is noindex.' },
   zh: { title: '发现', lead: '在自己库里组合筛选:语言 × 主题 × Star 档 × 创建时间。', fLang: '语言', fTopic: '主题', fStars: 'Star 档', fAge: '创建时间', fSort: '排序', all: '全部', a7: '7 天内', a30: '30 天内', a90: '90 天内', ay: '今年', sortStars: '按累计 Star', sortGain: '按近 7 天增长', empty: '没有符合条件的仓库。', colRepo: '项目', colGain: '近 7 天', note: '近 7 天增量来自自有快照对比(自 2026-10-18 起采集),新入库仓库显示“—”。本页 noindex,不进搜索。' },
