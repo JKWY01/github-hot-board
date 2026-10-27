@@ -5,7 +5,7 @@ import { isLocale } from '@/app/[lang]/dictionaries'
 import { LOCALES } from '@/lib/locales'
 import { getRepoArchiveCached, isRepoFullName } from '@/lib/repoarchive'
 import { readBoardNeighbors, readRepoDescs, readDiscoverMeta, readRepoStatusFacts, readSiblingRepos, readTopicPeers } from '@/lib/snapshot'
-import { borrowLocalizedRepoDocFetch, readRepoDocWithFallback } from '@/lib/repodocs'
+import { serveRepoDoc } from '@/lib/repodocs'
 import RepoArchiveView, { repoArchiveMetadata } from '@/components/repo-archive'
 
 /** 超时哨兵(2026-10-26 六轮审查):超时/出错 resolve TIMEOUT,与"仓库不存在"(null)可区分 ——
@@ -127,13 +127,10 @@ export default async function RepoPage({
   // 同作者其他上榜仓(内链网第二层):repo_seen 小表前缀查,失败静默。
   const siblings = unTimeout(await withTimeout(readSiblingRepos(fullName), 4500).catch(() => [] as string[])) ?? []
 
-  // README 正文(repo_docs 快照,抽屉与档案页共用一份):读序 = 目标语缓存 → en 缓存 → 实弹。
-  // 实弹走语言感知借取:真翻译入目标语键,英文兜底只展示不入目标语键(回退污染修复,基线评审阶段1)。
-  const cachedDoc = unTimeout(await withTimeout(readRepoDocWithFallback(fullName, lang), 9000))
-  const borrowed = cachedDoc?.html
-    ? null
-    : unTimeout(await withTimeout(borrowLocalizedRepoDocFetch(fullName, lang), 4000))
-  const readmeHtml = cachedDoc?.html ?? borrowed?.html ?? null
+  // README 正文(与抽屉 API 共用 serveRepoDoc,评审五轮统一读序):
+  // 目标语缓存 → 上游语言探测 → 上游失败时英文缓存降级;超时(上游内部预算外)按无文档处理
+  const served = unTimeout(await withTimeout(serveRepoDoc(fullName, lang), 9000))
+  const readmeHtml = served?.html ?? null
 
   return (
     <RepoArchiveView

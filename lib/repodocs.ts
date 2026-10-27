@@ -53,7 +53,7 @@ export async function readRepoDoc(full: string, lang: string): Promise<string | 
   }
 }
 
-/** 带英文回退的读取:目标语言缓存 → 英文缓存 → null(调用方再决定是否实弹)。
+/** 目标语缓存读取(serveRepoDoc 第①层):命中时做历史兜底识别,未命中返回 null。
  * 命中英文回退时返回 fallback: true,调用方无需区分内容,但测试与观测需要区分。 */
 export async function readRepoDocWithFallback(
   full: string,
@@ -173,4 +173,28 @@ export function borrowLocalizedRepoDocFetch(
     })
   inflightLocalized.set(key, task)
   return task
+}
+
+/** 完整 README 读取服务(评审五轮:API 与档案页共用的统一读序)。
+ * ① 目标语缓存命中(含历史兜底识别)→ 返回;
+ * ② 上游语言探测(单飞+语言感知落键):真翻译或英文兜底,按 localized 语义;
+ * ③ 上游失败/无内容 → 读已有英文缓存降级,fallback: true;
+ * ④ 三层皆空 → null(调用方按各自错误策略处理)。
+ * 任何失败都不写负缓存(评审四轮),后续请求可重新探测。
+ * cached 标注 html 是否直接来自库缓存(①③)而非上游(②)。 */
+export interface ServedDoc {
+  html: string | null
+  fallback: boolean
+  cached: boolean
+}
+
+export async function serveRepoDoc(full: string, lang: string): Promise<ServedDoc> {
+  const hit = await readRepoDocWithFallback(full, lang)
+  if (hit.html) return { html: hit.html, fallback: hit.fallback, cached: true }
+  const borrowed = await borrowLocalizedRepoDocFetch(full, lang)
+  if (borrowed.html) return { html: borrowed.html, fallback: borrowed.fallback, cached: false }
+  // 上游失败降级:库里的英文缓存(若有)比空页面对用户好得多;
+  // fallback: true 如实标注,不冒充目标语言
+  const en = await readRepoDoc(full, 'en')
+  return { html: en, fallback: en !== null, cached: en !== null }
 }

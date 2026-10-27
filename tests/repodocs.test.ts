@@ -1,6 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { borrowLocalizedRepoDocFetch, readRepoDocWithFallback, storeRepoDoc } from '../lib/repodocs'
+import {
+  borrowLocalizedRepoDocFetch,
+  readRepoDocWithFallback,
+  serveRepoDoc,
+  storeRepoDoc,
+} from '../lib/repodocs'
 
 /** README 缓存语言语义测试(数据库基线评审阶段1,用户验收要求第四节)。
  *  七个场景覆盖 readRepoDocWithFallback 读序与 borrowLocalizedRepoDocFetch
@@ -140,6 +145,47 @@ describe('存量历史兜底识别(评审二轮:目标语命中也可能污染�
     fakeCache.set('x/y|zh', '<p>中文</p>')
     const r = await readRepoDocWithFallback('x/y', 'zh')
     expect(r).toEqual({ html: '<p>中文</p>', fallback: false })
+  })
+})
+
+describe('serveRepoDoc 统一读序(评审五轮:上游失败时英文缓存兜底)', () => {
+  it('A:英文缓存已存在,目标语言探测成功拿真翻译 → 仍优先返回真翻译', async () => {
+    fakeCache.set('s/a|en', '<p>english</p>')
+    localizedMock.mockResolvedValue({ html: '<p>真翻译</p>', localized: true })
+    const r = await serveRepoDoc('s/a', 'zh')
+    expect(r).toEqual({ html: '<p>真翻译</p>', fallback: false, cached: false })
+    // 真翻译落 zh 键
+    expect(fakeCache.get('s/a|zh')).toBe('<p>真翻译</p>')
+  })
+
+  it('B:英文缓存已存在,上游探测失败 → 返回英文缓存降级 fallback:true(评审五轮核心)', async () => {
+    fakeCache.set('s/b|en', '<p>english cached</p>')
+    localizedMock.mockResolvedValue({ html: null, localized: false })
+    const r = await serveRepoDoc('s/b', 'zh')
+    expect(r).toEqual({ html: '<p>english cached</p>', fallback: true, cached: true })
+  })
+
+  it('C:英文缓存也不存在,上游失败 → 返回 null(调用方按错误策略处理)', async () => {
+    localizedMock.mockResolvedValue({ html: null, localized: false })
+    const r = await serveRepoDoc('s/c', 'zh')
+    expect(r).toEqual({ html: null, fallback: false, cached: false })
+  })
+
+  it('D:失败之后再请求 → 不受任何负缓存阻断,仍可重新探测并成功', async () => {
+    localizedMock.mockResolvedValueOnce({ html: null, localized: false })
+    const first = await serveRepoDoc('s/d', 'zh')
+    expect(first.html).toBeNull()
+    // 第二次:上游恢复,拿到真翻译 —— 证明没有把上一次失败记成"无翻译"
+    localizedMock.mockResolvedValueOnce({ html: '<p>后来拿到了</p>', localized: true })
+    const second = await serveRepoDoc('s/d', 'zh')
+    expect(second).toEqual({ html: '<p>后来拿到了</p>', fallback: false, cached: false })
+  })
+
+  it('E:目标语缓存命中(含历史兜底识别)→ 不打上游', async () => {
+    fakeCache.set('s/e|zh', '<p>中文缓存</p>')
+    const r = await serveRepoDoc('s/e', 'zh')
+    expect(r).toEqual({ html: '<p>中文缓存</p>', fallback: false, cached: true })
+    expect(localizedMock).not.toHaveBeenCalled()
   })
 })
 

@@ -2,7 +2,7 @@ import { fetchRepoDoc } from '@/lib/github'
 import { isLocale } from '@/lib/locales'
 import { clientIpOf, slidingWindow } from '@/lib/ratelimit'
 import { isRepoFullName } from '@/lib/reposhape'
-import { borrowLocalizedRepoDocFetch, readRepoDocWithFallback } from '@/lib/repodocs'
+import { serveRepoDoc } from '@/lib/repodocs'
 
 /** 站内仓库页面接口:返回 GitHub 官方渲染好的 README HTML,给行点击抽屉用。
  * ?full=owner/name&lg=zh —— 首屏 README(站点语言协商,16 语;非法值回英文)
@@ -40,14 +40,13 @@ export async function GET(request: Request) {
     return Response.json({ ok: true, readme }, { headers: { 'Cache-Control': 'no-store' } })
   }
 
-  const cached = await readRepoDocWithFallback(full, locale)
-  if (cached.html) {
-    return Response.json({ ok: true, readme: cached.html, cached: true, fallback: cached.fallback }, { headers: { 'Cache-Control': 'no-store' } })
-  }
-
-  const { html: readme, fallback } = await borrowLocalizedRepoDocFetch(full, locale)
-  if (!readme) {
+  // 统一读序(评审五轮):目标缓存→上游探测→失败时英文缓存降级;与档案页共用 serveRepoDoc
+  const served = await serveRepoDoc(full, locale)
+  if (!served.html) {
     return Response.json({ ok: false }, { status: 404, headers: { 'Cache-Control': 'no-store' } })
   }
-  return Response.json({ ok: true, readme, fallback }, { headers: { 'Cache-Control': 'no-store' } })
+  return Response.json(
+    { ok: true, readme: served.html, fallback: served.fallback, cached: served.cached },
+    { headers: { 'Cache-Control': 'no-store' } },
+  )
 }
