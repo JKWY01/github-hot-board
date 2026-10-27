@@ -22,7 +22,9 @@ export async function generateMetadata({
   return {
     // 布局模板会自动追加 siteName,这里只给裸标题
     title: liveStrings(lang).watchTitle,
-    description: undefined,
+    // canonical 不是为消审计告警:铃铛入口会产生 ?from=bell 参数变体(200 同内容),
+    // 规范到无参 URL;noindex 工具页,desc/h1 有意不补(不参与收录)。
+    alternates: { canonical: `/${lang}/watch` },
     robots: { index: false, follow: true },
   }
 }
