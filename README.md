@@ -11,7 +11,7 @@
 
 | # | 项目 | 累计 Star | 本周新增 Star |
 |---|---|---|---|
-| 1 | [morluto/rea](https://git.vaiox.xyz/zh/repo/morluto/rea) | 392.5k | 26.7k |
+| 1 | [morluto/rea](https://git.vaiox.xyz/zh/repo/morluto/rea) | 392.7k | 26.9k |
 | 2 | [Gathin23/cleanyourtv](https://git.vaiox.xyz/zh/repo/Gathin23/cleanyourtv) | 37.6k | 13.7k |
 | 3 | [peach-mitao/peach](https://git.vaiox.xyz/zh/repo/peach-mitao/peach) | 12.0k | 9.8k |
 | 4 | [cloudflare/security-audit-skill](https://git.vaiox.xyz/zh/repo/cloudflare/security-audit-skill) | 47.9k | 8.5k |
@@ -26,7 +26,7 @@
 
 | # | 项目 | 累计 Star | 本月新增 Star |
 |---|---|---|---|
-| 1 | [morluto/rea](https://git.vaiox.xyz/zh/repo/morluto/rea) | 392.5k | 26.7k |
+| 1 | [morluto/rea](https://git.vaiox.xyz/zh/repo/morluto/rea) | 392.7k | 26.9k |
 | 2 | [Gathin23/cleanyourtv](https://git.vaiox.xyz/zh/repo/Gathin23/cleanyourtv) | 37.6k | 13.7k |
 | 3 | [peach-mitao/peach](https://git.vaiox.xyz/zh/repo/peach-mitao/peach) | 12.0k | 9.8k |
 | 4 | [cloudflare/security-audit-skill](https://git.vaiox.xyz/zh/repo/cloudflare/security-audit-skill) | 47.9k | 8.5k |
@@ -42,12 +42,12 @@
 | # | 项目 | 累计 Star | 新增 |
 |---|---|---|---|
 | 1 | [codecrafters-io/build-your-own-x](https://git.vaiox.xyz/zh/repo/codecrafters-io/build-your-own-x) | 556.5k | — |
-| 2 | [sindresorhus/awesome](https://git.vaiox.xyz/zh/repo/sindresorhus/awesome) | 525.2k | — |
+| 2 | [sindresorhus/awesome](https://git.vaiox.xyz/zh/repo/sindresorhus/awesome) | 525.3k | — |
 | 3 | [public-apis/public-apis](https://git.vaiox.xyz/zh/repo/public-apis/public-apis) | 492.5k | — |
 | 4 | [freeCodeCamp/freeCodeCamp](https://git.vaiox.xyz/zh/repo/freeCodeCamp/freeCodeCamp) | 458.0k | — |
 | 5 | [EbookFoundation/free-programming-books](https://git.vaiox.xyz/zh/repo/EbookFoundation/free-programming-books) | 400.2k | — |
 | 6 | [openclaw/openclaw](https://git.vaiox.xyz/zh/repo/openclaw/openclaw) | 393.2k | — |
-| 7 | [morluto/rea](https://git.vaiox.xyz/zh/repo/morluto/rea) | 392.5k | — |
+| 7 | [morluto/rea](https://git.vaiox.xyz/zh/repo/morluto/rea) | 392.7k | — |
 | 8 | [donnemartin/system-design-primer](https://git.vaiox.xyz/zh/repo/donnemartin/system-design-primer) | 375.7k | — |
 | 9 | [nilbuild/developer-roadmap](https://git.vaiox.xyz/zh/repo/nilbuild/developer-roadmap) | 370.5k | — |
 | 10 | [jwasham/coding-interview-university](https://git.vaiox.xyz/zh/repo/jwasham/coding-interview-university) | 363.4k | — |

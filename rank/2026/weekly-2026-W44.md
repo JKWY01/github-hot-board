@@ -5,7 +5,7 @@
 
 | # | 项目 | 累计 Star | 本周新增 Star | 简介 |
 |---|---|---|---|---|
-| 1 | [morluto/rea](https://git.vaiox.xyz/zh/repo/morluto/rea) | 392.5k | 26.7k |  |
+| 1 | [morluto/rea](https://git.vaiox.xyz/zh/repo/morluto/rea) | 392.7k | 26.9k |  |
 | 2 | [Gathin23/cleanyourtv](https://git.vaiox.xyz/zh/repo/Gathin23/cleanyourtv) | 37.6k | 13.7k |  |
 | 3 | [peach-mitao/peach](https://git.vaiox.xyz/zh/repo/peach-mitao/peach) | 12.0k | 9.8k |  |
 | 4 | [cloudflare/security-audit-skill](https://git.vaiox.xyz/zh/repo/cloudflare/security-audit-skill) | 47.9k | 8.5k |  |
@@ -20,13 +20,13 @@
 | 13 | [DietrichGebert/ponytail](https://git.vaiox.xyz/zh/repo/DietrichGebert/ponytail) | 177.3k | 4.0k |  |
 | 14 | [seedds/nxnative](https://git.vaiox.xyz/zh/repo/seedds/nxnative) | 5.1k | 3.7k |  |
 | 15 | [affaan-m/ECC](https://git.vaiox.xyz/zh/repo/affaan-m/ECC) | 290.0k | 3.5k |  |
-| 16 | [TauricResearch/TradingAgents](https://git.vaiox.xyz/zh/repo/TauricResearch/TradingAgents) | 116.4k | 3.4k |  |
+| 16 | [TauricResearch/TradingAgents](https://git.vaiox.xyz/zh/repo/TauricResearch/TradingAgents) | 116.4k | 3.5k |  |
 | 17 | [Graphify-Labs/graphify](https://git.vaiox.xyz/zh/repo/Graphify-Labs/graphify) | 136.3k | 3.4k |  |
-| 18 | [mattpocock/skills](https://git.vaiox.xyz/zh/repo/mattpocock/skills) | 304.2k | 3.3k |  |
+| 18 | [mattpocock/skills](https://git.vaiox.xyz/zh/repo/mattpocock/skills) | 304.2k | 3.4k |  |
 | 19 | [heygen-com/hyperframes](https://git.vaiox.xyz/zh/repo/heygen-com/hyperframes) | 73.3k | 3.3k |  |
 | 20 | [hugohe3/ppt-master](https://git.vaiox.xyz/zh/repo/hugohe3/ppt-master) | 69.1k | 3.1k |  |
 | 21 | [deepseek-ai/DeepInfer](https://git.vaiox.xyz/zh/repo/deepseek-ai/DeepInfer) | 22.8k | 3.0k |  |
-| 22 | [Panniantong/Agent-Reach](https://git.vaiox.xyz/zh/repo/Panniantong/Agent-Reach) | 103.9k | 2.9k |  |
+| 22 | [Panniantong/Agent-Reach](https://git.vaiox.xyz/zh/repo/Panniantong/Agent-Reach) | 104.0k | 2.9k |  |
 | 23 | [ai-job-search-dev/ai-job-search](https://git.vaiox.xyz/zh/repo/ai-job-search-dev/ai-job-search) | 66.4k | 2.9k |  |
 | 24 | [pengchujin/aerial-tv](https://git.vaiox.xyz/zh/repo/pengchujin/aerial-tv) | 5.8k | 2.8k |  |
 | 25 | [yetone/magpie](https://git.vaiox.xyz/zh/repo/yetone/magpie) | 22.3k | 2.8k |  |

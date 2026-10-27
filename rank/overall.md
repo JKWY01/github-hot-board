@@ -6,12 +6,12 @@
 | # | 项目 | 累计 Star | Fork 数 | 简介 |
 |---|---|---|---|---|
 | 1 | [codecrafters-io/build-your-own-x](https://git.vaiox.xyz/zh/repo/codecrafters-io/build-your-own-x) | 556.5k | 52.1k | Master programming by recreating your favorite technologies … |
-| 2 | [sindresorhus/awesome](https://git.vaiox.xyz/zh/repo/sindresorhus/awesome) | 525.2k | 37.8k | Awesome lists about all kinds of interesting topics [NOTE: P… |
+| 2 | [sindresorhus/awesome](https://git.vaiox.xyz/zh/repo/sindresorhus/awesome) | 525.3k | 37.8k | Awesome lists about all kinds of interesting topics [NOTE: P… |
 | 3 | [public-apis/public-apis](https://git.vaiox.xyz/zh/repo/public-apis/public-apis) | 492.5k | 54.9k | A collective list of free APIs |
 | 4 | [freeCodeCamp/freeCodeCamp](https://git.vaiox.xyz/zh/repo/freeCodeCamp/freeCodeCamp) | 458.0k | 48.7k | freeCodeCamp.org's open-source codebase and curriculum. Lear… |
 | 5 | [EbookFoundation/free-programming-books](https://git.vaiox.xyz/zh/repo/EbookFoundation/free-programming-books) | 400.2k | 67.0k | :books: Freely available programming books |
 | 6 | [openclaw/openclaw](https://git.vaiox.xyz/zh/repo/openclaw/openclaw) | 393.2k | 82.7k | The AI that really does things. Any OS. Any Platform. The lo… |
-| 7 | [morluto/rea](https://git.vaiox.xyz/zh/repo/morluto/rea) | 392.5k | 98.4k | Reverse engineer anything with agents, from app behavior dow… |
+| 7 | [morluto/rea](https://git.vaiox.xyz/zh/repo/morluto/rea) | 392.7k | 98.4k | Reverse engineer anything with agents, from app behavior dow… |
 | 8 | [donnemartin/system-design-primer](https://git.vaiox.xyz/zh/repo/donnemartin/system-design-primer) | 375.7k | 59.0k | Learn how to design large-scale systems. Prep for the system… |
 | 9 | [nilbuild/developer-roadmap](https://git.vaiox.xyz/zh/repo/nilbuild/developer-roadmap) | 370.5k | 45.2k | Interactive roadmaps, guides and other educational content t… |
 | 10 | [jwasham/coding-interview-university](https://git.vaiox.xyz/zh/repo/jwasham/coding-interview-university) | 363.4k | 85.1k | A complete computer science study plan to become a software … |
