@@ -1,6 +1,8 @@
 import { withDb } from './snapshot'
 import { fetchLocalizedReadme } from './github'
+import { PROBE_FRESH_MS } from './descfill'
 import type { Locale } from './locales'
+import { readProbes, upsertProbe } from './snapshot'
 
 /** 仓库文档快照(repo_docs):抽屉与档案页共用的持久 README 缓存层。
  * 动机:
@@ -62,8 +64,15 @@ export async function readRepoDocWithFallback(
   if (lang === 'en') return { html: await readRepoDoc(full, 'en'), fallback: false }
   const hit = await readRepoDoc(full, lang)
   if (!hit) {
-    const en = await readRepoDoc(full, 'en')
-    return { html: en, fallback: en !== null }
+    // 「已确认无翻译」才直接英文兜底;未探测过仍返回 null 让调用方走上游探测
+    //(评审三轮:英文缓存存在≠GitHub 没有目标语 README,真实翻译不能失去发现机会)。
+    // probe 30 天新鲜期,由采集/读取链路共同维护;probe 查询失败按未探测处理(保守)。
+    const probes = await readProbes([full], PROBE_FRESH_MS).catch(() => new Map<string, boolean>())
+    if (probes.get(`${full}|${lang}`) === false) {
+      const en = await readRepoDoc(full, 'en')
+      return { html: en, fallback: en !== null }
+    }
+    return { html: null, fallback: false }
   }
   // 历史污染兼容(评审二轮):存量库约 2 万行非英文键存的实际是英文原文
   //(修复前的回退落盘)。目标语言命中时在 DB 层 md5 比对同仓英文源:
@@ -71,9 +80,18 @@ export async function readRepoDocWithFallback(
   // 不一致 → 真翻译。比对在 SQL 内完成,不把两份大 HTML 拉到应用层。
   // en 源不存在的行无法证伪,按真翻译处理(保守,不误伤)。
   const isFallback = await withDb(async (sql) => {
+    // 性能路径(评审三轮实测:全量 md5 对 2.2MB 大文档热态 23ms/冷态 102ms,不可接受):
+    // 先比字节长度(PG 只读元数据,零 HTML 解压),长度不同必然不是兜底副本,直接 false;
+    // 长度相同才做 md5 全文确认。p90 文档 98KB 时 md5 热态 ~0.1ms,大文档仅在"长度恰好相同"
+    // 的罕见场景才付摘要成本。
     const rows = (await sql`
-      SELECT (SELECT md5(html) FROM repo_docs WHERE full_name = ${full} AND lang = ${lang})
-           = (SELECT md5(html) FROM repo_docs WHERE full_name = ${full} AND lang = 'en') AS same
+      SELECT (
+        (SELECT octet_length(html) FROM repo_docs WHERE full_name = ${full} AND lang = ${lang})
+        = (SELECT octet_length(html) FROM repo_docs WHERE full_name = ${full} AND lang = 'en')
+        AND
+        (SELECT md5(html) FROM repo_docs WHERE full_name = ${full} AND lang = ${lang})
+        = (SELECT md5(html) FROM repo_docs WHERE full_name = ${full} AND lang = 'en')
+      ) AS same
     `) as unknown as Array<{ same: boolean }> | undefined
     return rows?.[0]?.same === true
   }).catch(() => false)
@@ -131,19 +149,28 @@ export function borrowRepoDocFetch(
 /** 语言感知的单飞借取:上游调用走 fetchLocalizedReadme(带语言协商),
  * localized=false 的英文兜底只展示不入目标语言键(入 en 键)。
  * 两层单飞语义保持:同 (lang,full) 并发共享一次上游;en 兜底另占 (en|full) 键。 */
-const inflightLocalized = new Map<string, Promise<string | null>>()
+const inflightLocalized = new Map<string, Promise<BorrowedDoc>>()
+
+export interface BorrowedDoc {
+  html: string | null
+  /** 本次上游结果是否英文兜底(localized:false)——API 层据此统一 fallback 语义 */
+  fallback: boolean
+}
 
 export function borrowLocalizedRepoDocFetch(
   full: string,
   lang: string,
-): Promise<string | null> {
+): Promise<BorrowedDoc> {
   const key = `${lang}|${full}`
   const current = inflightLocalized.get(key)
   if (current) return current
   const task = fetchLocalizedReadme(full, lang as Locale)
-    .then(async ({ html, localized }) => {
+    .then(async ({ html, localized }): Promise<BorrowedDoc> => {
       if (html) await storeRepoDoc(full, lang, html, localized).catch(() => undefined)
-      return html
+      // 探测结论落账本(30 天内不再为同仓同语白跑一次注定 miss 的探测):
+      // localized=false = 已确认该仓库没有此语言 README,读序可放心走英文兜底。
+      if (!localized) await upsertProbe(full, lang, false).catch(() => undefined)
+      return { html, fallback: !localized && lang !== 'en' }
     })
     .finally(() => {
       inflightLocalized.delete(key)

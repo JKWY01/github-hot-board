@@ -130,10 +130,10 @@ export default async function RepoPage({
   // README 正文(repo_docs 快照,抽屉与档案页共用一份):读序 = 目标语缓存 → en 缓存 → 实弹。
   // 实弹走语言感知借取:真翻译入目标语键,英文兜底只展示不入目标语键(回退污染修复,基线评审阶段1)。
   const cachedDoc = unTimeout(await withTimeout(readRepoDocWithFallback(fullName, lang), 9000))
-  const readmeHtml = cachedDoc?.html ?? (unTimeout(await withTimeout(
-    borrowLocalizedRepoDocFetch(fullName, lang),
-    4000,
-  )) ?? null)
+  const borrowed = cachedDoc?.html
+    ? null
+    : unTimeout(await withTimeout(borrowLocalizedRepoDocFetch(fullName, lang), 4000))
+  const readmeHtml = cachedDoc?.html ?? borrowed?.html ?? null
 
   return (
     <RepoArchiveView

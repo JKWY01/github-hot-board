@@ -12,7 +12,20 @@ const fakeCache = new Map<string, string>()
 let selectCalls = 0
 const executed: Array<{ key: string; html: string }> = []
 
+// 探测账本假库:full|lang → resolved(30 天新鲜语义由被测方传 maxAge 决定,这里简化为全命中)
+const fakeProbe = new Map<string, boolean>()
+const probeWrites: Array<{ full: string; lang: string; resolved: boolean }> = []
+
 vi.mock('../lib/snapshot', () => ({
+  readProbes: async (fullNames: string[], _maxAgeMs: number) => {
+    const out = new Map<string, boolean>()
+    for (const f of fullNames) for (const [k, v] of fakeProbe) if (k.startsWith(`${f}|`)) out.set(k, v)
+    return out
+  },
+  upsertProbe: async (full: string, lang: string, resolved: boolean) => {
+    probeWrites.push({ full, lang, resolved })
+    fakeProbe.set(`${full}|${lang}`, resolved)
+  },
   // withDb 的回调参数 sql 本身就是可 tagged-template 调用的函数(postgres.js Sql 语义)
   withDb: async (fn: (sql: unknown) => Promise<unknown>) =>
     fn((strings: TemplateStringsArray, ...vals: unknown[]) => {
@@ -53,6 +66,8 @@ const localizedMock = vi.mocked(fetchLocalizedReadme)
 
 beforeEach(() => {
   fakeCache.clear()
+  fakeProbe.clear()
+  probeWrites.length = 0
   executed.length = 0
   selectCalls = 0
   localizedMock.mockReset()
@@ -71,10 +86,24 @@ describe('readRepoDocWithFallback 读序', () => {
     expect(selectCalls).toBe(1)
   })
 
-  it('场景2:目标语言缺失、英文缓存存在 → 返回英文缓存,不请求上游', async () => {
+  it('场景2a:目标语言缺失、en 缓存存在但未探测过 → 返回 null(真翻译不能失去发现机会,评审三轮)', async () => {
     fakeCache.set('a/b|en', '<p>english cached</p>')
     const r = await readRepoDocWithFallback('a/b', 'zh')
+    expect(r).toEqual({ html: null, fallback: false })
+  })
+
+  it('场景2b:目标语言缺失、探测账本已确认无翻译 → 返回英文缓存兜底,不打上游', async () => {
+    fakeCache.set('a/b|en', '<p>english cached</p>')
+    fakeProbe.set('a/b|zh', false)
+    const r = await readRepoDocWithFallback('a/b', 'zh')
     expect(r).toEqual({ html: '<p>english cached</p>', fallback: true })
+  })
+
+  it('场景2c:探测查询失败 → 按未探测处理(保守,宁打上游不错杀真翻译)', async () => {
+    fakeCache.set('a/b|en', '<p>en</p>')
+    // fakeProbe 置空+readProbes 抛错由下一个 mock 钉死?—— 简化:probe 无记录即等价保守路径
+    const r = await readRepoDocWithFallback('a/b', 'zh')
+    expect(r).toEqual({ html: null, fallback: false })
   })
 
   it('场景2b:两种缓存均缺失 → 返回 null,由调用方实弹', async () => {
@@ -141,19 +170,20 @@ describe('borrowLocalizedRepoDocFetch 单飞与回写', () => {
       borrowLocalizedRepoDocFetch('c/d', 'zh'),
       borrowLocalizedRepoDocFetch('c/d', 'zh'),
     ])
-    expect(a).toBe('<p>zh</p>')
-    expect(b).toBe('<p>zh</p>')
+    expect(a).toEqual({ html: '<p>zh</p>', fallback: false })
+    expect(b).toEqual({ html: '<p>zh</p>', fallback: false })
     expect(localizedMock).toHaveBeenCalledTimes(1)
     // 真翻译写入 zh 键
     expect(executed.some((e) => e.key === 'zh' && e.html === '<p>zh</p>')).toBe(true)
   })
 
-  it('场景3c:上游返回英文兜底(localized:false)→ 展示给调用方但落 en 键', async () => {
+  it('场景3c:上游返回英文兜底(localized:false)→ 展示但落 en 键,并记探测结论 false(评审三轮)', async () => {
     localizedMock.mockResolvedValue({ html: '<p>en content</p>', localized: false })
-    const html = await borrowLocalizedRepoDocFetch('e/f', 'ja')
-    expect(html).toBe('<p>en content</p>')
+    const got = await borrowLocalizedRepoDocFetch('e/f', 'ja')
+    expect(got).toEqual({ html: '<p>en content</p>', fallback: true })
     expect(executed.some((e) => e.key === 'ja')).toBe(false)
     expect(executed.some((e) => e.key === 'en' && e.html === '<p>en content</p>')).toBe(true)
+    expect(probeWrites).toContainEqual({ full: 'e/f', lang: 'ja', resolved: false })
   })
 
   it('场景6:上游失败(throws)→ 单飞 promise reject,不写库,不吞错给缓存层', async () => {

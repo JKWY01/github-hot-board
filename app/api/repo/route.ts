@@ -45,9 +45,9 @@ export async function GET(request: Request) {
     return Response.json({ ok: true, readme: cached.html, cached: true, fallback: cached.fallback }, { headers: { 'Cache-Control': 'no-store' } })
   }
 
-  const readme = await borrowLocalizedRepoDocFetch(full, locale)
+  const { html: readme, fallback } = await borrowLocalizedRepoDocFetch(full, locale)
   if (!readme) {
     return Response.json({ ok: false }, { status: 404, headers: { 'Cache-Control': 'no-store' } })
   }
-  return Response.json({ ok: true, readme }, { headers: { 'Cache-Control': 'no-store' } })
+  return Response.json({ ok: true, readme, fallback }, { headers: { 'Cache-Control': 'no-store' } })
 }
