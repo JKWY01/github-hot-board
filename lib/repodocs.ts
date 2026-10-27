@@ -125,13 +125,21 @@ export async function storeRepoDoc(
       VALUES (${full}, ${key}, ${html}, ${html.length})
       ON CONFLICT (full_name, lang) DO UPDATE
       SET html = EXCLUDED.html, bytes = EXCLUDED.bytes, fetched_at = now()
-      WHERE repo_docs.fetched_at < now() - interval '1 hour'
-        OR (
-          ${key} <> 'en'
-          AND md5(repo_docs.html) IS NOT DISTINCT FROM
-              (SELECT md5(html) FROM repo_docs
-               WHERE full_name = ${full} AND lang = 'en')
-        )
+      WHERE CASE
+        -- ① 过期:直接放行,不碰摘要(评审九轮:OR 不保证求值顺序,
+        --    大文档 md5 的成本必须靠 CASE 显式规避,不能赌执行计划)
+        WHEN repo_docs.fetched_at < now() - interval '1 hour' THEN true
+        -- ② en 键:窗口内照旧保护(例外只给历史兜底的非 en 行)
+        WHEN ${key} = 'en' THEN false
+        -- ③ 长度不同:必然不是「内容与 en 一致」的历史兜底,不进摘要
+        WHEN (SELECT octet_length(html) FROM repo_docs
+              WHERE full_name = ${full} AND lang = 'en')
+             IS DISTINCT FROM octet_length(repo_docs.html) THEN false
+        -- ④ 长度相同的非 en 行才做全文确认:历史兜底→放行即时替换
+        ELSE md5(repo_docs.html) IS NOT DISTINCT FROM
+             (SELECT md5(html) FROM repo_docs
+              WHERE full_name = ${full} AND lang = 'en')
+      END
     `
   })
 }

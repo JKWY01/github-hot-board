@@ -27,26 +27,6 @@ vi.mock('../lib/snapshot', () => ({
     fn((strings: TemplateStringsArray, ...vals: unknown[]) => {
       const text = strings.join('?')
       // SELECT 形态 [full, lang];INSERT 形态 [full, lang, html]
-      if (text.includes('octet_length(html)')) {
-        // 历史污染识别查询(CASE 语义:先长度后 md5;IS DISTINCT FROM 覆盖缺失行)
-        const full = String(vals[0] ?? '')
-        const lang = String(vals[1] ?? '')
-        const t = fakeCache.get(`${full}|${lang}`)
-        const e = fakeCache.get(`${full}|en`)
-        const same = t !== undefined && t === e
-        return Promise.resolve([{ same }])
-      }
-      if (text.includes('SELECT html')) {
-        selectCalls += 1
-        const full = String(vals[0] ?? '')
-        const wantLang = String(vals[1] ?? '')
-        // 定向抛错(评审七轮):模拟真·数据库异常,区别于"查询正常但无数据"
-        if (failSelectFor.has(`${full}|${wantLang}`)) {
-          return Promise.reject(new Error('db connection reset'))
-        }
-        const hit = fakeCache.get(`${full}|${wantLang}`)
-        return Promise.resolve(hit !== undefined ? [{ html: hit }] : [])
-      }
       if (text.includes('INSERT INTO repo_docs')) {
         const full = String(vals[0] ?? '')
         const key = String(vals[1] ?? '')
@@ -66,6 +46,28 @@ vi.mock('../lib/snapshot', () => ({
         executed.push({ key, html })
         fakeCache.set(cacheKey, html)
         fakeFetchedAt.set(cacheKey, 'recent')
+      }
+      // 读取侧历史污染识别查询(CASE:先长度后 md5);注意须在 INSERT 之后判——
+      // 写入 SQL 的 CASE 分支里也含 octet_length(html)(评审九轮踩中)
+      if (text.includes('octet_length(html)')) {
+        // 历史污染识别查询(CASE 语义:先长度后 md5;IS DISTINCT FROM 覆盖缺失行)
+        const full = String(vals[0] ?? '')
+        const lang = String(vals[1] ?? '')
+        const t = fakeCache.get(`${full}|${lang}`)
+        const e = fakeCache.get(`${full}|en`)
+        const same = t !== undefined && t === e
+        return Promise.resolve([{ same }])
+      }
+      if (text.includes('SELECT html')) {
+        selectCalls += 1
+        const full = String(vals[0] ?? '')
+        const wantLang = String(vals[1] ?? '')
+        // 定向抛错(评审七轮):模拟真·数据库异常,区别于"查询正常但无数据"
+        if (failSelectFor.has(`${full}|${wantLang}`)) {
+          return Promise.reject(new Error('db connection reset'))
+        }
+        const hit = fakeCache.get(`${full}|${wantLang}`)
+        return Promise.resolve(hit !== undefined ? [{ html: hit }] : [])
       }
       return Promise.resolve()
     }),
@@ -204,7 +206,7 @@ describe('serveRepoDoc 统一读序(评审五轮:上游失败时英文缓存兜�
     expect(second).toEqual({ html: '<p>后来拿到了</p>', fallback: false, cached: false })
   })
 
-  it('E:目标语缓存命中(含历史兜底识别)→ 不打上游', async () => {
+  it('E:目标语真翻译缓存命中且无 en 源对比(普通快速路径)→ 不打上游', async () => {
     fakeCache.set('s/e|zh', '<p>中文缓存</p>')
     const r = await serveRepoDoc('s/e', 'zh')
     expect(r).toEqual({ html: '<p>中文缓存</p>', fallback: false, cached: true })
@@ -291,13 +293,14 @@ describe('serveRepoDoc 统一读序(评审五轮:上游失败时英文缓存兜�
     expect(executed.some((e) => e.key === 'zh(blocked-1h)')).toBe(true)
   })
 
-  it('SQL 契约:storeRepoDoc 的 ON CONFLICT 含历史兜底替换例外(评审八轮,防误删)', async () => {
-    // 静态契约:真 SQL 必须保留「1h 防覆盖 OR (非en键 且 内容= en 行)」——
-    // mock 镜像了行为,但真 SQL 才是线上语义;删掉例外=真翻译又替换不了旧副本
+  it('SQL 契约:写入保护 = CASE 四步(过期→en 保护→长度→摘要),例外防误删(评审九轮)', async () => {
+    // 静态契约:真 SQL 必须是显式 CASE(OR 不保证求值顺序,过期行不得被赌进 md5 分支);
+    // 四步顺序 = 评审九轮 spec:①过期放行 ②en 键保护 ③长度不同跳过 ④同长才摘要确认
     const src = await import('node:fs').then((fs) => fs.readFileSync('lib/repodocs.ts', 'utf8'))
-    expect(src).toContain("WHERE repo_docs.fetched_at < now() - interval '1 hour'")
-    expect(src).toContain("md5(repo_docs.html) IS NOT DISTINCT FROM")
-    expect(src).toContain("${key} <> 'en'")
+    expect(src).toContain("WHEN repo_docs.fetched_at < now() - interval '1 hour' THEN true")
+    expect(src).toContain("WHEN ${key} = 'en' THEN false")
+    expect(src).toContain('IS DISTINCT FROM octet_length(repo_docs.html) THEN false')
+    expect(src).toContain('md5(repo_docs.html) IS NOT DISTINCT FROM')
   })
 
   it('J2:en 降级读取也抛错 → 返回空结果,不伪装(异常路径完整覆盖)', async () => {
