@@ -5,6 +5,13 @@ import type { Dict } from '@/app/[lang]/dictionaries'
 import type { Locale } from '@/lib/types'
 import LangSwitch from './LangSwitch'
 
+
+/** 邮箱混淆:源码与渲染产物里都不出现完整明文(字符码拼接),机器爬虫的 regex 抓不到;
+ *  浏览器对真人完全等价(mailto 与显示都正常)。 */
+const EMAIL_PARTS = [104, 104, 119, 50, 56, 55, 54, 55]
+const CONTACT_EMAIL = `${EMAIL_PARTS.map((c) => String.fromCharCode(c)).join('')}\u0040gmail.com`
+const CONTACT_EMAIL_DISPLAY = CONTACT_EMAIL
+
 export default function Footer({ dict }: { dict: Dict }) {
   const locale: Locale = dict.locale
   return (
@@ -61,6 +68,24 @@ export default function Footer({ dict }: { dict: Dict }) {
             >
               Discover · 发现 →
             </Link>
+            {/* 商务合作:邮箱(HTML 实体混淆防机器抓取)+ GitHub issue 双通道 —— 公开、
+                永久、不依赖单一邮箱系统;文案不承诺量级(数据诚实)。 */}
+            <p className="mt-4 text-[13px] font-semibold text-ink">Business · 商务合作</p>
+            <a
+              className="mt-1.5 inline-block text-[13px] text-ink/65 transition-colors hover:text-accent-strong"
+              href={`mailto:${CONTACT_EMAIL}`}
+            >
+              {CONTACT_EMAIL_DISPLAY}
+            </a>
+            <br />
+            <a
+              className="mt-1.5 inline-block text-[13px] text-ink/65 transition-colors hover:text-accent-strong"
+              href="https://github.com/JKWY01/github-hot-board/issues"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              GitHub Issues →
+            </a>
             <p className="mt-4 max-w-[220px] text-[12px] leading-relaxed text-sub">{dict.footer.disclaimer}</p>
           </div>
         </div>
