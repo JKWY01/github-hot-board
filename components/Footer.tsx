@@ -1,6 +1,7 @@
 import Link from 'next/link'
 
 import { BOARD_ORDER } from '@/lib/boards'
+import { discoverTitle } from '@/app/[lang]/discover/page'
 import type { Dict } from '@/app/[lang]/dictionaries'
 import type { Locale } from '@/lib/types'
 import LangSwitch from './LangSwitch'
@@ -25,9 +26,17 @@ export default function Footer({ dict }: { dict: Dict }) {
             {dict.history.title}
           </Link>
           <Link href={`/${locale}/discover`} prefetch={false} className="text-ink/60 transition-colors hover:text-accent">
-            Discover
+            {discoverTitle(locale)}
           </Link>
-          <span className="ml-auto hidden text-ink/45 sm:inline">{dict.footer.copyright}</span>
+          {/* 联系我们:吸底条右侧(用户 2026-10-27 截图指出空白处缺入口);mailto 走已混淆邮箱。
+              文案照 Status 双语硬标签先例,不占 16 语字典位 */}
+          <a
+            href={`mailto:${CONTACT_EMAIL}`}
+            className="ml-auto text-ink/60 transition-colors hover:text-accent sm:ml-4"
+          >
+            联系我们 · Contact
+          </a>
+          <span className="hidden text-ink/45 lg:inline">{dict.footer.copyright}</span>
         </div>
       </div>
       <footer className="border-t-[0.5px] border-black/10 bg-surface">
