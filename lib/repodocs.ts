@@ -61,9 +61,23 @@ export async function readRepoDocWithFallback(
 ): Promise<{ html: string | null; fallback: boolean }> {
   if (lang === 'en') return { html: await readRepoDoc(full, 'en'), fallback: false }
   const hit = await readRepoDoc(full, lang)
-  if (hit) return { html: hit, fallback: false }
-  const en = await readRepoDoc(full, 'en')
-  return { html: en, fallback: en !== null }
+  if (!hit) {
+    const en = await readRepoDoc(full, 'en')
+    return { html: en, fallback: en !== null }
+  }
+  // 历史污染兼容(评审二轮):存量库约 2 万行非英文键存的实际是英文原文
+  //(修复前的回退落盘)。目标语言命中时在 DB 层 md5 比对同仓英文源:
+  // 一致 → 是历史兜底,fallback: true(内容照常展示,语义正确);
+  // 不一致 → 真翻译。比对在 SQL 内完成,不把两份大 HTML 拉到应用层。
+  // en 源不存在的行无法证伪,按真翻译处理(保守,不误伤)。
+  const isFallback = await withDb(async (sql) => {
+    const rows = (await sql`
+      SELECT (SELECT md5(html) FROM repo_docs WHERE full_name = ${full} AND lang = ${lang})
+           = (SELECT md5(html) FROM repo_docs WHERE full_name = ${full} AND lang = 'en') AS same
+    `) as unknown as Array<{ same: boolean }> | undefined
+    return rows?.[0]?.same === true
+  }).catch(() => false)
+  return { html: hit, fallback: isFallback === true }
 }
 
 /** 入库:一小时内不被覆盖(夜批与运行时谁先到谁为准,过期才续新)。

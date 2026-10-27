@@ -18,6 +18,14 @@ vi.mock('../lib/snapshot', () => ({
     fn((strings: TemplateStringsArray, ...vals: unknown[]) => {
       const text = strings.join('?')
       // SELECT 形态 [full, lang];INSERT 形态 [full, lang, html]
+      if (text.includes('SELECT md5(html)')) {
+        // 历史污染识别查询:目标语与 en 内容 md5 是否一致(按假库实时比对)
+        const full = String(vals[0] ?? '')
+        const lang = String(vals[1] ?? '')
+        const t = fakeCache.get(`${full}|${lang}`)
+        const e = fakeCache.get(`${full}|en`)
+        return Promise.resolve([{ same: t !== undefined && t === e }])
+      }
       if (text.includes('SELECT html')) {
         selectCalls += 1
         const full = String(vals[0] ?? '')
@@ -100,6 +108,29 @@ describe('storeRepoDoc localized 落键语义', () => {
   it('场景4:空内容 → 不写任何键(上游失败/空返回不破坏缓存)', async () => {
     await storeRepoDoc('a/b', 'zh', '', true)
     expect(executed).toHaveLength(0)
+  })
+})
+
+describe('存量历史兜底识别(评审二轮:目标语命中也可能污染行)', () => {
+  it('目标语与 en 缓存内容完全相同 → 识别为历史兜底 fallback:true(内容照常返回)', async () => {
+    fakeCache.set('x/y|zh', '<p>same english</p>')
+    fakeCache.set('x/y|en', '<p>same english</p>')
+    const r = await readRepoDocWithFallback('x/y', 'zh')
+    expect(r.html).toBe('<p>same english</p>')
+    expect(r.fallback).toBe(true)
+  })
+
+  it('目标语与 en 内容不同 → 真翻译 fallback:false(不误伤)', async () => {
+    fakeCache.set('x/y|zh', '<p>中文真翻译</p>')
+    fakeCache.set('x/y|en', '<p>english</p>')
+    const r = await readRepoDocWithFallback('x/y', 'zh')
+    expect(r).toEqual({ html: '<p>中文真翻译</p>', fallback: false })
+  })
+
+  it('en 源不存在 → 无法证伪,按真翻译处理(保守不误伤)', async () => {
+    fakeCache.set('x/y|zh', '<p>中文</p>')
+    const r = await readRepoDocWithFallback('x/y', 'zh')
+    expect(r).toEqual({ html: '<p>中文</p>', fallback: false })
   })
 })
 
