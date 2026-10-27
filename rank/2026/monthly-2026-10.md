@@ -5,31 +5,27 @@
 
 | # | 项目 | 累计 Star | 本月新增 Star | 简介 |
 |---|---|---|---|---|
-| 1 | [morluto/rea](https://git.vaiox.xyz/zh/repo/morluto/rea) | 396.2k | 30.4k |  |
-| 2 | [Gathin23/cleanyourtv](https://git.vaiox.xyz/zh/repo/Gathin23/cleanyourtv) | 37.6k | 13.7k |  |
-| 3 | [peach-mitao/peach](https://git.vaiox.xyz/zh/repo/peach-mitao/peach) | 12.0k | 9.8k |  |
-| 4 | [debpalash/VoiceStudio](https://git.vaiox.xyz/zh/repo/debpalash/VoiceStudio) | 91.0k | 9.3k |  |
-| 5 | [cloudflare/security-audit-skill](https://git.vaiox.xyz/zh/repo/cloudflare/security-audit-skill) | 47.9k | 8.5k |  |
-| 6 | [Ebony-Vinyl/dsh-our-free-model](https://git.vaiox.xyz/zh/repo/Ebony-Vinyl/dsh-our-free-model) | 44.2k | 7.5k |  |
-| 7 | [Zagitta/gpu-unlock](https://git.vaiox.xyz/zh/repo/Zagitta/gpu-unlock) | 8.5k | 5.6k |  |
-| 8 | [deepseek-ai/deepseek-harness](https://git.vaiox.xyz/zh/repo/deepseek-ai/deepseek-harness) | 263.6k | 5.4k |  |
-| 9 | [pbakaus/impeccable](https://git.vaiox.xyz/zh/repo/pbakaus/impeccable) | 90.2k | 5.3k |  |
-| 10 | [stablyai/orca](https://git.vaiox.xyz/zh/repo/stablyai/orca) | 107.9k | 5.2k |  |
-| 11 | [DietrichGebert/ponytail](https://git.vaiox.xyz/zh/repo/DietrichGebert/ponytail) | 177.9k | 4.6k |  |
-| 12 | [Nutlope/hallmark](https://git.vaiox.xyz/zh/repo/Nutlope/hallmark) | 35.2k | 4.5k |  |
-| 13 | [elayadesign/ai-design-skills](https://git.vaiox.xyz/zh/repo/elayadesign/ai-design-skills) | 7.1k | 4.3k |  |
-| 14 | [TauricResearch/TradingAgents](https://git.vaiox.xyz/zh/repo/TauricResearch/TradingAgents) | 117.2k | 4.2k |  |
-| 15 | [affaan-m/ECC](https://git.vaiox.xyz/zh/repo/affaan-m/ECC) | 290.6k | 4.1k |  |
-| 16 | [Graphify-Labs/graphify](https://git.vaiox.xyz/zh/repo/Graphify-Labs/graphify) | 136.8k | 3.9k |  |
-| 17 | [mattpocock/skills](https://git.vaiox.xyz/zh/repo/mattpocock/skills) | 304.7k | 3.9k |  |
-| 18 | [heygen-com/hyperframes](https://git.vaiox.xyz/zh/repo/heygen-com/hyperframes) | 73.8k | 3.8k |  |
-| 19 | [Panniantong/Agent-Reach](https://git.vaiox.xyz/zh/repo/Panniantong/Agent-Reach) | 104.7k | 3.7k |  |
-| 20 | [seedds/nxnative](https://git.vaiox.xyz/zh/repo/seedds/nxnative) | 5.1k | 3.7k |  |
-| 21 | [hugohe3/ppt-master](https://git.vaiox.xyz/zh/repo/hugohe3/ppt-master) | 69.6k | 3.6k |  |
-| 22 | [ai-job-search-dev/ai-job-search](https://git.vaiox.xyz/zh/repo/ai-job-search-dev/ai-job-search) | 66.7k | 3.2k |  |
-| 23 | [deepseek-ai/DeepInfer](https://git.vaiox.xyz/zh/repo/deepseek-ai/DeepInfer) | 22.8k | 3.0k |  |
-| 24 | [multica-ai/andrej-karpathy-skills](https://git.vaiox.xyz/zh/repo/multica-ai/andrej-karpathy-skills) | 225.3k | 2.8k |  |
-| 25 | [pengchujin/aerial-tv](https://git.vaiox.xyz/zh/repo/pengchujin/aerial-tv) | 5.8k | 2.8k |  |
+| 1 | [heygen-com/hyperframes](https://git.vaiox.xyz/zh/repo/heygen-com/hyperframes) | 73.8k | 19.9k | Write HTML. Render video. Built for agents. |
+| 2 | [cloudflare/security-audit-skill](https://git.vaiox.xyz/zh/repo/cloudflare/security-audit-skill) | 49.8k | 26.3k | A coding-agent skill for multi-phase security audits with in… |
+| 3 | [debpalash/VoiceStudio](https://git.vaiox.xyz/zh/repo/debpalash/VoiceStudio) | 91.0k | 53.0k | VoiceStudio is the open-source, fully-local ElevenLabs alter… |
+| 4 | [anthropics/knowledge-work-plugins](https://git.vaiox.xyz/zh/repo/anthropics/knowledge-work-plugins) | 33.4k | 7.6k | Open source repository of plugins primarily intended for kno… |
+| 5 | [pbakaus/impeccable](https://git.vaiox.xyz/zh/repo/pbakaus/impeccable) | 90.2k | 17.5k | The design language that makes your AI harness better at des… |
+| 6 | [earthtojake/text-to-cad](https://git.vaiox.xyz/zh/repo/earthtojake/text-to-cad) | 23.5k | 7.0k | Design physical products with AI |
+| 7 | [mksglu/context-mode](https://git.vaiox.xyz/zh/repo/mksglu/context-mode) | 32.5k | 8.5k | Context window optimization for AI coding agents. Sandboxes … |
+| 8 | [cursor/plugins](https://git.vaiox.xyz/zh/repo/cursor/plugins) | 14.3k | 5.5k | Cursor plugin specification and official plugins |
+| 9 | [anthropics/claude-plugins-official](https://git.vaiox.xyz/zh/repo/anthropics/claude-plugins-official) | 44.9k | 7.9k | Official, Anthropic-managed directory of high quality Claude… |
+| 10 | [NVIDIA/OpenShell](https://git.vaiox.xyz/zh/repo/NVIDIA/OpenShell) | 20.2k | 11.3k | OpenShell is the safe, private runtime for autonomous AI age… |
+| 11 | [affaan-m/ECC](https://git.vaiox.xyz/zh/repo/affaan-m/ECC) | 290.6k | 23.2k | The agent harness performance optimization system. Skills, i… |
+| 12 | [thedotmack/claude-mem](https://git.vaiox.xyz/zh/repo/thedotmack/claude-mem) | 103.7k | 9.1k | Persistent Context Across Sessions for Every Agent – Capture… |
+| 13 | [NationalSecurityAgency/ghidra](https://git.vaiox.xyz/zh/repo/NationalSecurityAgency/ghidra) | 95.0k | 15.1k | Ghidra is a software reverse engineering (SRE) framework |
+| 14 | [pingdotgg/t3code](https://git.vaiox.xyz/zh/repo/pingdotgg/t3code) | 30.7k | 6.9k |  |
+| 15 | [DietrichGebert/ponytail](https://git.vaiox.xyz/zh/repo/DietrichGebert/ponytail) | 177.9k | 31.6k | Makes your AI agent think like the laziest senior dev in the… |
+| 16 | [tashfeenahmed/freellmapi](https://git.vaiox.xyz/zh/repo/tashfeenahmed/freellmapi) | 42.6k | 13.3k | 7.4 billion tokens per month. 34 free LLM providers. 635 fre… |
+| 17 | [paperclipai/paperclip](https://git.vaiox.xyz/zh/repo/paperclipai/paperclip) | 107.9k | 21.9k | The open-source app everyone uses to manage agents at work |
+| 18 | [Panniantong/Agent-Reach](https://git.vaiox.xyz/zh/repo/Panniantong/Agent-Reach) | 104.8k | 18.0k | Give your AI agent eyes to see the entire internet. Read & s… |
+| 19 | [supabase/supabase](https://git.vaiox.xyz/zh/repo/supabase/supabase) | 114.1k | 3.5k | The Postgres development platform. Supabase gives you a dedi… |
+| 20 | [HKUDS/CLI-Anything](https://git.vaiox.xyz/zh/repo/HKUDS/CLI-Anything) | 57.4k | 6.9k | "CLI-Anything: Making ALL Software Agent-Native" -- CLI-Hub:… |
+| 21 | [flutter/flutter](https://git.vaiox.xyz/zh/repo/flutter/flutter) | 180.4k | 1.9k | Flutter makes it easy and fast to build beautiful apps for m… |
 
 ---
 
