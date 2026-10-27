@@ -1,4 +1,4 @@
-import { LOCALES } from '@/lib/locales'
+import { LOCALES, altLangs } from '@/lib/locales'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { connection } from 'next/server'
@@ -27,7 +27,12 @@ export async function generateMetadata({
   return {
     title: `${dict.history.title} · ${dict.boards[slug].name}`,
     description: dict.history.subtitle,
-    alternates: { canonical: `/${lang}/history/${slug}` },
+    alternates: {
+      canonical: `/${lang}/history/${slug}`,
+      // hreflang 套件与榜单页同源(altLangs):往日榜是 600+ 收录 URL 的入口层,
+      // 各语言版本需互相指认才被独立收录(审计 P1:此前完全缺失)。
+      languages: altLangs(`/history/${slug}`),
+    },
   }
 }
 

@@ -1,4 +1,4 @@
-import { LOCALES } from '@/lib/locales'
+import { LOCALES, altLangs } from '@/lib/locales'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { connection } from 'next/server'
@@ -33,7 +33,10 @@ export async function generateMetadata({
   return {
     title: `${date} · ${dict.history.title} · ${dict.boards[slug].name}`,
     description: `${date} — ${dict.history.subtitle}`,
-    alternates: { canonical: `/${lang}/history/${slug}/${date}` },
+    alternates: {
+      canonical: `/${lang}/history/${slug}/${date}`,
+      languages: altLangs(`/history/${slug}/${date}`),
+    },
   }
 }
 
