@@ -15,7 +15,22 @@ const CONTACT_EMAIL_DISPLAY = CONTACT_EMAIL
 export default function Footer({ dict }: { dict: Dict }) {
   const locale: Locale = dict.locale
   return (
-    <footer className="border-t-[0.5px] border-black/10 bg-surface">
+    <>
+      {/* 吸底紧凑条(与 header sticky top-0 对称,2026-10-27 用户设计需求):
+          滚动中常驻视口底边,单行放站名/往日榜/语言切换;到 footer 本体时视觉上无缝汇入 */}
+      <div className="sticky bottom-0 z-40 border-t-[0.5px] border-black/10 bg-white/85 backdrop-blur-xl">
+        <div className="mx-auto flex h-10 max-w-6xl items-center gap-4 px-4 text-[12px] sm:px-6">
+          <span className="font-semibold text-ink/80">{dict.meta.siteName}</span>
+          <Link href={`/${locale}/history/overall`} prefetch={false} className="text-ink/60 transition-colors hover:text-accent">
+            {dict.history.title}
+          </Link>
+          <Link href={`/${locale}/discover`} prefetch={false} className="text-ink/60 transition-colors hover:text-accent">
+            Discover
+          </Link>
+          <span className="ml-auto hidden text-ink/45 sm:inline">{dict.footer.copyright}</span>
+        </div>
+      </div>
+      <footer className="border-t-[0.5px] border-black/10 bg-surface">
       <div className="mx-auto max-w-6xl px-5 py-12 sm:px-6">
         <div className="grid gap-10 md:grid-cols-[1.3fr_1fr_auto]">
           <div className="max-w-md">
@@ -95,5 +110,6 @@ export default function Footer({ dict }: { dict: Dict }) {
         </div>
       </div>
     </footer>
+    </>
   )
 }

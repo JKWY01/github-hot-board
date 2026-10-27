@@ -191,12 +191,11 @@ export default function LiveBoardList({
     }
     setHist(next)
   }
-  /* 渐进渲染:总榜 500 行一次全渲染约 1.5 万 DOM 节点,移动端水合吃力。
-   * SSR 首批 RENDER_CHUNK 行,滚动接近尾部自动续批;筛选/搜索照常作用于全集。
-   * tradeoff(已拍板):HTML 里行数截到首批 —— JSON-LD 本就只标 150,档案页才是 SEO 主粮。 */
-  const RENDER_CHUNK = 100
-  const [visibleCount, setVisibleCount] = useState(limit ?? RENDER_CHUNK)
-  const sentinelRef = useRef<HTMLDivElement | null>(null)
+  /* 渐进渲染已退役(2026-10-27 用户拍板"要全部显示"):500 行一次全渲染。
+   * 当初的顾虑(1.5 万 DOM 节点水合吃力)实测不成立 —— 用户明确要看全部,
+   * "完整名录"折叠链接(400 条纯链接)同时退役:名录的全部使命(全量行可见+内链)
+   * 由全量渲染直接承担。SSR 载荷仍是 100 行截断,挂载即补全(initialTruncated 路径)。 */
+
   const searchLocal = () => {
     const q = searchDeb.trim().toLowerCase()
     return q.length > 0 && items.some((it) => it.fullName.toLowerCase().includes(q))
@@ -299,22 +298,6 @@ export default function LiveBoardList({
   useEffect(() => {
     setNowAnchor(Date.now())
   }, [items])
-
-  // 哨兵续批:滚动到距尾部 ~600px 时再挂下一批(依赖 visibleCount:新哨兵节点出现后重挂观察)
-  useEffect(() => {
-    const el = sentinelRef.current
-    if (!el) return
-    const io = new IntersectionObserver(
-      (entries) => {
-        if (entries.some((e) => e.isIntersecting)) {
-          setVisibleCount((c) => c + RENDER_CHUNK)
-        }
-      },
-      { rootMargin: '600px 0px 0px 0px' },
-    )
-    io.observe(el)
-    return () => io.disconnect()
-  }, [visibleCount])
 
   useEffect(() => {
     const target = locateRef.current
@@ -820,7 +803,7 @@ export default function LiveBoardList({
       )}
 
       <ol className={`card list-none overflow-hidden ${compact ? '' : 'rounded-[22px]'}`}>
-        {view.slice(0, visibleCount).map((item, index) => {
+        {view.map((item, index) => {
           // 名次语义:默认视图 = 视图序(≡原榜);筛选态保留原榜名次;改序态按视图序重编号,
           // 且爬/降徽章在自定义视图一律休眠 —— 它们描述的是原榜坐标,重排后不算数。
           const rankShown = !custom || sortId === 'board' ? (rankOf.get(item.fullName) ?? index + 1) : index + 1
@@ -1010,18 +993,18 @@ export default function LiveBoardList({
       </ol>
 
       {/* 渐进渲染:还有未挂载的行 → 哨兵(IntersectionObserver 见尾自动续批) */}
-      {view.length > visibleCount && <div ref={sentinelRef} aria-hidden="true" className="h-px" />}
-
       {/* 完整名录(SSR 输出首屏之外的纯链接,默认折叠):首屏行数截断到 100 后,榜单→档案
           的内链从 500 掉到 100 —— 档案页的收录发现靠这些内链(GSC 实证档案页是点击主力)。
           纯 <a> 名单 14KB/gzip 1KB,爬虫读得到;真人默认收起不扰视线。轮询到货后 items
           变全集,此节与榜行补全共存不冲突(roster 是 SSR 静态集,union 去重交给 key)。 */}
+      {/* 完整名录常显(2026-10-27 用户拍板"要全部显示"):全量榜行 + 名录链接墙直接可见,
+          不再折叠。SSR 内链通道保留(爬虫),真人滚到底自然看到。 */}
       {(roster?.length ?? 0) > 0 && (
         <nav aria-label={strings.fullRoster} className="mt-6 px-1">
-          <details className="card px-4 py-3 sm:px-5">
-            <summary className="cursor-pointer text-[13px] font-medium text-sub select-none">
+          <div className="card px-4 py-3 sm:px-5">
+            <p className="text-[13px] font-medium text-sub select-none">
               {strings.fullRoster} · {roster!.length}
-            </summary>
+            </p>
             <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5">
               {roster!.map((item, index) => (
                 <li key={`roster-${item.fullName}`} className="min-w-0">
@@ -1034,7 +1017,7 @@ export default function LiveBoardList({
                 </li>
               ))}
             </ul>
-          </details>
+          </div>
         </nav>
       )}
       {/* 档位/搜索过滤后为空:一句人话,不晾一个空卡(真·空榜仍走错误卡路径) */}
