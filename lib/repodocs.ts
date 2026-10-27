@@ -1,11 +1,20 @@
 import { withDb } from './snapshot'
+import { fetchLocalizedReadme } from './github'
+import type { Locale } from './locales'
 
 /** 仓库文档快照(repo_docs):抽屉与档案页共用的持久 README 缓存层。
  * 动机:
  * ① 详情开盖不再每次实弹打 GitHub —— 配额省下、秒开(用户并发开同一个仓库只炸一次);
  * ② 档案页(爬虫主战场)服务端渲染 README 正文 —— 爬虫第一次看见详情内容(SEO 主粮);
  * ③ 香港服务器夜间批量预填 + 10 天轮换续鲜(en 键),运行时"未命中实时取并入库"补长尾。
- * 单飞(single-flight):同实例并发同仓请求共享一次上游调用;入库后全域秒读。 */
+ * 单飞(single-flight):同实例并发同仓请求共享一次上游调用;入库后全域秒读。
+ *
+ * 语言来源语义(2026-10-27 回退污染修复,数据库基线评审阶段1):
+ * repo_docs 里一个 (full_name, lang) 键只允许存「该语言的真实翻译」。
+ * 英文兜底(仓库没有该语言 README 时显示的原文)可以正常返回给页面,
+ * 但绝不冒充目标语言翻译写进目标语言键 —— 否则同一份英文正文会以十几个
+ * 语种键各存一份(生产实测 22,346 行/3,405 仓/1,029MB 纯冗余)。
+ * 读取顺序:目标语言缓存 → 英文缓存 → 上游 GitHub(仅此时允许写缓存)。 */
 
 let ready: Promise<void> | null = null
 
@@ -44,14 +53,36 @@ export async function readRepoDoc(full: string, lang: string): Promise<string | 
   }
 }
 
-/** 入库:一小时内不被覆盖(夜批与运行时谁先到谁为准,过期才续新)。 */
-export async function storeRepoDoc(full: string, lang: string, html: string): Promise<void> {
+/** 带英文回退的读取:目标语言缓存 → 英文缓存 → null(调用方再决定是否实弹)。
+ * 命中英文回退时返回 fallback: true,调用方无需区分内容,但测试与观测需要区分。 */
+export async function readRepoDocWithFallback(
+  full: string,
+  lang: string,
+): Promise<{ html: string | null; fallback: boolean }> {
+  if (lang === 'en') return { html: await readRepoDoc(full, 'en'), fallback: false }
+  const hit = await readRepoDoc(full, lang)
+  if (hit) return { html: hit, fallback: false }
+  const en = await readRepoDoc(full, 'en')
+  return { html: en, fallback: en !== null }
+}
+
+/** 入库:一小时内不被覆盖(夜批与运行时谁先到谁为准,过期才续新)。
+ * localized=false(英文兜底)只允许写 en 键 —— 请求方拿去展示可以,
+ * 冒充目标语言翻译落目标语言键就是本次要修的污染。 */
+export async function storeRepoDoc(
+  full: string,
+  lang: string,
+  html: string,
+  localized = true,
+): Promise<void> {
   if (!html) return
+  // 非英文请求拿到英文兜底:内容归 en 键,目标语言键保持纯净(留待真翻译)
+  const key = lang === 'en' || localized ? lang : 'en'
   await boot()
   await withDb(async (sql) => {
     await sql`
       INSERT INTO repo_docs (full_name, lang, html, bytes)
-      VALUES (${full}, ${lang}, ${html}, ${html.length})
+      VALUES (${full}, ${key}, ${html}, ${html.length})
       ON CONFLICT (full_name, lang) DO UPDATE
       SET html = EXCLUDED.html, bytes = EXCLUDED.bytes, fetched_at = now()
       WHERE repo_docs.fetched_at < now() - interval '1 hour'
@@ -59,7 +90,8 @@ export async function storeRepoDoc(full: string, lang: string, html: string): Pr
   })
 }
 
-/** 单飞借取:同仓同语并发时共享一次上游调用;命中即回写入库(写后路)。 */
+/** 单飞借取:同仓同语并发时共享一次上游调用;命中即回写入库(写后路)。
+ * fetcher 返回 localized 标志(真实翻译/英文兜底),入库按语义落键。 */
 const inflight = new Map<string, Promise<string | null>>()
 
 export function borrowRepoDocFetch(
@@ -79,5 +111,29 @@ export function borrowRepoDocFetch(
       inflight.delete(key)
     })
   inflight.set(key, task)
+  return task
+}
+
+/** 语言感知的单飞借取:上游调用走 fetchLocalizedReadme(带语言协商),
+ * localized=false 的英文兜底只展示不入目标语言键(入 en 键)。
+ * 两层单飞语义保持:同 (lang,full) 并发共享一次上游;en 兜底另占 (en|full) 键。 */
+const inflightLocalized = new Map<string, Promise<string | null>>()
+
+export function borrowLocalizedRepoDocFetch(
+  full: string,
+  lang: string,
+): Promise<string | null> {
+  const key = `${lang}|${full}`
+  const current = inflightLocalized.get(key)
+  if (current) return current
+  const task = fetchLocalizedReadme(full, lang as Locale)
+    .then(async ({ html, localized }) => {
+      if (html) await storeRepoDoc(full, lang, html, localized).catch(() => undefined)
+      return html
+    })
+    .finally(() => {
+      inflightLocalized.delete(key)
+    })
+  inflightLocalized.set(key, task)
   return task
 }
