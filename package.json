@@ -9,7 +9,7 @@
     "lint": "eslint",
     "sync": "node scripts/sync-fetch.mjs",
     "test": "vitest run",
-    "seo:audit": "node scripts/seo-audit.mjs"
+    "seo:audit": "GIT_SHA=$(git rev-parse --short HEAD 2>/dev/null || echo unknown) node scripts/seo-audit.mjs"
   },
   "dependencies": {
     "@vercel/analytics": "^2.0.1",

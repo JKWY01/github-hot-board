@@ -10,8 +10,9 @@ const src = readFileSync(fileURLToPath(new URL('../scripts/seo-audit.mjs', impor
 const pkg = JSON.parse(readFileSync(fileURLToPath(new URL('../package.json', import.meta.url)), 'utf8'))
 
 describe('seo-audit 脚本契约', () => {
-  it('npm run seo:audit 已注册且指向脚本', () => {
-    expect(pkg.scripts['seo:audit']).toBe('node scripts/seo-audit.mjs')
+  it('npm run seo:audit 已注册且指向脚本(带 GIT_SHA 注入)', () => {
+    expect(pkg.scripts['seo:audit']).toContain('node scripts/seo-audit.mjs')
+    expect(pkg.scripts['seo:audit']).toContain('GIT_SHA')
   })
 
   it('覆盖七类页面样本(首页/榜单/分面/档案/往日榜/工具页/基础设施)', () => {
@@ -46,8 +47,8 @@ describe('seo-audit 脚本契约', () => {
     expect(src.includes("'ld+json-not-object'")).toBe(true)
   })
 
-  it('退出码契约:P0>0 退出 1(CI 可用)', () => {
-    expect(src.includes('process.exit(report.bySeverity.P0 > 0 ? 1 : 0)')).toBe(true)
+  it('退出码契约:P0 或 hreflang-wrong-target 阻断(CI 可用)', () => {
+    expect(src.includes('report.bySeverity.P0 > 0 || wrongTarget > 0 ? 1 : 0')).toBe(true)
   })
 
   it('报告产物:JSON 快照 + latest.md', () => {
@@ -89,5 +90,38 @@ describe('sitemap 抽查诊断与抖动重试', () => {
   it('fetchPage 失败重试一次(两次都败才报 fetch-failed)', () => {
     expect(/retry = true/.test(src)).toBe(true)
     expect(src.includes('return fetchPage(path, false)')).toBe(true)
+  })
+})
+
+import { expectedHrefFor } from '../scripts/seo-audit.mjs'
+
+describe('expectedHrefFor 行为测试(评审要求的真实执行)', () => {
+  it('/zh → /en(纯语言首页)', () => {
+    expect(expectedHrefFor('en', '/zh')).toBe('/en')
+  })
+  it('/zh/boards/overall → /en/boards/overall(带二级路径)', () => {
+    expect(expectedHrefFor('en', '/zh/boards/overall')).toBe('/en/boards/overall')
+  })
+  it('/zh-TW/... 的自指与跨指(zh-TW 是带区域码的语言段)', () => {
+    expect(expectedHrefFor('zh-TW', '/zh-TW/history/overall')).toBe('/zh-TW/history/overall')
+    expect(expectedHrefFor('en', '/zh-TW/history/overall')).toBe('/en/history/overall')
+  })
+  it('x-default 恒指 /en', () => {
+    expect(expectedHrefFor('x-default', '/zh/boards/overall')).toBe('/en/boards/overall')
+    expect(expectedHrefFor('x-default', '/zh')).toBe('/en')
+  })
+})
+
+describe('CI 阻断分级', () => {
+  it('P0 或 hreflang-wrong-target 阻断;其余 P1/P2 不阻塞', () => {
+    expect(src.includes("wrongTarget > 0 ? 1 : 0")).toBe(true)
+  })
+})
+
+describe('报告可追溯性', () => {
+  it('auditSha / deployedVersion 字段存在且取不到标 unknown', () => {
+    expect(src.includes("auditSha")).toBe(true)
+    expect(src.includes("deployedVersion")).toBe(true)
+    expect(src.includes("'unknown'")).toBe(true)
   })
 })

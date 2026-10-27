@@ -13,10 +13,19 @@
  *
  * 用法:
  *   node scripts/seo-audit.mjs [--base https://git.vaiox.xyz] [--out reports] [--full]
- *   --full  把 repo 样本从 3 个提到 15 个(慢,约 1 分钟)
+ *   --full  英文档案样本 5→15 个,总样本 43→53(慢,约 1 分钟)
  */
 import { writeFileSync, mkdirSync } from 'node:fs'
 import { join } from 'node:path'
+
+
+/** hreflang 目标 URL 纯函数:给定语言代码与当前样本路径,算期望的替代 URL。
+ *  '/zh' → '/en';'/zh/boards/overall' → '/en/boards/overall';x-default 恒指 /en。
+ *  独立导出供行为测试覆盖(/zh、/zh/boards/overall、/zh-TW/... 等形态)。 */
+export function expectedHrefFor(lang, samplePath) {
+  const stripped = samplePath.replace(/^\/(?:[a-z]{2}(?:-[A-Z]{2})?)(?=\/|$)/, '')
+  return `/${lang === 'x-default' ? 'en' : lang}${stripped}`
+}
 
 const BASE = argBase()
 const OUT_DIR = argOut()
@@ -171,10 +180,8 @@ function checkPage(sample, r) {
     const dupes = langs.filter((l, i) => langs.indexOf(l) !== i)
     if (dupes.length) issues.push({ url, type: 'hreflang-duplicate', sev: 'P2', detail: dupes.join(',') })
     // 目标 URL 形态:每项必须是 /{lang}/<同一路径>(x-default → /en/...),跨语言链接错乱在此暴露
-    // 语言段剥离:'/zh/boards/x'→'/boards/x';纯语言首页 '/zh'→''(want=/en)
-    const wantPath = sample.path.replace(/^\/(?:[a-z]{2}(?:-[A-Z]{2})?)(?=\/|$)/, '')
     for (const { lang, href } of hreflangs) {
-      const want = `${BASE}/${lang === 'x-default' ? 'en' : lang}${wantPath}`
+      const want = `${BASE}${expectedHrefFor(lang, sample.path)}`
       if (href !== want) issues.push({ url, type: 'hreflang-wrong-target', sev: 'P1', detail: `${lang} → ${href} (want ${want})` })
     }
     const selfOk = hreflangs.some((x) => x.href === `${BASE}${sample.path}`)
@@ -277,7 +284,7 @@ async function runPool(items, worker) {
 async function main() {
   const full = process.argv.includes('--full')
   const list = samples(full)
-  console.error(`[seo-audit] base=${BASE} samples=${list.length}${full ? ' (full)' : ''}`)
+  console.error(`[seo-audit] base=${BASE} samples=${list.length}${full ? ' (full=53)' : ''}`)
   const results = await runPool(list, async (s) => ({ sample: s, r: await fetchPage(s.path) }))
   let issues = []
   for (const { sample, r } of results) issues.push(...checkPage(sample, r))
@@ -311,6 +318,10 @@ async function main() {
   const report = {
     base: BASE,
     generatedAt: new Date().toISOString(),
+    // 可追溯性:auditSha=本次运行的脚本版本;deployedVersion=被审计站点实际运行版本,
+    // 取不到就如实标 unknown,不猜测(两者区分:脚本变了 vs 网站变了)
+    auditSha: (process.env.GIT_SHA ?? '').trim() || 'unknown',
+    deployedVersion: (process.env.DEPLOYED_VERSION ?? '').trim() || 'unknown',
     sampleCount: list.length,
     sitemapCounts,
     issueCount: issues.length,
@@ -325,12 +336,16 @@ async function main() {
 
   console.error(`[seo-audit] issues: P0=${report.bySeverity.P0} P1=${report.bySeverity.P1} P2=${report.bySeverity.P2}`)
   console.error(`[seo-audit] report: ${OUT_DIR}/latest.md`)
-  process.exit(report.bySeverity.P0 > 0 ? 1 : 0)
+  // CI 阻断条件分级:P0 全阻断;hreflang-wrong-target 单独阻断(语言路由回归是最容易
+  // 悄悄发生且最难人工察觉的一类);其余 P1/P2 只报告不阻塞(有意 noindex 的工具页等
+  // 设计不应阻塞发布)。
+  const wrongTarget = issues.filter((i) => i.type === 'hreflang-wrong-target').length
+  process.exit(report.bySeverity.P0 > 0 || wrongTarget > 0 ? 1 : 0)
 }
 
 function toMarkdown(r) {
   const lines = []
-  lines.push(`# SEO 审计报告`, ``, `- 站点:${r.base}`, `- 时间:${r.generatedAt}`, `- 样本:${r.sampleCount} 页`, `- sitemap 计数:${JSON.stringify(r.sitemapCounts)}`, `- 问题:P0=${r.bySeverity.P0} P1=${r.bySeverity.P1} P2=${r.bySeverity.P2}`, ``)
+  lines.push(`# SEO 审计报告`, ``, `- 站点:${r.base}`, `- 时间:${r.generatedAt}`, `- 审计器版本:${r.auditSha ?? 'unknown'}`, `- 生产部署版本:${r.deployedVersion ?? 'unknown'}(取不到不猜)`, `- 样本:${r.sampleCount} 页(问题条目数≠独立页面数)`, `- sitemap 计数:${JSON.stringify(r.sitemapCounts)}`, `- 问题:P0=${r.bySeverity.P0} P1=${r.bySeverity.P1} P2=${r.bySeverity.P2}`, ``)
   for (const sev of ['P0', 'P1', 'P2']) {
     const rows = r.issues.filter((i) => i.sev === sev)
     if (!rows.length) continue
