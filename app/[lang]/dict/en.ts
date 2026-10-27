@@ -18,7 +18,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: 'Top 100 by real star gain over seven days, measured from our own snapshots.',
     metricLabel: 'Stars this week',
     metricHint: 'measured, 7-day window',
-    desc: 'Ranked by what our snapshots measured: the star difference between each repo first and latest snapshot of the week. Repos also on GitHub official Trending carry an "official" badge; ones the official list caught before us are listed at the bottom as new faces.',
+    desc: 'Ranked by what our snapshots measured: the star difference between each repo first and latest snapshot of the week. ones the official list caught before us are listed at the bottom as new faces.',
     faqs: [
       { q: 'Numbers sometimes differ from the official page?', a: 'Fetching results are cached for up to ~6 hours while the official numbers keep moving. A refresh re-aligns them.' },
       { q: 'What happens if crawling fails?', a: 'GitHub has no official Trending API. On failure, this board temporarily switches to “newest repos created in 7 days, ranked by stars” and clearly labels the fallback on the page.' },

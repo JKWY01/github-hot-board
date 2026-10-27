@@ -18,7 +18,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: 'Top 100 por ganancia real de estrellas en siete días, medida con nuestras instantáneas.',
     metricLabel: 'Star esta semana',
     metricHint: 'medido, ventana de 7 días',
-    desc: 'Clasificado según lo que nuestras instantáneas midieron: la diferencia de estrellas entre la primera y la última toma de la semana. Los repos también presentes en el Trending oficial llevan la insignia «oficial»; los aún no capturados aparecen al pie de la página.',
+    desc: 'Clasificado según lo que nuestras instantáneas midieron: la diferencia de estrellas entre la primera y la última toma de la semana. Los aún no capturados aparecen al pie de la página.',
     faqs: [
       { q: '¿A veces los números no cuadran con la página oficial?', a: 'Lo que capturamos queda en caché hasta unas ~6 horas, mientras los números oficiales siguen moviéndose. Un refresco lo realinea.' },
       { q: '¿Qué pasa si falla la captura?', a: 'GitHub no ofrece API oficial para Trending. Si la captura se bloquea, el ranking pasa temporalmente a “repos creados en los últimos 7 días, ordenados por Star” y el modo de respaldo queda marcado claramente en la página.' },

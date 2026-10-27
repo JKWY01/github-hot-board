@@ -18,7 +18,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: 'Top 100 des plus fortes hausses d’étoiles sur sept jours, mesurées par nos captures.',
     metricLabel: 'Stars cette semaine',
     metricHint: 'mesuré, fenêtre de 7 jours',
-    desc: 'Classement établi à partir de nos captures toutes les 6 heures : la différence d’étoiles entre la première et la dernière capture de la semaine. Les dépôts également présents sur le Trending officiel portent un badge « officiel » ; ceux pas encore collectés figurent en bas de page.',
+    desc: 'Classement établi à partir de nos captures toutes les 6 heures : la différence d’étoiles entre la première et la dernière capture de la semaine. Ceux pas encore collectés figurent en bas de page.',
     faqs: [
       { q: 'Les chiffres divergent parfois de la page officielle ?', a: 'Les résultats récupérés restent jusqu’à ~6 heures en cache pendant que les chiffres officiels continuent de bouger. Un rafraîchissement remet tout d’accord.' },
       { q: 'Que se passe-t-il si le crawl échoue ?', a: 'GitHub ne fournit aucune API officielle pour Trending. En cas d’échec, ce tableau bascule temporairement sur « dépôts créés dans les 7 derniers jours, triés par stars », et le repli est clairement signalé sur la page.' },

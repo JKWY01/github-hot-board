@@ -18,7 +18,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: 'Top 100 tăng sao thật trong bảy ngày, đo từ ảnh chụp của chúng tôi.',
     metricLabel: 'Star tuần này',
     metricHint: 'đo thực tế, cửa sổ 7 ngày',
-    desc: 'Xếp theo số liệu ảnh chụp 6 giờ/lần: chênh lệch sao giữa ảnh đầu và ảnh mới nhất trong tuần. Repo cũng có trên Trending chính thức gắn nhãn «chính thức»; repo chưa thu thập nằm ở cuối trang.',
+    desc: 'Xếp theo số liệu ảnh chụp 6 giờ/lần: chênh lệch sao giữa ảnh đầu và ảnh mới nhất trong tuần. Repo chưa thu thập nằm ở cuối trang.',
     faqs: [
       { q: 'Đôi khi con số lệch với trang chính thức?', a: 'Kết quả lấy về được cache tối đa ~6 giờ trong khi con số chính thức trên trang vẫn nhích tiếp. Sau mỗi lần làm mới, hai bên tự canh lại.' },
       { q: 'Crawl dữ liệu thất bại thì sao?', a: 'GitHub không có API Trending chính thức. Khi crawl hỏng, bảng chuyển tạm sang phương án “repo mới tạo trong 7 ngày xếp theo Star” và ghi chú rõ phương án này ngay trên trang.' },

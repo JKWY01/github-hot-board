@@ -18,7 +18,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: 'Yedi günde en çok yıldız kazanan 100 depo, kendi anlık görüntülerimizle ölçüldü.',
     metricLabel: 'Bu hafta eklenen Star',
     metricHint: 'ölçüldü, 7 günlük pencere',
-    desc: '6 saatte bir çekilen görüntülerimize göre sıralandı: haftanın ilk ve son görüntüsündeki yıldız farkı. Resmî Trending’de de yer alan depolar «resmî» rozeti taşır; henüz toplanmayanlar sayfa sonunda listelenir.',
+    desc: '6 saatte bir çekilen görüntülerimize göre sıralandı: haftanın ilk ve son görüntüsündeki yıldız farkı. Henüz toplanmayanlar sayfa sonunda listelenir.',
     faqs: [
       { q: 'Sayılar bazen resmi sayfayla tutmuyor mu?', a: 'Çekilen sonuçlar ~6 saate kadar önbelleğe alınırken resmi sayı akmaya devam eder. Her yenilemede ikisi yeniden hizalanır.' },
       { q: 'Tarama başarısız olursa ne olur?', a: 'GitHub’ın resmi bir Trending API’si yok. Hata durumunda bu liste geçici olarak “son 7 günde oluşturulan repoları Star sayısına göre sıralayan” yedek yönteme geçer; bu durum sayfada açıkça etiketlenir.' },

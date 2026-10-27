@@ -18,7 +18,7 @@ const boards: Record<BoardSlug, Dict['boards'][BoardSlug]> = {
     tagline: 'Top 100 nach echtem Sterne-Zuwachs in sieben Tagen, gemessen in eigenen Snapshots.',
     metricLabel: 'Sterne diese Woche',
     metricHint: 'gemessen, 7-Tage-Fenster',
-    desc: 'Berechnet aus unseren 6-stündlichen Snapshots: Die Zahl rechts ist die Differenz zwischen erstem und letztem Snapshot der Woche. Repos auch im offiziellen Trending tragen eine „offiziell“-Markierung; noch nicht erfasste stehen unten unter „Neu im offiziellen Trending“.',
+    desc: 'Berechnet aus unseren 6-stündlichen Snapshots: Die Zahl rechts ist die Differenz zwischen erstem und letztem Snapshot der Woche. Noch nicht erfasste stehen unten unter „Neu im offiziellen Trending“.',
     faqs: [
       { q: 'Die Zahlen stimmen manchmal nicht mit der offiziellen Seite überein?', a: 'Die abgerufenen Ergebnisse liegen bis zu ~6 Stunden im Cache, während die offiziellen Zahlen weiterlaufen. Ein Refresh richtet sie wieder aus.' },
       { q: 'Was passiert, wenn das Crawling fehlschlägt?', a: 'Eine offizielle Trending-API gibt es von GitHub nicht. Schlägt das Abrufen fehl, schaltet dieses Board vorübergehend auf „neueste Repos der letzten 7 Tage, sortiert nach Sternen“ um und kennzeichnet den Fallback klar auf der Seite.' },

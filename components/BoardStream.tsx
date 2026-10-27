@@ -93,11 +93,6 @@ export default async function BoardStream({
             {locale === 'zh' ? '官方标注 · 真实增量' : 'official delta · real'}
           </span>
         )}
-        {data.source === 'daily-stars' && (
-          <span className="rounded-full bg-good/10 px-2.5 py-1 font-medium text-good">
-            {locale === 'zh' ? '官方同款已标记' : 'official overlap marked'}
-          </span>
-        )}
         <span className="sr-only">{copy.name}</span>
       </div>
 
