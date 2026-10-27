@@ -91,7 +91,10 @@ async function fetchPage(path, retry = true) {
     const headers = Object.fromEntries(res.headers.entries())
     const body = res.status >= 200 && res.status < 400 && !path.endsWith('.xml') ? await res.text() : ''
     const ms = Date.now() - t0
-    return { ok: true, status: res.status, location: headers.location ?? null, headers, body, ms, bytes: body.length }
+    // 体积口径 = 解压后 HTML 的 UTF-8 字节数(body.length 是 UTF-16 代码单元,
+    // 中文页面会虚高;传输体积(gzip/br)由性能报告独立记录,两者不混)
+    const htmlBytes = Buffer.byteLength(body, 'utf8')
+    return { ok: true, status: res.status, location: headers.location ?? null, headers, body, ms, bytes: htmlBytes }
   } catch (e) {
     // 网络抖动抗性:fetch 失败/超时重试一次,两次都败才算真问题(审计结论要可复现)
     if (retry) {
@@ -193,7 +196,7 @@ function checkPage(sample, r) {
   }
 
   // 7) 体积
-  if (r.bytes > 1_200_000) issues.push({ url, type: 'page-too-heavy', sev: 'P2', detail: `${Math.round(r.bytes / 1024)}KB` })
+  if (r.bytes > 1_200_000) issues.push({ url, type: 'page-too-heavy', sev: 'P2', detail: `uncompressed HTML ${Math.round(r.bytes / 1024)}KiB (utf8 bytes)` })
 
   return issues
 }
