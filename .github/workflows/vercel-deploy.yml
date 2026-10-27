@@ -35,6 +35,10 @@ jobs:
       - name: 部署到 Vercel production
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          # 构建期预渲染要读库(分面页 discover-meta 等);此前漏带炸过 build
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          GITHUB_TOKENS: ${{ secrets.GH_TOKENS }}
+          NEXT_PUBLIC_SITE_URL: 'https://git.vaiox.xyz'
         run: |
           npm i -g vercel@latest
           vercel pull --yes --environment=production --token "$VERCEL_TOKEN" --scope jkwy01s-projects
