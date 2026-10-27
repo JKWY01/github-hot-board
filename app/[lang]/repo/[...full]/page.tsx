@@ -3,10 +3,9 @@ import type { Metadata } from 'next'
 
 import { isLocale } from '@/app/[lang]/dictionaries'
 import { LOCALES } from '@/lib/locales'
-import { fetchRepoReadme } from '@/lib/github'
 import { getRepoArchiveCached, isRepoFullName } from '@/lib/repoarchive'
 import { readBoardNeighbors, readRepoDescs, readDiscoverMeta, readRepoStatusFacts, readSiblingRepos, readTopicPeers } from '@/lib/snapshot'
-import { borrowRepoDocFetch, readRepoDoc } from '@/lib/repodocs'
+import { serveRepoDoc } from '@/lib/repodocs'
 import RepoArchiveView, { repoArchiveMetadata } from '@/components/repo-archive'
 
 /** 超时哨兵(2026-10-26 六轮审查):超时/出错 resolve TIMEOUT,与"仓库不存在"(null)可区分 ——
@@ -128,13 +127,10 @@ export default async function RepoPage({
   // 同作者其他上榜仓(内链网第二层):repo_seen 小表前缀查,失败静默。
   const siblings = unTimeout(await withTimeout(readSiblingRepos(fullName), 4500).catch(() => [] as string[])) ?? []
 
-  // README 正文(repo_docs 快照,抽屉与档案页共用一份):命中零上游;
-  // 未命中单飞实弹取一次(≤4s),入库后爬虫与访客下访直接吃到正文。服务端夜批还会预填。
-  const cachedDoc = unTimeout(await withTimeout(readRepoDoc(fullName, lang), 9000))
-  const readmeHtml = cachedDoc ?? (unTimeout(await withTimeout(
-    borrowRepoDocFetch(fullName, lang, () => fetchRepoReadme(fullName, lang)),
-    4000,
-  )) ?? null)
+  // README 正文(与抽屉 API 共用 serveRepoDoc,评审五轮统一读序):
+  // 目标语缓存 → 上游语言探测 → 上游失败时英文缓存降级;超时(上游内部预算外)按无文档处理
+  const served = unTimeout(await withTimeout(serveRepoDoc(fullName, lang), 9000))
+  const readmeHtml = served?.html ?? null
 
   return (
     <RepoArchiveView

@@ -240,7 +240,7 @@ async function renderMarkdownFile(full: string, path: string, branch: string): P
  * 切换器命中优先,命名候选兜底;全链路走服务端缓存(分支 6h、文档 1h),重复访问零新增成本。
  * 返回 localized:是否真的读到了该语言的版本 —— 行描述只认本地化版,
  * 默认英文版只给抽屉兜底,冒充 "某种语言的描述" 会把英文原句错标进语言槽。 */
-async function fetchLocalizedReadme(full: string, locale: Locale): Promise<{ html: string | null; localized: boolean }> {
+export async function fetchLocalizedReadme(full: string, locale: Locale): Promise<{ html: string | null; localized: boolean }> {
   if (!isRepoFullName(full)) return { html: null, localized: false }
   const branch = await defaultBranch(full)
   const baseHtml = await githubHtml(`https://api.github.com/repos/${full}/readme`)
