@@ -14,6 +14,8 @@ import {
 
 // 简易假库:lang → html(按 SELECT 的 lang 参数命中,与真实键语义一致)
 const fakeCache = new Map<string, string>()
+// 定向抛错集(评审七轮):SELECT 命中这些 full|lang 键时直接 throw,模拟真·数据库异常
+const failSelectFor = new Set<string>()
 let selectCalls = 0
 const executed: Array<{ key: string; html: string }> = []
 
@@ -36,6 +38,10 @@ vi.mock('../lib/snapshot', () => ({
         selectCalls += 1
         const full = String(vals[0] ?? '')
         const wantLang = String(vals[1] ?? '')
+        // 定向抛错(评审七轮):模拟真·数据库异常,区别于"查询正常但无数据"
+        if (failSelectFor.has(`${full}|${wantLang}`)) {
+          return Promise.reject(new Error('db connection reset'))
+        }
         const hit = fakeCache.get(`${full}|${wantLang}`)
         return Promise.resolve(hit !== undefined ? [{ html: hit }] : [])
       }
@@ -59,6 +65,7 @@ const localizedMock = vi.mocked(fetchLocalizedReadme)
 
 beforeEach(() => {
   fakeCache.clear()
+  failSelectFor.clear()
   executed.length = 0
   selectCalls = 0
   localizedMock.mockReset()
@@ -210,7 +217,7 @@ describe('serveRepoDoc 统一读序(评审五轮:上游失败时英文缓存兜�
     expect(localizedMock).toHaveBeenCalledTimes(2)
   })
 
-  it('I:上游超预算(慢)→ 超时降级英文缓存;后台探测不丢弃(评审六轮 P1)', async () => {
+  it('I:上游超预算(慢)→ 超时降级英文缓存;后台落库尽力而为(评审七轮:同进程可完成,线上受函数时限)', async () => {
     fakeCache.set('s/i|en', '<p>en while slow</p>')
     // 上游 80ms 才回,预算 10ms → 先降级;上游回落后入库,下次命中
     localizedMock.mockImplementationOnce(
@@ -223,12 +230,24 @@ describe('serveRepoDoc 统一读序(评审五轮:上游失败时英文缓存兜�
     expect(r2).toEqual({ html: '<p>slow zh</p>', fallback: false, cached: true })
   })
 
-  it('J:目标语缓存读库异常 → 按未命中处理走上游,不伪装(评审六轮:DB 异常不入收敛范围)', async () => {
-    // SELECT 抛错只影响 s/j 的目标语读取(SQLite 假库以 missing key 模拟失败语义:
-    // readRepoDoc 内部 catch → null → 上游),上游正常返回真翻译
+  it('J:目标语 SELECT 真·抛错(非空结果)→ readRepoDoc 捕获按 miss 走上游,不伪装命中(评审七轮)', async () => {
+    // 定向让 s/j 的目标语 SELECT 直接 reject(连接级异常),readRepoDoc 内部
+    // try/catch 捕获 → null → 继续上游探测;异常绝不能被伪装成成功缓存
+    failSelectFor.add('s/j|zh')
     localizedMock.mockResolvedValue({ html: '<p>zh real</p>', localized: true })
     const r = await serveRepoDoc('s/j', 'zh')
     expect(r).toEqual({ html: '<p>zh real</p>', fallback: false, cached: false })
+    expect(localizedMock).toHaveBeenCalledTimes(1)
+    // 唯一入库的是上游拿到的真翻译(合法写入),异常路径没有产生伪装数据
+    expect(fakeCache.get('s/j|zh')).toBe('<p>zh real</p>')
+  })
+
+  it('J2:en 降级读取也抛错 → 返回空结果,不伪装(异常路径完整覆盖)', async () => {
+    failSelectFor.add('s/j2|zh')
+    failSelectFor.add('s/j2|en')
+    localizedMock.mockResolvedValue({ html: null, localized: false })
+    const r = await serveRepoDoc('s/j2', 'zh')
+    expect(r).toEqual({ html: null, fallback: false, cached: false })
   })
 })
 

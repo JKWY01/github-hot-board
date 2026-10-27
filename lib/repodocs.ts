@@ -1,4 +1,6 @@
 import { withDb } from './snapshot'
+import { after } from 'next/server'
+
 import { fetchLocalizedReadme } from './github'
 import type { Locale } from './locales'
 
@@ -191,8 +193,10 @@ export interface ServedDoc {
 }
 
 /** 上游探测默认等待预算:与旧档案页 borrow 的 4s 对齐(github.ts 单请求 10s +
- * quotaSlot 排队可达 45s —— 超预算不是失败:后台单飞继续跑完并入库,下访即命中,
- * 本次先降级英文缓存,绝不空手而归)。 */
+ * quotaSlot 排队可达 45s)。超预算不是失败:本次先降级英文缓存,绝不空手而归;
+ * 后台探测尽力而为(经 after() 挂到请求生命周期,但受函数时限约束——档案页
+ * maxDuration 30s,排队极端情况可能被冻结),不承诺下次必然命中,读序对 miss
+ * 永远可重试兜底(评审七轮:不写"必然命中"这种未经线上证明的保证)。 */
 const UPSTREAM_BUDGET_MS = 4_000
 
 export async function serveRepoDoc(
@@ -208,24 +212,41 @@ export async function serveRepoDoc(
   // 任何数据库异常都不会被伪装成成功的目标语言响应。
   const budget = opts.upstreamMs ?? UPSTREAM_BUDGET_MS
   const upstream = borrowLocalizedRepoDocFetch(full, lang)
+  // settled 跟踪:区分"上游已回来但空"与"超时仍在跑"(评审七轮:只有后者需要登记后台)
+  let upstreamSettled = false
+  const wrapped = upstream.then(
+    (b) => {
+      upstreamSettled = true
+      return b as BorrowedDoc | null
+    },
+    (): BorrowedDoc | null => {
+      upstreamSettled = true
+      return null
+    },
+  )
   let timer: ReturnType<typeof setTimeout> | undefined
   const bail = new Promise<null>((resolve) => {
     timer = setTimeout(() => resolve(null), budget)
   })
   let borrowed: BorrowedDoc | null
   try {
-    borrowed = await Promise.race([
-      upstream.then(
-        (b) => b,
-        (): BorrowedDoc | null => null,
-      ),
-      bail,
-    ])
+    borrowed = await Promise.race([wrapped, bail])
   } finally {
     if (timer) clearTimeout(timer)
   }
   if (borrowed?.html) {
     return { html: borrowed.html, fallback: borrowed.fallback, cached: false }
+  }
+  // 超时路径:上游仍在跑 —— 显式挂到请求生命周期(Vercel 上响应即冻结裸 Promise,
+  // after() 让它在响应后继续,仍受函数时限;尽力而为,见文件头注释)。wrapped 永不
+  // reject(rejection 已映射为 null),after 回调无异常面。自托管长驻进程/单测环境
+  // 无请求上下文时 after() 不可用,裸 Promise 本就能跑完 —— catch 兜住即可。
+  if (!upstreamSettled) {
+    try {
+      after(() => wrapped)
+    } catch {
+      /* 非请求上下文(长驻进程/单测):进程存活,后台自会完成 */
+    }
   }
   // 上游失败/超时降级:库里的英文缓存(若有)比空页面对用户好得多;
   // fallback: true 如实标注,不冒充目标语言
