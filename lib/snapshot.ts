@@ -584,6 +584,30 @@ export interface RepoStatusFacts {
   issues: number | null
 }
 
+/** 批量版(榜单整页一次查询):repo → 最新非空 forks/issues。
+ *  星速层(repo_daily_stars)只存星数,增量榜行的 fork/issues 从快照明细表回补;
+ *  快照里没见过的仓返回缺省(前台对 0/undefined 不画格,不造假)。 */
+export async function readRepoCounts(fullNames: string[]): Promise<Map<string, { forks: number; issues: number | null }>> {
+  const out = new Map<string, { forks: number; issues: number | null }>()
+  if (fullNames.length === 0) return out
+  await withDb(async (sql) => {
+    // forks 取历史最大:fork 数单调不减(GitHub 语义),max = 最新真实观测,
+    // 天然免疫污染 0(2026-10-27 事故:OOM 同步窗口把 0 写进了部分拍)。
+    // issues 不单调(可真 0),取最新一拍原值;真 0 如实展示,污染 0 由下一拍自愈覆盖。
+    const rows = await sql`
+      SELECT repo,
+             max(forks) AS forks,
+             (array_agg(issues ORDER BY (issues IS NOT NULL) DESC, taken_at DESC))[1] AS issues
+      FROM board_snapshots
+      WHERE repo = ANY(${fullNames})
+      GROUP BY repo`
+    for (const r of rows as unknown as Array<{ repo: string; forks: number | string; issues: number | string | null }>) {
+      out.set(String(r.repo), { forks: Number(r.forks ?? 0), issues: r.issues != null ? Number(r.issues) : null })
+    }
+  })
+  return out
+}
+
 export async function readRepoStatusFacts(fullName: string): Promise<RepoStatusFacts> {
   const base: RepoStatusFacts = { license: null, pushedAt: null, issues: null }
   return (await withDb(async (sql) => {
