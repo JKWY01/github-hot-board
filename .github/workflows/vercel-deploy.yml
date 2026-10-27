@@ -3,6 +3,8 @@
 # (与 deploy-hk 同节奏):main 只攒代码,发版=打标签,两线同步。
 # 前提:Vercel 项目设置里已关 Git 集成的 main 自动部署(控制台 Git 菜单)。
 # 回滚 = vercel rollback 或重新给旧 commit 打标签再跑。
+# 注意:Hobby 账户 CLI 上传 API 每天上限 5000 次(api-upload-free,与 push 自动部署共用池)。
+# 2026-10-27 首跑撞限(当天已烧 ~40 发),24h 后恢复 —— 打标签发版一天一发完全够用。
 name: vercel-deploy
 
 on:
