@@ -563,7 +563,7 @@ export default function LiveBoardList({
         case 'gap':
           return Math.max(0, (item.milestoneTarget ?? 0) - item.stars)
         case 'forks':
-          return item.forks
+          return item.forks ?? 0
         default:
           return item.stars
       }
@@ -846,7 +846,6 @@ export default function LiveBoardList({
               : null
           // 行描述按站点语言挑:载荷里备好的对应语言描述(descLng),没有就回仓库原文
           const shown = item.descLng?.[locale] || item.desc || null
-          const officialLabel = locale === 'zh' ? '官方同款' : 'official'
           return (
             <li
               key={item.fullName}
@@ -895,12 +894,6 @@ export default function LiveBoardList({
                     </span>
                     {/* 站内档案/出站 GitHub 的门都收进行右缘(见行尾动作组);名字行保持干净 */}
                     {flag && flagBadge(flag.kind, flag.delta, strings)}
-                    {/* 官方同款:官方 Trending 同期也收录了这家(自算增量榜的双源互证) */}
-                    {item.officialTrending && (
-                      <span className="hidden shrink-0 whitespace-nowrap rounded-full bg-good/10 px-1.5 py-0.5 text-[10.5px] font-semibold text-good sm:inline-flex">
-                        {officialLabel}
-                      </span>
-                    )}
                     {/* 新入榜:上一拍没这家且无实时旗 —— 榜单的诚实增量信号 */}
                     {!flag && !custom && prev === undefined && (
                       <span className="hidden shrink-0 whitespace-nowrap rounded-full bg-accent/10 px-1.5 py-0.5 text-[10.5px] font-semibold text-accent sm:inline-flex">
@@ -935,7 +928,7 @@ export default function LiveBoardList({
                       本征格式之后是本榜特化格(斜率/更新时间/24h 增量等)。 */}
                   <div className={`flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11.5px] text-sub ${compact ? 'mt-0.5' : 'mt-1'}`}>
                     {item.language && <span>{item.language}</span>}
-                    {metric !== 'forks' && (
+                    {metric !== 'forks' && item.forks !== undefined && (
                       <span className="inline-flex items-center gap-1">
                         <ForkIcon size={11} />
                         {fmtNum(item.forks, locale)}

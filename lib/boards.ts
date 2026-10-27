@@ -2,7 +2,7 @@ import { cacheLife, cacheTag } from 'next/cache'
 
 import { RateLimitError, fetchTrendingPage, ghSearch, resolveAvatarUrl } from './github'
 import { appendHistory, readPersistedBoard, savePersistedBoard } from './persist'
-import { filterUnknownRepos, readBoardHead, readDailyGains, readDiscoverMeta, readDailyGainsPct } from './snapshot'
+import { filterUnknownRepos, readBoardHead, readDailyGains, readDiscoverMeta, readRepoCounts, readDailyGainsPct } from './snapshot'
 import { cleanDesc, parseTrendingHtml } from './parse'
 import type { BoardData, BoardItem, OfficialNewcomer } from './types'
 
@@ -26,7 +26,7 @@ function toHistoryPayload(key: string, data: BoardData) {
       rank: index + 1,
       repo: item.fullName,
       stars: item.stars,
-      forks: item.forks,
+      ...(item.forks !== undefined ? { forks: item.forks } : {}),
       ...(item.slope !== undefined ? { slope: item.slope } : {}),
       ...(item.gained !== undefined ? { gained: item.gained } : {}),
       ...(item.score !== undefined ? { score: item.score } : {}),
@@ -136,9 +136,8 @@ interface TrendingParams {
 }
 
 /** 周/月榜:主榜 = 本站快照自算的真实星增量(近 7/30 天 Top 100,数量与口径都不受官方
- * 页 15/21 条的天花板限制);官方 Trending 页继续抓,承担两件事——①给主榜行打"官方同款"
- * 标(双源互证)②差集出"官方新面孔"(官方收录了、本站快照还没接住的仓,单独列出)。
- * 官方抓取失败不拖垮主榜(自算数据不依赖上游),新面孔栏缺省。 */
+ * 页 15/21 条的天花板限制);官方 Trending 页只承担一件事——差集出"官方新面孔"(官方
+ * 收录了、本站快照还没接住的仓,单独列出)。官方抓取失败不拖垮主榜,新面孔栏缺省。 */
 export async function getTrendingBoardData({ period, language }: TrendingParams): Promise<BoardData> {
   const days = period === 'weekly' ? 7 : 30
 
@@ -153,17 +152,18 @@ export async function getTrendingBoardData({ period, language }: TrendingParams)
   const top = langFiltered.slice(0, 100)
 
   if (top.length > 0) {
-    // 官方页并行抓:失败静默(主榜不依赖它),成功则拆成"同款标 + 新面孔"
+    // 官方页并行抓:失败静默(主榜不依赖它),差集出"官方新面孔"(官方收录了、本站快照还没接住的仓)
     const official = await fetchTrendingPage({ since: period, language })
       .then((html) => parseTrendingHtml(html, period))
       .catch(() => [])
-    const officialSet = new Set(official.map((o) => o.fullName))
-    // 语言分面行的主语言用 discover 元数据补(增量行本身没带语言)
+    // 语言分面行的主语言用 discover 元数据补(增量行本身没带语言);fork/issues 从快照明细回补
     const meta = language ? null : await readDiscoverMeta().catch(() => null)
+    const counts = await readRepoCounts(top.map((r) => r.fullName)).catch(() => new Map())
 
     const items: BoardItem[] = []
     for (const row of top) {
       const [owner, name] = row.fullName.split('/')
+      const c = counts.get(row.fullName)
       items.push({
         id: hashFullName(row.fullName),
         fullName: row.fullName,
@@ -173,13 +173,15 @@ export async function getTrendingBoardData({ period, language }: TrendingParams)
         avatarUrl: await resolveAvatarUrl(owner ?? 'github'),
         desc: null,
         stars: row.endStars,
-        forks: 0,
-        issues: 0,
+        // forks/issues 查不到就留空(undefined → 行内不渲染该格):没有 = 留白不编,
+        // 绝不给 0(2026-10-27 事故:DB 连接被同步窗口打满,readRepoCounts 静默失败,
+        // 0 写进了三榜快照 —— 数据诚实红线)。
+        forks: c?.forks,
+        issues: c?.issues,
         language: meta?.get(row.fullName)?.language ?? null,
         topics: [],
         gained: row.gain,
         sincePeriod: period,
-        officialTrending: officialSet.has(row.fullName) || undefined,
       })
     }
 
@@ -230,7 +232,7 @@ export async function getTrendingBoardData({ period, language }: TrendingParams)
           desc: entry.desc,
           stars: entry.stars,
           forks: entry.forks,
-          issues: 0,
+          issues: undefined, // 官方页不带 issues 数据:留白不编 0
           language: entry.language,
           topics: [],
           gained: entry.growth ?? undefined,
@@ -291,9 +293,11 @@ export async function getRisingData(): Promise<BoardData> {
   const gains = await readDailyGains(7, 300)
   if (gains.length >= 30) {
     const meta = await readDiscoverMeta().catch(() => null)
+    const counts = await readRepoCounts(gains.map((r) => r.fullName)).catch(() => new Map())
     const items: BoardItem[] = []
     for (const row of gains) {
       const [owner, name] = row.fullName.split('/')
+      const c = counts.get(row.fullName)
       items.push({
         id: hashFullName(row.fullName),
         fullName: row.fullName,
@@ -303,8 +307,11 @@ export async function getRisingData(): Promise<BoardData> {
         avatarUrl: await resolveAvatarUrl(owner ?? 'github'),
         desc: null,
         stars: row.endStars,
-        forks: 0,
-        issues: 0,
+        // forks/issues 查不到就留空(undefined → 行内不渲染该格):没有 = 留白不编,
+        // 绝不给 0(2026-10-27 事故:DB 连接被同步窗口打满,readRepoCounts 静默失败,
+        // 0 写进了三榜快照 —— 数据诚实红线)。
+        forks: c?.forks,
+        issues: c?.issues,
         language: meta?.get(row.fullName)?.language ?? null,
         topics: [],
         gained: row.gain,
@@ -340,9 +347,11 @@ export async function getDarkData(): Promise<BoardData> {
   const movers = await readDailyGainsPct(7, 100)
   if (movers.length >= 30) {
     const meta = await readDiscoverMeta().catch(() => null)
+    const counts = await readRepoCounts(movers.map((r) => r.fullName)).catch(() => new Map())
     const items: BoardItem[] = []
     for (const row of movers) {
       const [owner, name] = row.fullName.split('/')
+      const c = counts.get(row.fullName)
       items.push({
         id: hashFullName(row.fullName),
         fullName: row.fullName,
@@ -352,8 +361,11 @@ export async function getDarkData(): Promise<BoardData> {
         avatarUrl: await resolveAvatarUrl(owner ?? 'github'),
         desc: null,
         stars: row.endStars,
-        forks: 0,
-        issues: 0,
+        // forks/issues 查不到就留空(undefined → 行内不渲染该格):没有 = 留白不编,
+        // 绝不给 0(2026-10-27 事故:DB 连接被同步窗口打满,readRepoCounts 静默失败,
+        // 0 写进了三榜快照 —— 数据诚实红线)。
+        forks: c?.forks,
+        issues: c?.issues,
         language: meta?.get(row.fullName)?.language ?? null,
         topics: [],
         gained: row.gain,
@@ -409,7 +421,7 @@ export async function getControversialData(): Promise<BoardData> {
     .filter((item) => item.stars >= 3000)
     .map((item) => ({
       ...item,
-      score: (item.forks * 2 + item.issues) / Math.max(1, item.stars),
+      score: ((item.forks ?? 0) * 2 + (item.issues ?? 0)) / Math.max(1, item.stars),
     }))
     .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
     .slice(0, 200)

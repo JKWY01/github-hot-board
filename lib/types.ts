@@ -11,9 +11,10 @@ export interface RepoLite {
   /** 各站点语言的行描述(仓库对应语言 README 首句,同步时提取;没有就回 desc 原文) */
   descLng?: Record<string, string> | null
   stars: number
-  forks: number
-  /** GitHub 口径：含 PR */
-  issues: number
+  /** 快照里查不到就缺省(渲染层留白,不给 0)——forks 王/排序消费点已有 ?? 0 兜底 */
+  forks?: number
+  /** GitHub 口径：含 PR;快照里查不到就缺省(渲染层留白,不给 0) */
+  issues?: number
   language: string | null
   /** ISO 时间；Trending 抓取项不存在 */
   createdAt?: string
@@ -35,8 +36,6 @@ export interface BoardItem extends RepoLite {
   milestoneTarget?: number
   /** 上一拍(上一次同步)的名次(0 基；本拍新入榜则缺省)——落库持久化,任何访客打开都能看到爬/掉徽章 */
   prevRank?: number
-  /** 官方 Trending 同期收录标记(周/月榜自算增量榜的行内小标,双源互证) */
-  officialTrending?: boolean
 }
 
 export type BoardSource =

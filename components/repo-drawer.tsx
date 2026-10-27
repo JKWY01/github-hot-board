@@ -309,7 +309,7 @@ export default function RepoDrawer({
                 </span>
                 <span className="inline-flex items-center gap-1">
                   <ForkIcon size={11} />
-                  {fmtNum(item.forks, locale)}
+                  {fmtNum(item.forks ?? 0, locale)}
                 </span>
                 {item.language && <span>{item.language}</span>}
                 {/* 站内档案 = 语义化排名页(SEO 与读者共用);不与抽屉行为冲突 */}
