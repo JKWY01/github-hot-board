@@ -62,10 +62,14 @@ export async function readRepoDoc(full: string, lang: string): Promise<string | 
 
 /** 目标语缓存读取(serveRepoDoc 第①层):命中时做历史兜底识别,未命中返回 null。
  * 命中英文回退时返回 fallback: true,调用方无需区分内容,但测试与观测需要区分。 */
+/** 识别三态(评审十轮):true=确认历史英文副本;false=查询成功且确认不是(真翻译);
+ *  null=识别查询自身失败,来源未知 —— 上层不得当可信命中,按兜底候选继续探测(fail-closed)。 */
+export type FallbackVerdict = boolean | null
+
 export async function readRepoDocWithFallback(
   full: string,
   lang: string,
-): Promise<{ html: string | null; fallback: boolean }> {
+): Promise<{ html: string | null; fallback: FallbackVerdict }> {
   if (lang === 'en') return { html: await readRepoDoc(full, 'en'), fallback: false }
   const hit = await readRepoDoc(full, lang)
   if (!hit) {
@@ -81,7 +85,7 @@ export async function readRepoDocWithFallback(
   // 一致 → 是历史兜底,fallback: true(内容照常展示,语义正确);
   // 不一致 → 真翻译。比对在 SQL 内完成,不把两份大 HTML 拉到应用层。
   // en 源不存在的行无法证伪,按真翻译处理(保守,不误伤)。
-  const isFallback = await withDb(async (sql) => {
+  const isFallback = await withDb(async (sql): Promise<boolean> => {
     // 性能路径(评审三轮实测:全量 md5 对 2.2MB 大文档热态 23ms/冷态 102ms,不可接受):
     // 先比字节长度(PG 只读元数据,零 HTML 解压),长度不同必然不是兜底副本,直接 false;
     // 长度相同才做 md5 全文确认。p90 文档 98KB 时 md5 热态 ~0.1ms,大文档仅在"长度恰好相同"
@@ -98,8 +102,8 @@ export async function readRepoDocWithFallback(
       END AS same
     `) as unknown as Array<{ same: boolean }> | undefined
     return rows?.[0]?.same === true
-  }).catch(() => false)
-  return { html: hit, fallback: isFallback === true }
+  }).catch(() => null) // 识别查询失败 ≠「确认不是兜底」——三态语义,fail-closed(评审十轮)
+  return { html: hit, fallback: isFallback === true ? true : isFallback === false ? false : null }
 }
 
 /** 入库:一小时内不被覆盖(夜批与运行时谁先到谁为准,过期才续新)。
@@ -226,13 +230,14 @@ export async function serveRepoDoc(
   opts: { upstreamMs?: number } = {},
 ): Promise<ServedDoc> {
   const hit = await readRepoDocWithFallback(full, lang)
-  // 真翻译缓存:快速路径直接返回。历史英文兜底副本(fallback:true)不算命中 ——
-  // 它只是降级候选:继续上游探测找真 README,否则旧英文副本会永久霸占目标语键
-  // (评审八轮:识别出污染却照常返回=半修复)。
-  if (hit.html && !hit.fallback) {
+  // 真翻译缓存(识别查询成功且确认不是兜底):快速路径直接返回。
+  // 历史兜底(fallback:true)与「识别失败来源未知」(fallback:null)都不算可信命中 ——
+  // 只作降级候选,继续上游探测找真 README,否则旧英文副本会永久霸占目标语键
+  //(评审八轮:识别出污染却照常返回=半修复;评审十轮:识别查询失败同样不得放行)。fail-closed。
+  if (hit.html && hit.fallback === false) {
     return { html: hit.html, fallback: false, cached: true }
   }
-  const legacyCandidate = hit.html // 历史兜底内容(可能为 null),上游失败时兜底用
+  const legacyCandidate = hit.html // 兜底候选(历史副本或来源未知的内容),上游失败时用
   // 只收敛「上游获取」的失败/超时/异常(评审六轮):会 reject 到这里的只剩上游网络/解析
   // 错误 —— 统一降级英文缓存。缓存写库异常在借取链内部已各自吞掉,不在这里二次吞;
   // 读库异常也不在此收敛(readRepoDoc 内部 catch 后按 miss 处理,仍走上游),

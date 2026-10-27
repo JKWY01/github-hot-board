@@ -18,6 +18,8 @@ const fakeCache = new Map<string, string>()
 const failSelectFor = new Set<string>()
 // 行写入时间标记:'recent' = 1h 内(防覆盖生效),缺省 = 过期(可覆盖)
 const fakeFetchedAt = new Map<string, 'recent'>()
+// 识别查询定向抛错集(评审十轮):历史副本检测 SQL 失败 → 三态 null
+const failDetectFor = new Set<string>()
 let selectCalls = 0
 const executed: Array<{ key: string; html: string }> = []
 
@@ -50,9 +52,12 @@ vi.mock('../lib/snapshot', () => ({
       // 读取侧历史污染识别查询(CASE:先长度后 md5);注意须在 INSERT 之后判——
       // 写入 SQL 的 CASE 分支里也含 octet_length(html)(评审九轮踩中)
       if (text.includes('octet_length(html)')) {
-        // 历史污染识别查询(CASE 语义:先长度后 md5;IS DISTINCT FROM 覆盖缺失行)
         const full = String(vals[0] ?? '')
         const lang = String(vals[1] ?? '')
+        // 定向抛错(评审十轮):识别查询自身失败 ≠ 「确认不是兜底」
+        if (failDetectFor.has(`${full}|${lang}`)) {
+          return Promise.reject(new Error('detection query failed'))
+        }
         const t = fakeCache.get(`${full}|${lang}`)
         const e = fakeCache.get(`${full}|en`)
         const same = t !== undefined && t === e
@@ -83,6 +88,7 @@ const localizedMock = vi.mocked(fetchLocalizedReadme)
 beforeEach(() => {
   fakeCache.clear()
   failSelectFor.clear()
+  failDetectFor.clear()
   fakeFetchedAt.clear()
   executed.length = 0
   selectCalls = 0
@@ -301,6 +307,27 @@ describe('serveRepoDoc 统一读序(评审五轮:上游失败时英文缓存兜�
     expect(src).toContain("WHEN ${key} = 'en' THEN false")
     expect(src).toContain('IS DISTINCT FROM octet_length(repo_docs.html) THEN false')
     expect(src).toContain('md5(repo_docs.html) IS NOT DISTINCT FROM')
+  })
+
+  it('N:目标语 SELECT 成功但识别 SQL 抛错 → 三态 null,serveRepoDoc 必须继续上游探测(评审十轮 P1)', async () => {
+    // 污染形态数据(zh=en 同内容),识别查询定向失败:
+    // 不得把这份缓存当真翻译直接返回(fail-closed),必须打上游找真 README
+    fakeCache.set('s/n|zh', '<p>old english copy</p>')
+    fakeCache.set('s/n|en', '<p>old english copy</p>')
+    failDetectFor.add('s/n|zh')
+    localizedMock.mockResolvedValue({ html: '<p>真翻译到位</p>', localized: true })
+    const r = await serveRepoDoc('s/n', 'zh')
+    expect(localizedMock).toHaveBeenCalledTimes(1)
+    expect(r).toEqual({ html: '<p>真翻译到位</p>', fallback: false, cached: false })
+  })
+
+  it('N2:识别 SQL 抛错 + 上游也失败 → 回退已知缓存内容 fallback:true(降级不丢内容)', async () => {
+    fakeCache.set('s/n2|zh', '<p>cached content</p>')
+    fakeCache.set('s/n2|en', '<p>cached content</p>')
+    failDetectFor.add('s/n2|zh')
+    localizedMock.mockRejectedValue(new Error('upstream down'))
+    const r = await serveRepoDoc('s/n2', 'zh')
+    expect(r).toEqual({ html: '<p>cached content</p>', fallback: true, cached: true })
   })
 
   it('J2:en 降级读取也抛错 → 返回空结果,不伪装(异常路径完整覆盖)', async () => {
