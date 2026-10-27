@@ -234,7 +234,9 @@ async function auditSitemaps(issues) {
       const probe = locs[Math.floor(locs.length / 2)].replace(BASE, '')
       const pr = await fetchPage(probe)
       if (!pr.ok || pr.status !== 200) {
-        issues.push({ url: locs[Math.floor(locs.length / 2)], type: 'sitemap-dead-url', sev: 'P1', detail: r.ok ? `status ${pr.status}` : pr.error })
+        // 诊断用被抽查页自身的失败信息(pr),不是 sitemap 请求的 r(评审实锤的变量误用)
+        const detail = pr.ok ? `status ${pr.status}` : (pr.error ?? 'unknown')
+        issues.push({ url: locs[Math.floor(locs.length / 2)], type: 'sitemap-dead-url', sev: 'P1', detail })
       }
     }
   }

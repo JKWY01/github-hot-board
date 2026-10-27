@@ -79,3 +79,15 @@ describe('seo-audit 脚本契约', () => {
     expect(src.includes("crossLang ? 'P2' : 'P1'")).toBe(true)
   })
 })
+
+describe('sitemap 抽查诊断与抖动重试', () => {
+  it('sitemap-dead-url 的诊断信息来自被抽查页(pr),不是 sitemap 请求(r)', () => {
+    expect(src.includes('const detail = pr.ok ? `status ${pr.status}` : (pr.error ?? ' + "'unknown'" + ')')).toBe(true)
+    expect(src.includes('detail: r.ok ? `status ${pr.status}` : pr.error')).toBe(false)
+  })
+
+  it('fetchPage 失败重试一次(两次都败才报 fetch-failed)', () => {
+    expect(/retry = true/.test(src)).toBe(true)
+    expect(src.includes('return fetchPage(path, false)')).toBe(true)
+  })
+})
