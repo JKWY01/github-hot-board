@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "sync": "node scripts/sync-fetch.mjs",
-    "test": "vitest run"
+    "test": "vitest run",
+    "seo:audit": "node scripts/seo-audit.mjs"
   },
   "dependencies": {
     "@vercel/analytics": "^2.0.1",
