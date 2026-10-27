@@ -706,7 +706,17 @@ export async function readDiscoverMeta(): Promise<Map<string, DiscoverMeta & { s
     }
     return true
   })
-  if (!ok) throw new Error('discover-meta unavailable (db unreachable/timeout)')
+  if (!ok) {
+    // 运行时:抛错防毒空缓存(cacheLife 2h 会把空 Map 烤 2 小时)。
+    // 构建期:预渲染没有重试,一次 DB 抖动=整个发版失败(2026-10-27 实锤两连炸);
+    // 构建产物生命周期有限且部署后 cacheLife 到期自愈,这里按 degraded 空结果放行,
+    // 页面消费点(.catch(() => null))全部有降级路径。
+    if (process.env.NEXT_PHASE === 'phase-production-build') {
+      console.error('[discover-meta] build-time db unavailable — baking degraded empty meta')
+      return out
+    }
+    throw new Error('discover-meta unavailable (db unreachable/timeout)')
+  }
   return out
 }
 
