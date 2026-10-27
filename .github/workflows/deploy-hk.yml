@@ -59,11 +59,11 @@ jobs:
           chmod 600 /tmp/dk
           SHA=${GITHUB_SHA::12}
           scp -P 4492 -o StrictHostKeyChecking=accept-new -o BatchMode=yes -i /tmp/dk /tmp/release.tgz root@45.197.146.227:/opt/ghb/app/incoming.tgz
-          # 容器以 /src:ro 挂 release、启动时 cp -a 进可写层再跑(2026-10-25 实锤:
-          # 直接 :/app:ro 挂载时 cacheComponents 的 ISR 写 .next/server/route-cache
-          # 全部 ENOENT,预渲染缓存更新失败 → 每语首渲染 500;tmpfs/volumes-from
-          # 都不能叠在 ro bind 上,唯一解是可写层)。
-          ssh -p 4492 -o StrictHostKeyChecking=accept-new -o BatchMode=yes -i /tmp/dk root@45.197.146.227 "set -e; mkdir -p /opt/ghb/app/releases/$SHA; tar xzf /opt/ghb/app/incoming.tgz -C /opt/ghb/app/releases/$SHA; ln -sfn /opt/ghb/app/releases/$SHA /opt/ghb/app/current; rm -f /opt/ghb/app/incoming.tgz; docker rm -f ghb-web >/dev/null 2>&1 || true; docker run -d --name ghb-web --network host --restart unless-stopped --memory 384m --memory-swap 384m --log-opt max-size=10m --log-opt max-file=3 --env-file /opt/ghb/app/.env -e HOSTNAME=127.0.0.1 -e PORT=3000 -e NODE_OPTIONS=--max-old-space-size=256 --health-cmd 'wget -qO- http://127.0.0.1:3000/api/boards/overall >/dev/null || exit 1' --health-interval 60s --health-timeout 15s --health-retries 3 --health-start-period 120s -v /opt/ghb/app/current:/src:ro -w /app node:20-alpine sh -c 'cp -a /src/. /app/ && exec node server.js'; sleep 12; curl -sf -o /dev/null http://127.0.0.1:3000/api/boards/overall && echo DEPLOY_OK; ls -1dt /opt/ghb/app/releases/* | tail -n +4 | xargs -r rm -rf"
+          # 容器参数 2026-10-27 v8.3 对齐(服务器 /opt/ghb/app/run.sh 同款,事故复盘后定版):
+          # slim+可写 cp -a/640m 帽/堆 360/grep 健检(slim 无 wget;健检 exec node 会加 40MB 尖峰)。
+          # 384m/alpine/ro 挂载在爬虫高峰实测堆满自杀(30 分钟 5 轮),勿回退。
+          # cachevol 独立卷挂 .next/cache(发布目录自清,卷保缓存);/app 可写(route-cache 落盘)。
+          ssh -p 4492 -o StrictHostKeyChecking=accept-new -o BatchMode=yes -i /tmp/dk root@45.197.146.227 "set -e; mkdir -p /opt/ghb/app/releases/$SHA; tar xzf /opt/ghb/app/incoming.tgz -C /opt/ghb/app/releases/$SHA; ln -sfn /opt/ghb/app/releases/$SHA /opt/ghb/app/current; rm -f /opt/ghb/app/incoming.tgz; mkdir -p /opt/ghb/app/cachevol; docker rm -f ghb-web >/dev/null 2>&1 || true; docker run -d --name ghb-web --network host --restart unless-stopped --memory 640m --memory-swap 640m --log-opt max-size=10m --log-opt max-file=3 --env-file /opt/ghb/app/.env -e HOSTNAME=127.0.0.1 -e PORT=3000 -e NODE_OPTIONS=--max-old-space-size=360 --health-cmd 'grep -qEis \":0BB8[[:space:]]+00000000:0000[[:space:]]+0A\" /proc/net/tcp' --health-interval 60s --health-timeout 15s --health-retries 3 --health-start-period 120s -v /opt/ghb/app/current:/app -v /opt/ghb/app/cachevol:/app/.next/cache -w /app node:20-slim sh -c 'cp -a /src/. /app/ 2>/dev/null || true; exec node server.js'; sleep 12; curl -sf -o /dev/null http://127.0.0.1:3000/api/boards/overall && echo DEPLOY_OK; ls -1dt /opt/ghb/app/releases/* | tail -n +4 | xargs -r rm -rf"
 
       - name: 部署后冒烟(公网全链,两次生产-only 断流都靠人肉 curl 才发现——固化为流水线步骤)
         run: |
