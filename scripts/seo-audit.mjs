@@ -80,7 +80,7 @@ function argOut() {
   return 'reports/seo'
 }
 
-async function fetchPage(path) {
+async function fetchPage(path, retry = true) {
   const t0 = Date.now()
   try {
     const res = await fetch(`${BASE}${path}`, {
@@ -93,6 +93,11 @@ async function fetchPage(path) {
     const ms = Date.now() - t0
     return { ok: true, status: res.status, location: headers.location ?? null, headers, body, ms, bytes: body.length }
   } catch (e) {
+    // 网络抖动抗性:fetch 失败/超时重试一次,两次都败才算真问题(审计结论要可复现)
+    if (retry) {
+      await new Promise((r) => setTimeout(r, 1500))
+      return fetchPage(path, false)
+    }
     return { ok: false, error: String(e?.cause ?? e).slice(0, 120), ms: Date.now() - t0 }
   }
 }

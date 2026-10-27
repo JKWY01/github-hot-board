@@ -1,6 +1,6 @@
 {
   "base": "https://git.vaiox.xyz",
-  "generatedAt": "2026-10-27T13:23:55.333Z",
+  "generatedAt": "2026-10-27T13:33:00.639Z",
   "sampleCount": 43,
   "sitemapCounts": {
     "/sitemap/boards.xml": 576,
@@ -8,11 +8,11 @@
     "/sitemap/0.xml": 4000,
     "/sitemap/1.xml": 1882
   },
-  "issueCount": 31,
+  "issueCount": 24,
   "bySeverity": {
     "P0": 0,
     "P1": 7,
-    "P2": 24
+    "P2": 17
   },
   "issues": [
     {
@@ -76,46 +76,10 @@
       "detail": "105 chars"
     },
     {
-      "url": "https://git.vaiox.xyz/zh/boards/overall",
-      "type": "slow-response",
-      "sev": "P2",
-      "detail": "6868ms"
-    },
-    {
-      "url": "https://git.vaiox.xyz/zh/boards/controversial",
-      "type": "slow-response",
-      "sev": "P2",
-      "detail": "10279ms"
-    },
-    {
-      "url": "https://git.vaiox.xyz/zh/boards/forks",
-      "type": "slow-response",
-      "sev": "P2",
-      "detail": "7625ms"
-    },
-    {
-      "url": "https://git.vaiox.xyz/en/boards/overall",
-      "type": "slow-response",
-      "sev": "P2",
-      "detail": "12039ms"
-    },
-    {
-      "url": "https://git.vaiox.xyz/zh/boards/overall/python",
-      "type": "slow-response",
-      "sev": "P2",
-      "detail": "7613ms"
-    },
-    {
       "url": "https://git.vaiox.xyz/en/boards/weekly/typescript",
       "type": "title-too-long",
       "sev": "P2",
       "detail": "72 chars"
-    },
-    {
-      "url": "https://git.vaiox.xyz/en/boards/overall/javascript",
-      "type": "slow-response",
-      "sev": "P2",
-      "detail": "6890ms"
     },
     {
       "url": "https://git.vaiox.xyz/en/boards/overall/javascript",
@@ -170,12 +134,6 @@
       "type": "page-too-heavy",
       "sev": "P2",
       "detail": "1742KB"
-    },
-    {
-      "url": "https://git.vaiox.xyz/en/history/overall/2026-10-25",
-      "type": "slow-response",
-      "sev": "P2",
-      "detail": "5979ms"
     },
     {
       "url": "https://git.vaiox.xyz/en/history/overall/2026-10-25",
