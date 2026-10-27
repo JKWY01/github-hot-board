@@ -536,8 +536,12 @@ export default function LiveBoardList({
         case 'slope':
           return fmtSlope(n)
         case 'score':
-          // 换芯后 score=增速百分比(rising 绝对增量榜新行 score 也走这,black 兜底形态同)
-          return `${n.toFixed(1)}%`
+          // score 语义按榜分流(2026-10-27 自查实锤:换芯后 rising/dark 的 score=增速
+          // 百分比,controversial 的 score=争议指数(比值,非百分比)——统一加 % 会把
+          // 争议指数 3.96 显示成 "4.0%",语义错误。
+          return metric === 'score' && slug === 'controversial'
+            ? n.toFixed(2)
+            : `${n.toFixed(1)}%`
         case 'gap':
           return fmtNum(Math.max(0, n), locale)
         default:
