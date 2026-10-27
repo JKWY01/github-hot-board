@@ -32,6 +32,7 @@
 ## For repository authors
 
 - If a repo is listed on any board, authors can embed a rank badge in their README: `GET /api/badge/{owner}/{repo}.svg` returns a shields-style SVG (current best rank / previously listed / not listed).
+- Any repository can embed the badge — unlisted repos get a clean grey "not listed" badge, and it turns colored the moment the repo makes a board.
 - Markdown: `[![GitHub Hot Board](https://git.vaiox.xyz/api/badge/{owner}/{repo}.svg)](https://git.vaiox.xyz/en/repo/{owner}/{repo})`
 
 ## Data health

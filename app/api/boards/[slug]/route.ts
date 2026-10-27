@@ -63,6 +63,10 @@ export async function GET(
         'Cache-Control': 'no-store',
         // 公开只读数据,CORS 全开(gitstock 模式):浏览器端第三方应用可直接消费。
         'Access-Control-Allow-Origin': '*',
+        // JSON 消费者的自助引导:四天数据里有真人 UA 直接消费此 API,
+        // 指到 agent 说明书与可复用的榜单徽章 —— 把数据用户转成引用/外链源。
+        'Link': '</llms.txt>; rel="help"',
+        'X-Docs': 'https://git.vaiox.xyz/llms.txt (API guide, MCP server, badge embed)',
       },
     })
   } catch (error) {

@@ -278,6 +278,9 @@ export default function RepoArchiveView({
             label={t.copy}
             text={`[![${t.badge}](${badgeBaseUrl}/api/badge/${archive.fullName}.svg)](${badgeBaseUrl}/${locale}/repo/${archive.fullName})`}
           />
+          <p className="w-full text-[11.5px] leading-relaxed text-sub/80">
+            Badge · 任何仓库都可以挂 —— 未上榜的仓库显示灰章,上完榜会自动点亮。
+          </p>
         </div>
         <div className={`${PLATE} mt-2 flex flex-wrap items-center gap-x-4 gap-y-3 px-5 py-4`}>
           <code className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap rounded-lg bg-white px-3 py-2 text-[11px] leading-relaxed text-ink/70">
