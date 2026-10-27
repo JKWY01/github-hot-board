@@ -14,7 +14,9 @@ import type { Locale } from './locales'
  * 英文兜底(仓库没有该语言 README 时显示的原文)可以正常返回给页面,
  * 但绝不冒充目标语言翻译写进目标语言键 —— 否则同一份英文正文会以十几个
  * 语种键各存一份(生产实测 22,346 行/3,405 仓/1,029MB 纯冗余)。
- * 读取顺序:目标语言缓存 → 英文缓存 → 上游 GitHub(仅此时允许写缓存)。 */
+ * 读取顺序(serveRepoDoc,评审五/六轮定稿):目标语言缓存(带历史兜底识别)→
+ * 上游语言探测(限时预算内;真翻译优先,英文兜底只展示不冒充)→
+ * 上游失败/超时/异常 → 英文缓存降级(fallback: true;不写负缓存,可重试)。 */
 
 let ready: Promise<void> | null = null
 
@@ -188,12 +190,44 @@ export interface ServedDoc {
   cached: boolean
 }
 
-export async function serveRepoDoc(full: string, lang: string): Promise<ServedDoc> {
+/** 上游探测默认等待预算:与旧档案页 borrow 的 4s 对齐(github.ts 单请求 10s +
+ * quotaSlot 排队可达 45s —— 超预算不是失败:后台单飞继续跑完并入库,下访即命中,
+ * 本次先降级英文缓存,绝不空手而归)。 */
+const UPSTREAM_BUDGET_MS = 4_000
+
+export async function serveRepoDoc(
+  full: string,
+  lang: string,
+  opts: { upstreamMs?: number } = {},
+): Promise<ServedDoc> {
   const hit = await readRepoDocWithFallback(full, lang)
   if (hit.html) return { html: hit.html, fallback: hit.fallback, cached: true }
-  const borrowed = await borrowLocalizedRepoDocFetch(full, lang)
-  if (borrowed.html) return { html: borrowed.html, fallback: borrowed.fallback, cached: false }
-  // 上游失败降级:库里的英文缓存(若有)比空页面对用户好得多;
+  // 只收敛「上游获取」的失败/超时/异常(评审六轮):会 reject 到这里的只剩上游网络/解析
+  // 错误 —— 统一降级英文缓存。缓存写库异常在借取链内部已各自吞掉,不在这里二次吞;
+  // 读库异常也不在此收敛(readRepoDoc 内部 catch 后按 miss 处理,仍走上游),
+  // 任何数据库异常都不会被伪装成成功的目标语言响应。
+  const budget = opts.upstreamMs ?? UPSTREAM_BUDGET_MS
+  const upstream = borrowLocalizedRepoDocFetch(full, lang)
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const bail = new Promise<null>((resolve) => {
+    timer = setTimeout(() => resolve(null), budget)
+  })
+  let borrowed: BorrowedDoc | null
+  try {
+    borrowed = await Promise.race([
+      upstream.then(
+        (b) => b,
+        (): BorrowedDoc | null => null,
+      ),
+      bail,
+    ])
+  } finally {
+    if (timer) clearTimeout(timer)
+  }
+  if (borrowed?.html) {
+    return { html: borrowed.html, fallback: borrowed.fallback, cached: false }
+  }
+  // 上游失败/超时降级:库里的英文缓存(若有)比空页面对用户好得多;
   // fallback: true 如实标注,不冒充目标语言
   const en = await readRepoDoc(full, 'en')
   return { html: en, fallback: en !== null, cached: en !== null }

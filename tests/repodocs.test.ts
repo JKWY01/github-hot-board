@@ -187,6 +187,49 @@ describe('serveRepoDoc 统一读序(评审五轮:上游失败时英文缓存兜�
     expect(r).toEqual({ html: '<p>中文缓存</p>', fallback: false, cached: true })
     expect(localizedMock).not.toHaveBeenCalled()
   })
+
+  it('F:上游直接 reject + 英文缓存存在 → 仍降级英文 fallback:true(评审六轮 P1)', async () => {
+    fakeCache.set('s/f|en', '<p>en ok</p>')
+    localizedMock.mockRejectedValue(new Error('upstream down'))
+    const r = await serveRepoDoc('s/f', 'zh')
+    expect(r).toEqual({ html: '<p>en ok</p>', fallback: true, cached: true })
+  })
+
+  it('G:上游 reject + 英文缓存不存在 → 空结果(不伪装成功)', async () => {
+    localizedMock.mockRejectedValue(new Error('upstream down'))
+    const r = await serveRepoDoc('s/g', 'zh')
+    expect(r).toEqual({ html: null, fallback: false, cached: false })
+  })
+
+  it('H:reject 之后再请求 → 无负缓存,重新探测成功', async () => {
+    localizedMock.mockRejectedValueOnce(new Error('flaky'))
+    await serveRepoDoc('s/h', 'zh')
+    localizedMock.mockResolvedValueOnce({ html: '<p>恢复</p>', localized: true })
+    const r = await serveRepoDoc('s/h', 'zh')
+    expect(r).toEqual({ html: '<p>恢复</p>', fallback: false, cached: false })
+    expect(localizedMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('I:上游超预算(慢)→ 超时降级英文缓存;后台探测不丢弃(评审六轮 P1)', async () => {
+    fakeCache.set('s/i|en', '<p>en while slow</p>')
+    // 上游 80ms 才回,预算 10ms → 先降级;上游回落后入库,下次命中
+    localizedMock.mockImplementationOnce(
+      () => new Promise((res) => setTimeout(() => res({ html: '<p>slow zh</p>', localized: true }), 80)),
+    )
+    const r = await serveRepoDoc('s/i', 'zh', { upstreamMs: 10 })
+    expect(r).toEqual({ html: '<p>en while slow</p>', fallback: true, cached: true })
+    await new Promise((res) => setTimeout(res, 120)) // 等后台单飞落库
+    const r2 = await serveRepoDoc('s/i', 'zh')
+    expect(r2).toEqual({ html: '<p>slow zh</p>', fallback: false, cached: true })
+  })
+
+  it('J:目标语缓存读库异常 → 按未命中处理走上游,不伪装(评审六轮:DB 异常不入收敛范围)', async () => {
+    // SELECT 抛错只影响 s/j 的目标语读取(SQLite 假库以 missing key 模拟失败语义:
+    // readRepoDoc 内部 catch → null → 上游),上游正常返回真翻译
+    localizedMock.mockResolvedValue({ html: '<p>zh real</p>', localized: true })
+    const r = await serveRepoDoc('s/j', 'zh')
+    expect(r).toEqual({ html: '<p>zh real</p>', fallback: false, cached: false })
+  })
 })
 
 describe('borrowLocalizedRepoDocFetch 单飞与回写', () => {
