@@ -1,0 +1,331 @@
+{
+  "base": "https://git.vaiox.xyz",
+  "generatedAt": "2026-10-27T14:54:45.600Z",
+  "sampleCount": 43,
+  "sitemapCounts": {
+    "/sitemap/boards.xml": 576,
+    "/sitemap/history.xml": 70,
+    "/sitemap/0.xml": 4000,
+    "/sitemap/1.xml": 1882
+  },
+  "issueCount": 52,
+  "bySeverity": {
+    "P0": 0,
+    "P1": 9,
+    "P2": 43
+  },
+  "issues": [
+    {
+      "url": "https://git.vaiox.xyz/zh/history/overall",
+      "type": "hreflang-incomplete",
+      "sev": "P1",
+      "detail": "missing: en,zh,zh-TW,ja,ko,de,fr,es,pt,it,ru,uk,pl,tr,vi,id"
+    },
+    {
+      "url": "https://git.vaiox.xyz/zh/history/overall",
+      "type": "hreflang-missing-x-default",
+      "sev": "P1",
+      "detail": ""
+    },
+    {
+      "url": "https://git.vaiox.xyz/zh/history/overall",
+      "type": "hreflang-missing-self",
+      "sev": "P1",
+      "detail": ""
+    },
+    {
+      "url": "https://git.vaiox.xyz/zh/history/weekly",
+      "type": "hreflang-incomplete",
+      "sev": "P1",
+      "detail": "missing: en,zh,zh-TW,ja,ko,de,fr,es,pt,it,ru,uk,pl,tr,vi,id"
+    },
+    {
+      "url": "https://git.vaiox.xyz/zh/history/weekly",
+      "type": "hreflang-missing-x-default",
+      "sev": "P1",
+      "detail": ""
+    },
+    {
+      "url": "https://git.vaiox.xyz/zh/history/weekly",
+      "type": "hreflang-missing-self",
+      "sev": "P1",
+      "detail": ""
+    },
+    {
+      "url": "https://git.vaiox.xyz/zh/watch",
+      "type": "missing-description",
+      "sev": "P1",
+      "detail": ""
+    },
+    {
+      "url": "https://git.vaiox.xyz/zh/watch",
+      "type": "missing-h1",
+      "sev": "P1",
+      "detail": ""
+    },
+    {
+      "url": "https://git.vaiox.xyz/zh/watch",
+      "type": "missing-canonical",
+      "sev": "P1",
+      "detail": ""
+    },
+    {
+      "url": "https://git.vaiox.xyz/en",
+      "type": "title-too-long",
+      "sev": "P2",
+      "detail": "125 chars"
+    },
+    {
+      "url": "https://git.vaiox.xyz/es",
+      "type": "title-too-long",
+      "sev": "P2",
+      "detail": "106 chars"
+    },
+    {
+      "url": "https://git.vaiox.xyz/pl",
+      "type": "title-too-long",
+      "sev": "P2",
+      "detail": "105 chars"
+    },
+    {
+      "url": "https://git.vaiox.xyz/zh/boards/overall",
+      "type": "slow-response",
+      "sev": "P2",
+      "detail": "6074ms"
+    },
+    {
+      "url": "https://git.vaiox.xyz/zh/boards/weekly",
+      "type": "slow-response",
+      "sev": "P2",
+      "detail": "14551ms"
+    },
+    {
+      "url": "https://git.vaiox.xyz/zh/boards/monthly",
+      "type": "slow-response",
+      "sev": "P2",
+      "detail": "18463ms"
+    },
+    {
+      "url": "https://git.vaiox.xyz/zh/boards/annual",
+      "type": "slow-response",
+      "sev": "P2",
+      "detail": "15752ms"
+    },
+    {
+      "url": "https://git.vaiox.xyz/zh/boards/rising",
+      "type": "slow-response",
+      "sev": "P2",
+      "detail": "16123ms"
+    },
+    {
+      "url": "https://git.vaiox.xyz/zh/boards/dark",
+      "type": "slow-response",
+      "sev": "P2",
+      "detail": "12297ms"
+    },
+    {
+      "url": "https://git.vaiox.xyz/zh/boards/overlooked",
+      "type": "slow-response",
+      "sev": "P2",
+      "detail": "7950ms"
+    },
+    {
+      "url": "https://git.vaiox.xyz/zh/boards/controversial",
+      "type": "slow-response",
+      "sev": "P2",
+      "detail": "10938ms"
+    },
+    {
+      "url": "https://git.vaiox.xyz/zh/boards/forks",
+      "type": "slow-response",
+      "sev": "P2",
+      "detail": "7351ms"
+    },
+    {
+      "url": "https://git.vaiox.xyz/zh/boards/milestone",
+      "type": "slow-response",
+      "sev": "P2",
+      "detail": "9259ms"
+    },
+    {
+      "url": "https://git.vaiox.xyz/en/boards/overall",
+      "type": "slow-response",
+      "sev": "P2",
+      "detail": "11463ms"
+    },
+    {
+      "url": "https://git.vaiox.xyz/zh/boards/overall/python",
+      "type": "slow-response",
+      "sev": "P2",
+      "detail": "12543ms"
+    },
+    {
+      "url": "https://git.vaiox.xyz/en/boards/weekly/typescript",
+      "type": "title-too-long",
+      "sev": "P2",
+      "detail": "72 chars"
+    },
+    {
+      "url": "https://git.vaiox.xyz/en/boards/overall/javascript",
+      "type": "title-too-long",
+      "sev": "P2",
+      "detail": "76 chars"
+    },
+    {
+      "url": "https://git.vaiox.xyz/en/repo/vercel/next.js",
+      "type": "multiple-h1",
+      "sev": "P2",
+      "detail": "2 h1"
+    },
+    {
+      "url": "https://git.vaiox.xyz/en/repo/morluto/rea",
+      "type": "slow-response",
+      "sev": "P2",
+      "detail": "17422ms"
+    },
+    {
+      "url": "https://git.vaiox.xyz/en/repo/morluto/rea",
+      "type": "multiple-h1",
+      "sev": "P2",
+      "detail": "2 h1"
+    },
+    {
+      "url": "https://git.vaiox.xyz/en/repo/google/guava",
+      "type": "slow-response",
+      "sev": "P2",
+      "detail": "14910ms"
+    },
+    {
+      "url": "https://git.vaiox.xyz/en/repo/google/guava",
+      "type": "multiple-h1",
+      "sev": "P2",
+      "detail": "2 h1"
+    },
+    {
+      "url": "https://git.vaiox.xyz/en/repo/peach-mitao/peach",
+      "type": "slow-response",
+      "sev": "P2",
+      "detail": "13459ms"
+    },
+    {
+      "url": "https://git.vaiox.xyz/en/repo/peach-mitao/peach",
+      "type": "multiple-h1",
+      "sev": "P2",
+      "detail": "2 h1"
+    },
+    {
+      "url": "https://git.vaiox.xyz/en/repo/freeCodeCamp/freeCodeCamp",
+      "type": "slow-response",
+      "sev": "P2",
+      "detail": "16406ms"
+    },
+    {
+      "url": "https://git.vaiox.xyz/zh/repo/vercel/next.js",
+      "type": "slow-response",
+      "sev": "P2",
+      "detail": "16095ms"
+    },
+    {
+      "url": "https://git.vaiox.xyz/zh/repo/vercel/next.js",
+      "type": "multiple-h1",
+      "sev": "P2",
+      "detail": "2 h1"
+    },
+    {
+      "url": "https://git.vaiox.xyz/es/repo/google/guava",
+      "type": "slow-response",
+      "sev": "P2",
+      "detail": "19549ms"
+    },
+    {
+      "url": "https://git.vaiox.xyz/es/repo/google/guava",
+      "type": "multiple-h1",
+      "sev": "P2",
+      "detail": "2 h1"
+    },
+    {
+      "url": "https://git.vaiox.xyz/zh/history/overall",
+      "type": "slow-response",
+      "sev": "P2",
+      "detail": "5558ms"
+    },
+    {
+      "url": "https://git.vaiox.xyz/zh/history/overall",
+      "type": "page-too-heavy",
+      "sev": "P2",
+      "detail": "uncompressed HTML 1741KiB (utf8 bytes)"
+    },
+    {
+      "url": "https://git.vaiox.xyz/en/history/overall/2026-10-26",
+      "type": "slow-response",
+      "sev": "P2",
+      "detail": "6621ms"
+    },
+    {
+      "url": "https://git.vaiox.xyz/en/history/overall/2026-10-26",
+      "type": "page-too-heavy",
+      "sev": "P2",
+      "detail": "uncompressed HTML 1747KiB (utf8 bytes)"
+    },
+    {
+      "url": "https://git.vaiox.xyz/en/history/overall/2026-10-25",
+      "type": "slow-response",
+      "sev": "P2",
+      "detail": "6561ms"
+    },
+    {
+      "url": "https://git.vaiox.xyz/en/history/overall/2026-10-25",
+      "type": "page-too-heavy",
+      "sev": "P2",
+      "detail": "uncompressed HTML 1747KiB (utf8 bytes)"
+    },
+    {
+      "url": "https://git.vaiox.xyz/en/history/overall/2026-10-24",
+      "type": "slow-response",
+      "sev": "P2",
+      "detail": "5745ms"
+    },
+    {
+      "url": "https://git.vaiox.xyz/en/history/overall/2026-10-24",
+      "type": "page-too-heavy",
+      "sev": "P2",
+      "detail": "uncompressed HTML 1747KiB (utf8 bytes)"
+    },
+    {
+      "url": "https://git.vaiox.xyz/zh/discover",
+      "type": "slow-response",
+      "sev": "P2",
+      "detail": "8030ms"
+    },
+    {
+      "url": "https://git.vaiox.xyz/en/guide",
+      "type": "title-too-long",
+      "sev": "P2",
+      "detail": "71 chars"
+    },
+    {
+      "url": "https://git.vaiox.xyz/feed.xml",
+      "type": "slow-response",
+      "sev": "P2",
+      "detail": "10221ms"
+    },
+    {
+      "url": "https://git.vaiox.xyz/robots.txt",
+      "type": "slow-response",
+      "sev": "P2",
+      "detail": "6705ms"
+    },
+    {
+      "url": "https://git.vaiox.xyz/sitemap-index.xml",
+      "type": "slow-response",
+      "sev": "P2",
+      "detail": "7226ms"
+    },
+    {
+      "url": "https://git.vaiox.xyz/es/repo/google/guava",
+      "type": "duplicate-title",
+      "sev": "P2",
+      "detail": "same as https://git.vaiox.xyz/en/repo/google/guava (repo)"
+    }
+  ]
+}
