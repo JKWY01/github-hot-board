@@ -505,6 +505,20 @@ export function repoArchiveMetadata(lang: Locale, archive: RepoArchive): Metadat
     .replace('{n}', String(rows.length))
     .replace('{k}', String(best ? best.rank : 1))
     .replace('{stars}', fmtNum(archive.totalStars ?? 0, lang))
+  // OG 卡荣誉钩子:分享出去的卡片标题裸仓库名没有点击欲,带上"最好成绩"语境
+  //(官方自评清单:'值得分享的页面'是排名信号)。<title> 保持裸名给 title.template。
+  const ogTitle = best ? `${archive.fullName} · ${t.bestAt} #${best.rank}` : archive.fullName
+  // 近 30 天净增为正时,og:desc 在末尾追加增益句(纯数据,不做解读)。
+  // og:title 管"最好成绩"、og:desc 管势头,语义不重复。
+  const starByDayOg = new Map<string, number>()
+  for (const d of archive.daily) {
+    const cur = starByDayOg.get(d.day) ?? 0
+    if (d.stars > cur) starByDayOg.set(d.day, d.stars)
+  }
+  const pts = [...starByDayOg.entries()].sort((a, b) => a[0].localeCompare(b[0]))
+  const gain30 = pts.length >= 2 ? pts[pts.length - 1]![1] - pts[0]![1] : 0
+  const ogDescription =
+    gain30 > 0 ? `${description} · +${fmtNum(gain30, lang)} ${t.starUnit} / 30d` : description
   return {
     title,
     description,
@@ -513,8 +527,8 @@ export function repoArchiveMetadata(lang: Locale, archive: RepoArchive): Metadat
       languages: altLangs(`/repo/${archive.fullName}`),
     },
     openGraph: {
-      title,
-      description,
+      title: ogTitle,
+      description: ogDescription,
       url: path,
       siteName: dict.meta.siteName,
       type: 'website',
@@ -524,8 +538,8 @@ export function repoArchiveMetadata(lang: Locale, archive: RepoArchive): Metadat
     },
     twitter: {
       card: 'summary_large_image',
-      title,
-      description,
+      title: ogTitle,
+      description: ogDescription,
       images: [`/${lang}/repo-og/${archive.fullName}`],
     },
     robots: { index: true, follow: true },
