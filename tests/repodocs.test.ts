@@ -12,32 +12,20 @@ const fakeCache = new Map<string, string>()
 let selectCalls = 0
 const executed: Array<{ key: string; html: string }> = []
 
-// 探测账本假库:full|lang → resolved(30 天新鲜语义由被测方传 maxAge 决定,这里简化为全命中)
-const fakeProbe = new Map<string, boolean>()
-const probeWrites: Array<{ full: string; lang: string; resolved: boolean }> = []
-
 vi.mock('../lib/snapshot', () => ({
-  readProbes: async (fullNames: string[], _maxAgeMs: number) => {
-    const out = new Map<string, boolean>()
-    for (const f of fullNames) for (const [k, v] of fakeProbe) if (k.startsWith(`${f}|`)) out.set(k, v)
-    return out
-  },
-  upsertProbe: async (full: string, lang: string, resolved: boolean) => {
-    probeWrites.push({ full, lang, resolved })
-    fakeProbe.set(`${full}|${lang}`, resolved)
-  },
   // withDb 的回调参数 sql 本身就是可 tagged-template 调用的函数(postgres.js Sql 语义)
   withDb: async (fn: (sql: unknown) => Promise<unknown>) =>
     fn((strings: TemplateStringsArray, ...vals: unknown[]) => {
       const text = strings.join('?')
       // SELECT 形态 [full, lang];INSERT 形态 [full, lang, html]
-      if (text.includes('SELECT md5(html)')) {
-        // 历史污染识别查询:目标语与 en 内容 md5 是否一致(按假库实时比对)
+      if (text.includes('octet_length(html)')) {
+        // 历史污染识别查询(CASE 语义:先长度后 md5;IS DISTINCT FROM 覆盖缺失行)
         const full = String(vals[0] ?? '')
         const lang = String(vals[1] ?? '')
         const t = fakeCache.get(`${full}|${lang}`)
         const e = fakeCache.get(`${full}|en`)
-        return Promise.resolve([{ same: t !== undefined && t === e }])
+        const same = t !== undefined && t === e
+        return Promise.resolve([{ same }])
       }
       if (text.includes('SELECT html')) {
         selectCalls += 1
@@ -66,8 +54,6 @@ const localizedMock = vi.mocked(fetchLocalizedReadme)
 
 beforeEach(() => {
   fakeCache.clear()
-  fakeProbe.clear()
-  probeWrites.length = 0
   executed.length = 0
   selectCalls = 0
   localizedMock.mockReset()
@@ -92,16 +78,10 @@ describe('readRepoDocWithFallback 读序', () => {
     expect(r).toEqual({ html: null, fallback: false })
   })
 
-  it('场景2b:目标语言缺失、探测账本已确认无翻译 → 返回英文缓存兜底,不打上游', async () => {
+  it('场景2b:en 缓存存在但上游曾失败(html=null 也曾落不进任何键)→ 读层不持久化失败,仍返回 null 可重试', async () => {
+    // 评审四轮保守方案:负向探测不落账 —— en 缓存的存在不能证明"无翻译",
+    // 也不能把上游临时失败变成 30 天负缓存,所以目标语缺失永远走上游探测路径
     fakeCache.set('a/b|en', '<p>english cached</p>')
-    fakeProbe.set('a/b|zh', false)
-    const r = await readRepoDocWithFallback('a/b', 'zh')
-    expect(r).toEqual({ html: '<p>english cached</p>', fallback: true })
-  })
-
-  it('场景2c:探测查询失败 → 按未探测处理(保守,宁打上游不错杀真翻译)', async () => {
-    fakeCache.set('a/b|en', '<p>en</p>')
-    // fakeProbe 置空+readProbes 抛错由下一个 mock 钉死?—— 简化:probe 无记录即等价保守路径
     const r = await readRepoDocWithFallback('a/b', 'zh')
     expect(r).toEqual({ html: null, fallback: false })
   })
@@ -177,13 +157,21 @@ describe('borrowLocalizedRepoDocFetch 单飞与回写', () => {
     expect(executed.some((e) => e.key === 'zh' && e.html === '<p>zh</p>')).toBe(true)
   })
 
-  it('场景3c:上游返回英文兜底(localized:false)→ 展示但落 en 键,并记探测结论 false(评审三轮)', async () => {
+  it('场景3c:上游返回英文兜底(localized:false)→ 展示但落 en 键,零探测写入(评审四轮保守)', async () => {
     localizedMock.mockResolvedValue({ html: '<p>en content</p>', localized: false })
     const got = await borrowLocalizedRepoDocFetch('e/f', 'ja')
     expect(got).toEqual({ html: '<p>en content</p>', fallback: true })
     expect(executed.some((e) => e.key === 'ja')).toBe(false)
     expect(executed.some((e) => e.key === 'en' && e.html === '<p>en content</p>')).toBe(true)
-    expect(probeWrites).toContainEqual({ full: 'e/f', lang: 'ja', resolved: false })
+    // 负向探测不落账:下一次同仓同语请求仍会走上游(可重试语义)
+    expect(executed.filter((e) => e.html === '<p>en content</p>')).toHaveLength(1)
+  })
+
+  it('场景3d:上游临时失败(html=null, localized=false)→ 零写入零负缓存,可安全重试(评审四轮 P1)', async () => {
+    localizedMock.mockResolvedValue({ html: null, localized: false })
+    const got = await borrowLocalizedRepoDocFetch('fail/repo', 'zh')
+    expect(got).toEqual({ html: null, fallback: false })
+    expect(executed).toHaveLength(0)
   })
 
   it('场景6:上游失败(throws)→ 单飞 promise reject,不写库,不吞错给缓存层', async () => {

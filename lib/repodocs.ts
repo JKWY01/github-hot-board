@@ -1,8 +1,6 @@
 import { withDb } from './snapshot'
 import { fetchLocalizedReadme } from './github'
-import { PROBE_FRESH_MS } from './descfill'
 import type { Locale } from './locales'
-import { readProbes, upsertProbe } from './snapshot'
 
 /** 仓库文档快照(repo_docs):抽屉与档案页共用的持久 README 缓存层。
  * 动机:
@@ -64,14 +62,11 @@ export async function readRepoDocWithFallback(
   if (lang === 'en') return { html: await readRepoDoc(full, 'en'), fallback: false }
   const hit = await readRepoDoc(full, lang)
   if (!hit) {
-    // 「已确认无翻译」才直接英文兜底;未探测过仍返回 null 让调用方走上游探测
-    //(评审三轮:英文缓存存在≠GitHub 没有目标语 README,真实翻译不能失去发现机会)。
-    // probe 30 天新鲜期,由采集/读取链路共同维护;probe 查询失败按未探测处理(保守)。
-    const probes = await readProbes([full], PROBE_FRESH_MS).catch(() => new Map<string, boolean>())
-    if (probes.get(`${full}|${lang}`) === false) {
-      const en = await readRepoDoc(full, 'en')
-      return { html: en, fallback: en !== null }
-    }
+    // 评审四轮(保守方案):不做 README 负向探测的持久化 ——
+    // localized=false 无法区分「确认无翻译」与「GitHub 临时失败」,任何负缓存都可能把
+    // 一次超时变成 30 天的错误结论,且与 repo_desc_probe 既有语义(resolved=false=待重试)
+    // 冲突。目标语缓存缺失一律返回 null 交由上游探测:fetchLocalizedReadme 内部有
+    // 1h 服务端缓存,重复探测成本低,且永远可重试。
     return { html: null, fallback: false }
   }
   // 历史污染兼容(评审二轮):存量库约 2 万行非英文键存的实际是英文原文
@@ -84,14 +79,16 @@ export async function readRepoDocWithFallback(
     // 先比字节长度(PG 只读元数据,零 HTML 解压),长度不同必然不是兜底副本,直接 false;
     // 长度相同才做 md5 全文确认。p90 文档 98KB 时 md5 热态 ~0.1ms,大文档仅在"长度恰好相同"
     // 的罕见场景才付摘要成本。
+    // 评审四轮:AND 不保证求值顺序(PG 优化器可重排),改用 CASE 分支让"先长度后摘要"
+    // 成为代码语义而非执行计划巧合;IS DISTINCT FROM 同时覆盖任一行缺失(NULL)→ false。
     const rows = (await sql`
-      SELECT (
-        (SELECT octet_length(html) FROM repo_docs WHERE full_name = ${full} AND lang = ${lang})
-        = (SELECT octet_length(html) FROM repo_docs WHERE full_name = ${full} AND lang = 'en')
-        AND
-        (SELECT md5(html) FROM repo_docs WHERE full_name = ${full} AND lang = ${lang})
-        = (SELECT md5(html) FROM repo_docs WHERE full_name = ${full} AND lang = 'en')
-      ) AS same
+      SELECT CASE
+        WHEN (SELECT octet_length(html) FROM repo_docs WHERE full_name = ${full} AND lang = ${lang})
+          IS DISTINCT FROM (SELECT octet_length(html) FROM repo_docs WHERE full_name = ${full} AND lang = 'en')
+        THEN false
+        ELSE (SELECT md5(html) FROM repo_docs WHERE full_name = ${full} AND lang = ${lang})
+           = (SELECT md5(html) FROM repo_docs WHERE full_name = ${full} AND lang = 'en')
+      END AS same
     `) as unknown as Array<{ same: boolean }> | undefined
     return rows?.[0]?.same === true
   }).catch(() => false)
@@ -167,10 +164,9 @@ export function borrowLocalizedRepoDocFetch(
   const task = fetchLocalizedReadme(full, lang as Locale)
     .then(async ({ html, localized }): Promise<BorrowedDoc> => {
       if (html) await storeRepoDoc(full, lang, html, localized).catch(() => undefined)
-      // 探测结论落账本(30 天内不再为同仓同语白跑一次注定 miss 的探测):
-      // localized=false = 已确认该仓库没有此语言 README,读序可放心走英文兜底。
-      if (!localized) await upsertProbe(full, lang, false).catch(() => undefined)
-      return { html, fallback: !localized && lang !== 'en' }
+      // 评审四轮:不写任何探测账本 —— localized=false 无法区分「确认无翻译」与
+      // 「上游临时失败」,负缓存会让一次超时变成 30 天错误结论。保持可重试语义。
+      return { html, fallback: html !== null && !localized && lang !== 'en' }
     })
     .finally(() => {
       inflightLocalized.delete(key)
