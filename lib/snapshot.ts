@@ -35,84 +35,101 @@ export function dbUrlConfigured(): boolean {
  * 2 条会被写队列把读请求拖到秒级,导航洞渲染变长(体感就是切榜卡)。Neon 免费层上限远高于此。 */
 let sqlSingleton: import('postgres').Sql | null = null
 let tableReady = false
+/** 本进程已确认跑过 migrate(含 42P01 自愈路径)。进程内一次即可:DDL 全部 IF NOT EXISTS/幂等,
+ * 版本化审计由 ghb_schema_migrations 版本表承担,不靠进程状态。 */
+let migratedThisProcess = false
 
-/** 全部 DDL 收拢到这里。访客读路径不再主动建表(冷启动省 1-6s),表缺失时按 42P01 自愈。 */
+/** 迁移版本账本:每个迁移步骤一行,applied_at 可审计。幂等设计下重复应用无害,
+ * 账本的价值是"生产库结构演进有据可查"+"跳过已应用步骤省 DDL 往返"。
+ * 新增结构变更 = 在 MIGRATIONS 追加 { id, up } 并在提交信息里说明(独立迁移 commit)。 */
+interface Migration {
+  id: string
+  up: (sql: Sql) => Promise<void>
+}
+
+const MIGRATIONS: Migration[] = [
+  {
+    // v1(2026-10-28 固化):上线以来的全部基线结构 —— 建表/补列/索引此前散落在
+    // migrate() 内随每次自愈重放(42703 误触发 + 每次重放都向 board_snapshots 要
+    // ACCESS EXCLUSIVE 锁 = 锁案元凶)。固化后只有账本里没有的 id 才会执行 DDL。
+    id: '0001-baseline',
+    up: async (sql) => {
+      await sql`CREATE TABLE IF NOT EXISTS board_head (
+        key          TEXT PRIMARY KEY,
+        board        TEXT NOT NULL,
+        language     TEXT NOT NULL DEFAULT '',
+        source       TEXT NOT NULL,
+        degraded     BOOLEAN NOT NULL DEFAULT false,
+        item_count   INTEGER NOT NULL DEFAULT 0,
+        generated_at TIMESTAMPTZ NOT NULL,
+        taken_at     TIMESTAMPTZ NOT NULL,
+        payload      JSONB NOT NULL
+      )`
+      await sql`CREATE TABLE IF NOT EXISTS board_snapshots (
+        taken_at        TIMESTAMPTZ NOT NULL,
+        board           TEXT        NOT NULL,
+        language        TEXT        NOT NULL DEFAULT '',
+        source          TEXT        NOT NULL DEFAULT '',
+        rank            INTEGER     NOT NULL,
+        repo            TEXT        NOT NULL,
+        stars           BIGINT      NOT NULL,
+        forks           INTEGER     NOT NULL,
+        metric          DOUBLE PRECISION NOT NULL DEFAULT 0,
+        repo_created_at TIMESTAMPTZ
+      )`
+      await sql`ALTER TABLE board_snapshots ADD COLUMN IF NOT EXISTS degraded BOOLEAN NOT NULL DEFAULT false`
+      await sql`ALTER TABLE board_snapshots ADD COLUMN IF NOT EXISTS license TEXT`
+      await sql`ALTER TABLE board_snapshots ADD COLUMN IF NOT EXISTS pushed_at TEXT`
+      await sql`ALTER TABLE board_snapshots ADD COLUMN IF NOT EXISTS issues INTEGER`
+      await sql`CREATE TABLE IF NOT EXISTS repo_daily_stars (
+        repo  TEXT        NOT NULL,
+        day   DATE        NOT NULL,
+        stars BIGINT      NOT NULL,
+        first_seen_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+        PRIMARY KEY (repo, day)
+      )`
+      await sql`CREATE INDEX IF NOT EXISTS idx_daily_stars_day ON repo_daily_stars (day, stars DESC)`
+      await sql`CREATE INDEX IF NOT EXISTS board_snapshots_repo_time ON board_snapshots (repo, taken_at DESC)`
+      await sql`CREATE INDEX IF NOT EXISTS board_snapshots_board_time ON board_snapshots (board, language, taken_at DESC)`
+      await sql`CREATE INDEX IF NOT EXISTS board_snapshots_taken_at ON board_snapshots (taken_at)`
+      await sql`CREATE TABLE IF NOT EXISTS repo_desc (
+        full_name  TEXT PRIMARY KEY,
+        payload    JSONB NOT NULL DEFAULT '{}'::jsonb,
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+      )`
+      await sql`CREATE TABLE IF NOT EXISTS repo_desc_probe (
+        full_name  TEXT NOT NULL,
+        locale     TEXT NOT NULL,
+        resolved   BOOLEAN NOT NULL,
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+        PRIMARY KEY (full_name, locale)
+      )`
+      await sql`CREATE TABLE IF NOT EXISTS repo_seen (
+        repo      TEXT PRIMARY KEY,
+        last_seen TIMESTAMPTZ NOT NULL
+      )`
+      // 注:repo_docs 的权威 DDL 在 lib/repodocs.ts(ensure),push_sub 在 lib/push.ts
+      // (ensureTable)—— 各自模块自持,不在此重复,避免两处漂移。
+    },
+  },
+]
+
+/** 版本化迁移:按 ghb_schema_migrations 账本执行 MIGRATIONS 里未应用的步骤。
+ * 正常读路径不跑 DDL —— 只有 42P01(表真缺失)自愈或显式调用才进来;
+ * 幂等 DDL + 账本审计,重复应用无害,已应用步骤直接跳过(省 DDL 往返与锁窗口)。 */
 async function migrate(sql: Sql): Promise<void> {
-  await sql`
-    CREATE TABLE IF NOT EXISTS board_head (
-      key          TEXT PRIMARY KEY,
-      board        TEXT NOT NULL,
-      language     TEXT NOT NULL DEFAULT '',
-      source       TEXT NOT NULL,
-      degraded     BOOLEAN NOT NULL DEFAULT false,
-      item_count   INTEGER NOT NULL DEFAULT 0,
-      generated_at TIMESTAMPTZ NOT NULL,
-      taken_at     TIMESTAMPTZ NOT NULL,
-      payload      JSONB NOT NULL
-    )`
-  await sql`
-    CREATE TABLE IF NOT EXISTS board_snapshots (
-      taken_at        TIMESTAMPTZ NOT NULL,
-      board           TEXT        NOT NULL,
-      language        TEXT        NOT NULL DEFAULT '',
-      source          TEXT        NOT NULL DEFAULT '',
-      rank            INTEGER     NOT NULL,
-      repo            TEXT        NOT NULL,
-      stars           BIGINT      NOT NULL,
-      forks           INTEGER     NOT NULL,
-      metric          DOUBLE PRECISION NOT NULL DEFAULT 0,
-      repo_created_at TIMESTAMPTZ
-    )`
-  // 往日榜(2026-10-19 起):明细表补 degraded 列(老库幂等迁移)
-  await sql`ALTER TABLE board_snapshots ADD COLUMN IF NOT EXISTS degraded BOOLEAN NOT NULL DEFAULT false`
-  // 项目状态三件套(2026-10-25 起采集):license/push/issues 随拍落列。
-  // 老行 NULL = 未采集,页面如实标"未知"——历史不可凭空补。
-  await sql`ALTER TABLE board_snapshots ADD COLUMN IF NOT EXISTS license TEXT`
-  // 星速表(2026-10-26):每仓每日一行星数收盘价,近 7/30 天增量、官方新面孔判定都从这查。
-  // 明细表 60 天滚动,这张是永久层 —— 历史增量资产不再被收割。同步尾部每日 upsert 一次。
-  await sql`
-    CREATE TABLE IF NOT EXISTS repo_daily_stars (
-      repo  TEXT        NOT NULL,
-      day   DATE        NOT NULL,
-      stars BIGINT      NOT NULL,
-      first_seen_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-      PRIMARY KEY (repo, day)
-    )`
-  await sql`CREATE INDEX IF NOT EXISTS idx_daily_stars_day ON repo_daily_stars (day, stars DESC)`
-  await sql`ALTER TABLE board_snapshots ADD COLUMN IF NOT EXISTS pushed_at TEXT`
-  await sql`ALTER TABLE board_snapshots ADD COLUMN IF NOT EXISTS issues INTEGER`
-  await sql`CREATE INDEX IF NOT EXISTS board_snapshots_repo_time ON board_snapshots (repo, taken_at DESC)`
-  await sql`CREATE INDEX IF NOT EXISTS board_snapshots_board_time ON board_snapshots (board, language, taken_at DESC)`
-  // 保留期清理走 taken_at 过滤:量级到千万行后,专用索引让 DELETE 不再全索引扫
-  await sql`CREATE INDEX IF NOT EXISTS board_snapshots_taken_at ON board_snapshots (taken_at)`
-  // 仓库级多语描述缓存(访问驱动渐进填充,跨全榜复用)
-  await sql`
-    CREATE TABLE IF NOT EXISTS repo_desc (
-      full_name  TEXT PRIMARY KEY,
-      payload    JSONB NOT NULL DEFAULT '{}'::jsonb,
-      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
-    )`
-  // 收割进度:(仓库, 语言) 的探测结论。resolved=true 表示有确定结论
-  // (拿到描述 / 有翻译但无可用首句 / 该语言不存在),新鲜期内不再探测;
-  // false 表示上次探测被网络/限流打断,下一轮同步立即重试。
-  await sql`
-    CREATE TABLE IF NOT EXISTS repo_desc_probe (
-      full_name  TEXT NOT NULL,
-      locale     TEXT NOT NULL,
-      resolved   BOOLEAN NOT NULL,
-      updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-      PRIMARY KEY (full_name, locale)
-    )`
-  // 过榜仓库名单(仓库粒度一行):proxy 的"存在名单"与 sitemap 的全量仓库源。
-  // 之前两处都对 board_snapshots 做 DISTINCT 全表扫 —— 明细表按 60 天保留能涨到千万行级,
-  // 每 5 分钟扫一次是真实的算力地雷;这里用小表(几万行、主键索引)承载同一语义,
-  // 由 writeHeadAndRows 随拍 upsert;不再被 pruneOld 清理(档案页存在性判定源,永久保留)。
-  await sql`
-    CREATE TABLE IF NOT EXISTS repo_seen (
-      repo      TEXT PRIMARY KEY,
-      last_seen TIMESTAMPTZ NOT NULL
-    )`
-  // 一次性回填:只在 repo_seen 为空时跑(老库升级);GROUP BY 走 repo 索引,跑完即免。
+  await sql`CREATE TABLE IF NOT EXISTS ghb_schema_migrations (
+    id         TEXT PRIMARY KEY,
+    applied_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  )`
+  const applied = await sql`SELECT id FROM ghb_schema_migrations`
+  const done = new Set((applied as unknown as Array<{ id: string }>).map((r) => r.id))
+  for (const m of MIGRATIONS) {
+    if (done.has(m.id)) continue
+    await m.up(sql)
+    await sql`INSERT INTO ghb_schema_migrations (id) VALUES (${m.id}) ON CONFLICT (id) DO NOTHING`
+  }
+  // repo_seen 回填保留在账本外(数据回填非 DDL):空表才跑,跑完即免。
   const seeded = await sql`SELECT 1 FROM repo_seen LIMIT 1`
   if (seeded.length === 0) {
     await sql`
@@ -121,6 +138,7 @@ async function migrate(sql: Sql): Promise<void> {
       ON CONFLICT (repo) DO NOTHING`
   }
   tableReady = true
+  migratedThisProcess = true
 }
 
 export async function withDb<T>(fn: (sql: Sql) => Promise<T>): Promise<T | undefined> {
@@ -133,6 +151,25 @@ export async function withDb<T>(fn: (sql: Sql) => Promise<T>): Promise<T | undef
         max: 5,
         idle_timeout: 30,
         connect_timeout: 10,
+        // 服务端级兜底(仅作用于本池的会话参数,不改服务器全局配置):
+        // ① statement_timeout 20s —— 与应用竞速超时同值:竞速超时后即使驱动侧没成功
+        //    发出取消,服务端也会在 20s 时自行终止查询(2026-10-27 锁案:查询挂 7 分钟)。
+        // ② idle_in_transaction_session_timeout 60s —— 事务开着但客户端不发指令
+        //    (postgres.js 竞速超时后事务未关的形态)时,60s 由服务端终止并释放其锁。
+        //    同步批写单语句都在秒级,60s 远大于正常事务,不会误伤。
+        // 与应用侧竞速超时的关系:竞速保证调用方不等(读路径 20s 返回兜底),
+        // 服务端超时保证连接与锁最终必然回收 —— 两层缺一不可。
+        // 经 connection 传:postgres.js 把这里的键原样发成启动参数(statement_timeout 等
+        // 是合法会话 GUC),只影响本池连接,不触碰服务器全局配置。
+        connection: {
+          statement_timeout: 20_000,
+          idle_in_transaction_session_timeout: 60_000,
+        },
+        // prepare=false:显式禁用协议级 prepared statements。两个理由:
+        // ① A3 统一连接池后 HK 走 pgbouncer transaction 模式,禁止服务端 prepare
+        //    免除 1.21 前版本兼容性顾虑(当前 pgbouncer 已配 max_prepared_statements,
+        //    此项是双保险);② 站点查询全是单发短语句,prepare 无复用收益。
+        prepare: false,
         // 诊断开关:GHB_SQL_DEBUG=1 时打印实际发送的 SQL 与参数个数
         debug: process.env.GHB_SQL_DEBUG
           ? (_conn, query, params) => {
@@ -143,6 +180,7 @@ export async function withDb<T>(fn: (sql: Sql) => Promise<T>): Promise<T | undef
       })
     }
     const sql = sqlSingleton
+    let code: string | undefined
     try {
       // 查询级竞速超时(20s):连接池被同步/并发爬取挤爆时,postgres 驱动会无界排队,
       // Lambda 到 maxDuration 被掐 → 200 空流被边缘缓存成毒对象(实测事故)。
@@ -156,21 +194,34 @@ export async function withDb<T>(fn: (sql: Sql) => Promise<T>): Promise<T | undef
         ),
       ])
     } catch (error) {
+      code = (error as { code?: string })?.code
       // 访客冷启动跳过了建表:撞到"表不存在"(42P01)时补一次迁移再重试,
       // 之后 tableReady 置位,正常路径零额外往返。
-      const code = (error as { code?: string })?.code
-      const msg = error instanceof Error ? error.message : String(error)
-      if ((code === '42P01' || msg.includes('does not exist')) && !tableReady) {
+      // 只认 42P01 代码,不做 message 子串匹配:42703(column does not exist)、
+      // 3D000(database does not exist)等错误文本同样含 "does not exist",
+      // 曾把同步窗口的数组绑定错误误判成缺表,反复跑 migrate(DDL 锁挤兑读路径,2026-10-27 锁案元凶之一)。
+      if (code === '42P01' && !tableReady) {
         await migrate(sql)
         return await fn(sql)
       }
       throw error
     }
   } catch (error) {
-    // 库不可用/连接死亡时绝不拖垮调用方(读路径会自动回退磁盘/现场拉取);
-    // 丢弃单例连接,下一次调用用全新客户端重建(建表语句 IF NOT EXISTS 幂等)。
+    // 库不可用/查询超时/连接死亡时绝不拖垮调用方(读路径会自动回退磁盘/现场拉取)。
+    // 关键(2026-10-27 锁案根因):竞速超时只是"不再等待",底层的查询/事务仍在跑 ——
+    // 直接把 sqlSingleton 置 null 会留下一个还持有连接甚至 idle-in-transaction 的孤儿池
+    // (实测一条 0.177ms 的 board_head 查询所在事务挂了 2 小时+,钉死连接池 16 分钟)。
+    // 这里必须显式终止旧客户端的全部连接再重建:sql.end({ timeout }) 关闭的是整个
+    // postgres.js 实例,但走到这个 catch 的场景本身就是"该实例已不可信"(超时/连接错误),
+    // 丢弃整池是正确语义;结束等待中的在途请求会收到连接关闭错误,由各自调用方兜底。
+    const stale = sqlSingleton
     sqlSingleton = null
     tableReady = false
+    if (stale) {
+      // 终止 grace 3s:给在途简单查询一个收尾窗口;拿不回来就被服务端/超时兜底。
+      // end() 自身失败(网络已死)不影响后续流程 —— 新客户端下一次调用照常重建。
+      try { await stale.end({ timeout: 3 }) } catch { /* 连接已死,忽略 */ }
+    }
     console.error('[snapshot]', error instanceof Error ? error.message : error)
     return undefined
   }
@@ -454,10 +505,12 @@ export async function readDailyGainsPct(days: number, limit = 100, minStartStars
 export async function filterUnknownRepos(officialRepos: string[]): Promise<string[]> {
   if (officialRepos.length === 0) return []
   return (await withDb(async (sql) => {
-    // 参数化 unnest:官方仓全名经 trending 解析+形态校验,但走绑定参数不拼字面
+    // 单参数绑定数组(ANY($1)):postgres.js 的 sql(array) 辅助会把数组展平成裸值列表,
+    // 在同步长事务里曾生成 unnest("owner/repo",...) 被解析成标识符 → 42703
+    // "column does not exist"(生产日志实锤,还连带误触发 42P01 自愈分支跑 migrate)。
     const rows = await sql`
       SELECT r.repo
-      FROM (SELECT unnest(${sql(officialRepos)}::text[]) AS repo) r
+      FROM (SELECT unnest(${officialRepos}::text[]) AS repo) r
       LEFT JOIN (SELECT DISTINCT repo FROM repo_daily_stars) k ON k.repo = r.repo
       WHERE k.repo IS NULL`
     return (rows as unknown as Array<{ repo: string }>).map((r) => r.repo)
