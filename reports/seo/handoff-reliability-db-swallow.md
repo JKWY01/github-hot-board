@@ -31,6 +31,7 @@ Result 类型)由可靠性负责同事按架构定;同类 `?? base`/`?? []` 吞�
 
 ## 关联证据
 
-- 事故采样:`/tmp/noindex-evidence.json`(18 条,age=33149s 永续 HIT)
+- 事故采样(已持久化):`noindex-shell-evidence-2026-10-28.json`(18 条脱敏记录,age=33149s 永续 HIT)
+- 缓存行为验收补充(评审第五轮):模拟查询失败→恢复库→下一次查询须得真实数据,不得复用失败期空结果;仅证明函数抛异常不够
 - 受影响页面清单:见 seo-audit-2026-10-28-01-42-.json 的 unexpected-noindex 条目
 - 部署时间线:v1.2.2 vercel-deploy 10-27 14:35 UTC(api-upload-free failure)
