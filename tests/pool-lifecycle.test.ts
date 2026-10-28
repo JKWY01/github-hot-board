@@ -184,13 +184,18 @@ describe.skipIf(!hasPg)('withDb 应用层状态机(真实驱动,GHB_TEST_PG=1)',
       expect(createCount).toBe(2)
       expect(endCount).toBe(1)
     } finally {
-      // 失败路径也不留悬挂屏障/残留钩子/脏单例:先放开 A 再收尾
+      // 失败路径也不留悬挂屏障/残留钩子/脏单例(评审九轮):failA 的收尾自身再包
+      // try/finally —— 即使等待它时抛错,屏障/钩子/状态清理也必然继续执行
       releaseEnd()
-      if (failA) await failA.catch(() => undefined)
-      __testOnlyEndBarrier(null)
-      __testOnlyObserve({})
-      __testOnlyResetState()
-      await admin.end({ timeout: 2 }).catch(() => undefined)
+      try {
+        if (failA) await failA
+      } catch { /* failA 的结果不影响清理(正常路径它已 resolve;异常路径它已 reject 被吞) */ }
+      finally {
+        __testOnlyEndBarrier(null)
+        __testOnlyObserve({})
+        __testOnlyResetState()
+        void admin.end({ timeout: 2 }).catch(() => undefined)
+      }
     }
   })
 
