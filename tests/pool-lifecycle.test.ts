@@ -134,56 +134,64 @@ describe.skipIf(!hasPg)('withDb 应用层状态机(真实驱动,GHB_TEST_PG=1)',
     // ② 屏障:拦住 A 的 end(挂在真实 end 调用点之前)。"已到达暂停点"的确定性信号
     //    = onPoolEnd 计数(它在清现役之后、屏障之前被调用):endCount===1 即 A 已完成
     //    同步清理并停在屏障前,不是固定 sleep。
+    // 清理保护(评审八轮):断言失败也必须释放屏障/清钩子/重置状态 —— 否则残留的
+    // failA 会挂在屏障上,全局屏障与观测钩子污染后续测试。
     let releaseEnd!: () => void
     const endGate = new Promise<void>((resolve) => { releaseEnd = resolve })
-    __testOnlyEndBarrier(endGate)
+    let failA: Promise<unknown> | null = null
+    try {
+      __testOnlyEndBarrier(endGate)
 
-    // ③ 路1:A 上致命故障 → withDb catch → 同步清现役 → 卡在屏障(await endGate)
-    const failA = withDb(async () => {
-      throw Object.assign(new Error('connection failure'), { code: '08006' })
-    })
-    await vi.waitFor(() => expect(endCount).toBe(1))   // 确定性:A 已到达屏障
-    expect(__testOnlyPoolState().current).toBeNull()   // A 的同步清理已完成
-
-    // ④ 路2:B 建池并查询成功 —— 发生在 A 的故障处理尚未结束之时(屏障仍挂着)
-    const buildB = withDb(async (sql) => {
-      const rows = (await sql`SELECT 99 AS b`) as unknown as Array<{ b: number | string }>
-      return Number(rows[0].b)
-    })
-    const rB = await buildB
-    expect(rB).toBe(99)
-    const poolB = __testOnlyPoolState().current!
-    expect(poolB).not.toBeNull()
-    expect(poolB).not.toBe(poolA)             // B 是新现役池
-    expect(createCount).toBe(2)               // 恰好两次建池(A、B)
-    expect(__testOnlyPoolState().current).toBe(poolB)  // A 的故障处理仍停在屏障(未结束)
-
-    // ⑤ 释放屏障:A 的 end 完整结束
-    releaseEnd()
-    await failA
-    expect(endCount).toBe(1)                  // A 被 end(且仅一次)
-
-    // ③ 四断言(评审指定):B 仍是现役;B 连续查询成功;poolInit 指向 B 的现役状态;
-    //    A 已被正确关闭(endCount 已证)且不再回来
-    expect(__testOnlyPoolState().current).toBe(poolB)
-    expect(__testOnlyPoolState().initializing).toBe(false)
-    for (let i = 0; i < 3; i++) {
-      const r = await withDb(async (sql) => {
-        const rows = (await sql`SELECT ${100 + i} AS c`) as unknown as Array<{ c: number | string }>
-        return Number(rows[0].c)
+      // ③ 路1:A 上致命故障 → withDb catch → 同步清现役 → 卡在屏障(await endGate)
+      failA = withDb(async () => {
+        throw Object.assign(new Error('connection failure'), { code: '08006' })
       })
-      expect(r).toBe(100 + i)
-    }
-    expect(__testOnlyPoolState().current).toBe(poolB)
-    // 判别力断言:B 现役后连续查询阶段不得再触发建池(若旧故障处理误清了 B,
-    // 这里会出现第 3 次建池 —— 回归即红)
-    expect(createCount).toBe(2)
-    expect(endCount).toBe(1)
+      await vi.waitFor(() => expect(endCount).toBe(1))   // 确定性:A 已到达屏障
+      expect(__testOnlyPoolState().current).toBeNull()   // A 的同步清理已完成
 
-    __testOnlyObserve({}) // 清观测钩子
-    __testOnlyEndBarrier(null) // 清屏障
-    await admin.end({ timeout: 2 }).catch(() => undefined)
-    __testOnlyResetState()
+      // ④ 路2:B 建池并查询成功 —— 发生在 A 的故障处理尚未结束之时(屏障仍挂着)
+      const buildB = withDb(async (sql) => {
+        const rows = (await sql`SELECT 99 AS b`) as unknown as Array<{ b: number | string }>
+        return Number(rows[0].b)
+      })
+      const rB = await buildB
+      expect(rB).toBe(99)
+      const poolB = __testOnlyPoolState().current!
+      expect(poolB).not.toBeNull()
+      expect(poolB).not.toBe(poolA)             // B 是新现役池
+      expect(createCount).toBe(2)               // 恰好两次建池(A、B)
+      expect(__testOnlyPoolState().current).toBe(poolB)  // A 的故障处理仍停在屏障(未结束)
+
+      // ⑤ 释放屏障:A 的 end 完整结束
+      releaseEnd()
+      await failA
+      expect(endCount).toBe(1)                  // A 被 end(且仅一次)
+
+      // 四断言(评审指定):B 仍是现役;B 连续查询成功;poolInit 指向 B 的现役状态;
+      //    A 已被正确关闭(endCount 已证)且不再回来
+      expect(__testOnlyPoolState().current).toBe(poolB)
+      expect(__testOnlyPoolState().initializing).toBe(false)
+      for (let i = 0; i < 3; i++) {
+        const r = await withDb(async (sql) => {
+          const rows = (await sql`SELECT ${100 + i} AS c`) as unknown as Array<{ c: number | string }>
+          return Number(rows[0].c)
+        })
+        expect(r).toBe(100 + i)
+      }
+      expect(__testOnlyPoolState().current).toBe(poolB)
+      // 判别力断言:B 现役后连续查询阶段不得再触发建池(若旧故障处理误清了 B,
+      // 这里会出现第 3 次建池 —— 回归即红)
+      expect(createCount).toBe(2)
+      expect(endCount).toBe(1)
+    } finally {
+      // 失败路径也不留悬挂屏障/残留钩子/脏单例:先放开 A 再收尾
+      releaseEnd()
+      if (failA) await failA.catch(() => undefined)
+      __testOnlyEndBarrier(null)
+      __testOnlyObserve({})
+      __testOnlyResetState()
+      await admin.end({ timeout: 2 }).catch(() => undefined)
+    }
   })
 
   it('预置迁移账本后冷启动撞 42P01 → fail-closed,不做无效重试(真实 migrate 路径)', async () => {
@@ -220,6 +228,7 @@ describe.skipIf(!hasPg)('withDb 应用层状态机(真实驱动,GHB_TEST_PG=1)',
       onPoolCreate: () => { createCount += 1 },
       onPoolEnd: () => { endCount += 1 },
     })
+    try {
     const results = await Promise.all([
       withDb(async (sql) => { const r = (await sql`SELECT 1 AS n`) as unknown as Array<{ n: number | string }>; return Number(r[0].n) }),
       withDb(async (sql) => { const r = (await sql`SELECT 2 AS n`) as unknown as Array<{ n: number | string }>; return Number(r[0].n) }),
@@ -234,8 +243,10 @@ describe.skipIf(!hasPg)('withDb 应用层状态机(真实驱动,GHB_TEST_PG=1)',
     // 状态机单例不变量
     expect(__testOnlyPoolState().current).not.toBeNull()
     expect(__testOnlyPoolState().initializing).toBe(false)
-    __testOnlyObserve({}) // 清观测钩子
-    await admin.end({ timeout: 2 }).catch(() => undefined)
-    __testOnlyResetState()
+    } finally {
+      __testOnlyObserve({})
+      __testOnlyResetState()
+      await admin.end({ timeout: 2 }).catch(() => undefined)
+    }
   })
 })
