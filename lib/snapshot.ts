@@ -115,7 +115,9 @@ const MIGRATIONS: Migration[] = [
 ]
 
 /** 版本化迁移:按 ghb_schema_migrations 账本执行 MIGRATIONS 里未应用的步骤。
- * 正常读路径不跑 DDL —— 只有 42P01(表真缺失)自愈或显式调用才进来;
+ * 正常读路径不跑 DDL —— 只有 42P01(表真缺失)且本进程从未确认过结构时自愈一次。
+ * 注意边界:账本已应用的步骤会被跳过 —— migrate 不能修复任意结构漂移(表被误删后重跑
+ * 只会跳过基线 DDL)。生产缺表 = 显式版本化迁移或人工介入的事,请求路径 fail-closed。
  * 幂等 DDL + 账本审计,重复应用无害,已应用步骤直接跳过(省 DDL 往返与锁窗口)。
  * 并发保护:pg_advisory_xact_lock 串行化整个检查+执行,保证(a)多请求同时触发缺表
  * 自愈时 DDL 只跑一次;(b)某步骤的 DDL 与其账本记录在同一事务里,要么都在要么都不在。 */
@@ -161,12 +163,17 @@ function isPoolFatal(error: unknown): boolean {
     const msg = error instanceof Error ? error.message : String(error)
     return /CONNECT_?TIMEOUT|CONNECTION|terminating|ECONNRESET|EPIPE|socket/i.test(msg)
   }
-  // PG 连接失败类(SQLSTATE 连接异常段 08xxx)+ 系统错误 53xxx(连接数耗尽等)
-  return /^08/.test(code) || /^53/.test(code)
+  // PG 连接失败类(SQLSTATE 连接异常段 08xxx)。
+  // 53 段(资源不足)只认 53300(too many connections)——它意味着连接建立被拒,池里
+  // 的连接同样不可信;53100/53200(磁盘满/内存不足)是服务器资源问题,reset 池无济于事
+  // 反而丢掉还能用的连接,按普通失败返回交调用方兜底。
+  return /^08/.test(code) || code === '53300'
 }
 
 export async function withDb<T>(fn: (sql: Sql) => Promise<T>): Promise<T | undefined> {
   if (!DATABASE_URL) return undefined
+  // 提升到外层 try 之外:外层 catch 需要拿到"本请求实际用过的实例"做身份护栏(见下方注释)
+  let sql: Sql | null = null
   try {
     if (!sqlSingleton) {
       const postgres = (await import('postgres')).default
@@ -203,7 +210,7 @@ export async function withDb<T>(fn: (sql: Sql) => Promise<T>): Promise<T | undef
           : undefined,
       })
     }
-    const sql = sqlSingleton
+    sql = sqlSingleton
     let code: string | undefined
     try {
       // 查询级竞速超时(20s):连接池被同步/并发爬取挤爆时,postgres 驱动会无界排队,
@@ -219,14 +226,19 @@ export async function withDb<T>(fn: (sql: Sql) => Promise<T>): Promise<T | undef
       ])
     } catch (error) {
       code = (error as { code?: string })?.code
-      // 访客冷启动跳过了建表:撞到"表不存在"(42P01)时补一次迁移再重试,
-      // 之后 tableReady 置位,正常路径零额外往返。
+      // 42P01 自愈的边界(评审三轮明确):只在"本进程从未确认过结构"(!tableReady)时
+      // 尝试一次 migrate。若 migrate 已成功过(tableReady=true)却又撞 42P01 = 生产结构
+      // 漂移(表被误删/换库)——账本会跳过已应用的基线 DDL,重跑 migrate 并不能修复,
+      // 再试只会掩盖问题。fail-closed:告警 + 按失败返回,结构修复由显式版本化迁移承担。
       // 只认 42P01 代码,不做 message 子串匹配:42703(column does not exist)、
       // 3D000(database does not exist)等错误文本同样含 "does not exist",
       // 曾把同步窗口的数组绑定错误误判成缺表,反复跑 migrate(DDL 锁挤兑读路径,2026-10-27 锁案元凶之一)。
       if (code === '42P01' && !tableReady) {
         await migrate(sql)
         return await fn(sql)
+      }
+      if (code === '42P01') {
+        console.error('[snapshot] 结构漂移:migrate 已完成仍报缺表(42P01),fail-closed 不自动修复,需人工/显式迁移介入')
       }
       throw error
     }
@@ -237,22 +249,24 @@ export async function withDb<T>(fn: (sql: Sql) => Promise<T>): Promise<T | undef
     // (实测一条 0.177ms 的 board_head 查询所在事务挂了 2 小时+,钉死连接池 16 分钟)。
     //
     // 但销毁是重操作(end 关整个实例,并发在途请求一起失败),只对"池已不可信"的故障执行:
-    // 竞速超时 + 连接级错误(08xxx/53xxx/驱动网络错)。普通 SQL 错误(约束/语法/业务)
+    // 竞速超时 + 连接级错误(08xxx/53300/驱动网络错)。普通 SQL 错误(约束/语法/业务)
     // 由池自身回收连接,reset 只会把单个请求的失败扩散给全部并发调用方 —— 直接按失败返回。
     //
-    // 身份护栏:reset 只销毁"我刚才用过的那个实例"。若在 end() 期间别的调用已建了新池
-    // (sqlSingleton !== stale),绝不误关新池 —— 旧实例引用仍在闭包里,由它自己 end。
+    // 身份护栏(评审三轮实装):销毁的对象永远是"本请求实际使用过的实例"(闭包里的 sql),
+    // 绝不回头读全局 sqlSingleton —— 旧池 A 的请求延迟进入异常处理时,全局可能已被并发
+    // 调用换成新池 B,读全局会把 B 误关。只有 sqlSingleton === sql(我用的实例仍是现役池)
+    // 才清空全局;否则全局已经是别人的新池,只 end 自己的旧实例。
     if (!isPoolFatal(error)) {
       console.error('[snapshot]', error instanceof Error ? error.message : error)
       return undefined
     }
-    const stale = sqlSingleton
-    if (stale) {
-      sqlSingleton = null
+    // 终止 grace 3s:给在途简单查询一个收尾窗口;拿不回来就被服务端/超时兜底。
+    // end() 自身失败(网络已死)不影响后续流程 —— 新客户端下一次调用照常重建。
+    // sql 为 null 的唯一可能是"池还没建成就抛错"(import 失败等)—— 无池可关,跳过。
+    if (sql) {
+      if (sqlSingleton === sql) sqlSingleton = null
       tableReady = false
-      // 终止 grace 3s:给在途简单查询一个收尾窗口;拿不回来就被服务端/超时兜底。
-      // end() 自身失败(网络已死)不影响后续流程 —— 新客户端下一次调用照常重建。
-      try { await stale.end({ timeout: 3 }) } catch { /* 连接已死,忽略 */ }
+      try { await sql.end({ timeout: 3 }) } catch { /* 连接已死,忽略 */ }
     }
     console.error('[snapshot]', error instanceof Error ? error.message : error)
     return undefined
