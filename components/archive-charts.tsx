@@ -169,44 +169,49 @@ export default function ArchiveCharts({
       })
       rankChart.setOption(rankOption(themeColors()))
 
+      // --- 每日新增 Star(柱图;序列变化量,回答"哪天火的") ---
+      // 与另两图同构:option 走 themeColors、切主题重绘、cleanup 一并 dispose
+      // (2026-10-28 外部评审实锤:此前 ...baseTooltip 漏调参数=spread 函数得空对象,
+      //  tooltip 配置整体失效;轴色硬编码亮色暗色不翻;dispose 漏 delta 实例)
+      let deltaChart: import('echarts/core').ECharts | null = null
+      const deltaOption = (t: ReturnType<typeof themeColors>) => ({
+        grid,
+        tooltip: { ...baseTooltip(t), valueFormatter: (v: number) => `${fmtNum(v, locale)} ${starUnit}` },
+        xAxis: {
+          type: 'time' as const,
+          axisLine: { lineStyle: { color: t.axisLine } },
+          axisTick: { show: false },
+          axisLabel: { color: t.axisText, fontSize: 11, formatter: dayLabels() },
+          splitLine: { show: false },
+        },
+        yAxis: {
+          type: 'value' as const,
+          axisLabel: { color: t.axisText, fontSize: 11, formatter: (v: number) => fmtNum(v, locale) },
+          splitLine: { lineStyle: { color: t.split } },
+        },
+        series: [
+          {
+            name: deltaLabel ?? '',
+            type: 'bar' as const,
+            data: deltaPoints!.map((p) => [p.day, p.value]),
+            barMaxWidth: 14,
+            itemStyle: { color: 'rgba(0,113,227,0.72)', borderRadius: [3, 3, 0, 0] },
+          },
+        ],
+      })
+      if (deltaPoints && deltaPoints.length > 1 && deltaRef.current) {
+        deltaChart = echarts.init(deltaRef.current)
+        deltaChart.setOption(deltaOption(themeColors()))
+      }
+
       // 切主题即时重绘(监听 html.dark 增删,不用重挂图表)
       const mo = new MutationObserver(() => {
         const t = themeColors()
         starChart.setOption(starOption(t))
         rankChart.setOption(rankOption(t))
+        deltaChart?.setOption(deltaOption(t))
       })
       mo.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
-
-      // --- 每日新增 Star(柱图;序列变化量,回答"哪天火的") ---
-      let deltaChart: import('echarts/core').ECharts | null = null
-      if (deltaPoints && deltaPoints.length > 1 && deltaRef.current) {
-        deltaChart = echarts.init(deltaRef.current)
-        deltaChart.setOption({
-          grid,
-          tooltip: { ...baseTooltip, valueFormatter: (v: number) => `${fmtNum(v, locale)} ${starUnit}` },
-          xAxis: {
-            type: 'time',
-            axisLine: { lineStyle: { color: 'rgba(0,0,0,0.25)' } },
-            axisTick: { show: false },
-            axisLabel: { color: '#6e6e73', fontSize: 11, formatter: dayLabels() },
-            splitLine: { show: false },
-          },
-          yAxis: {
-            type: 'value',
-            axisLabel: { color: '#6e6e73', fontSize: 11, formatter: (v: number) => fmtNum(v, locale) },
-            splitLine: { lineStyle: { color: 'rgba(0,0,0,0.06)' } },
-          },
-          series: [
-            {
-              name: deltaLabel ?? '',
-              type: 'bar',
-              data: deltaPoints.map((p) => [p.day, p.value]),
-              barMaxWidth: 14,
-              itemStyle: { color: 'rgba(0,113,227,0.72)', borderRadius: [3, 3, 0, 0] },
-            },
-          ],
-        })
-      }
 
       const ro = new ResizeObserver(() => {
         starChart.resize()
@@ -220,6 +225,7 @@ export default function ArchiveCharts({
         ro.disconnect()
         starChart.dispose()
         rankChart.dispose()
+        deltaChart?.dispose()
       }
     })()
 
