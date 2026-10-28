@@ -307,8 +307,11 @@ html.dark .card { background: #16161a; border-color: rgba(255, 255, 255, 0.1); b
 html.dark .bg-white { background-color: #16161a; }
 html.dark .bg-white\/95 { background-color: rgba(22, 22, 26, 0.96); }
 html.dark .bg-white\/90 { background-color: rgba(22, 22, 26, 0.9); }
+html.dark .bg-white\/85 { background-color: rgba(15, 15, 18, 0.82); }
 html.dark .bg-white\/75 { background-color: rgba(15, 15, 18, 0.75); }
 html.dark .bg-white\/70 { background-color: rgba(22, 22, 26, 0.7); }
+/* 渐隐遮罩起点(ReadmeExpand 折叠态等 from-[#f5f5f7] 用法):与卡片浮层同色,暗色不再是亮雾 */
+html.dark .from-\[\#f5f5f7\] { --tw-gradient-from: #16161a; }
 
 /* 黑色系发丝线/细边 → 白色低透明 */
 html.dark .border-black\/5, html.dark .border-black\/6, html.dark .border-black\/8,
@@ -329,6 +332,7 @@ html.dark [class*="bg-black/["] {
 
 /* ink 双用修正:文字墨色已翻亮,bg-ink(激活芯片/hover 反白钮)保持深色浮层 */
 html.dark .bg-ink { background-color: #26262b; }
+html.dark .bg-ink\/85 { background-color: #26262b; } /* 档案页语言 chip:同 bg-ink,防 ink 翻亮吃掉白字 */
 html.dark .hover\:bg-ink:hover { background-color: #26262b; }
 html.dark .hover\:bg-ink:hover { border-color: rgba(255, 255, 255, 0.2); }
 html.dark .bg-ink\/25 { background-color: rgba(0, 0, 0, 0.55); } /* 抽屉遮罩 */
