@@ -51,6 +51,13 @@ export function __testOnlyResetState(): void {
 export function __testOnlyPoolState(): { current: Sql | null; initializing: boolean } {
   return { current: sqlSingleton, initializing: poolInit !== null && sqlSingleton === null }
 }
+/** 测试观测点(评审六轮):池创建次数与销毁次数计数,验证并发初始化"只建一次、
+ * 无游离池未关"。工厂钩子置位后,withDb 的真实初始化路径改走它(仍写回 sqlSingleton,
+ * 状态机代码路径不变,仅替换池的来源)。生产代码禁止调用。 */
+export function __testOnlyObserve(hooks: { onPoolCreate?: () => void; onPoolEnd?: () => void }): void {
+  testHooks = hooks
+}
+let testHooks: { onPoolCreate?: () => void; onPoolEnd?: () => void } | null = null
 
 /** 迁移版本账本:每个迁移步骤一行,applied_at 可审计。幂等设计下重复应用无害,
  * 账本的价值是"生产库结构演进有据可查"+"跳过已应用步骤省 DDL 往返"。
@@ -202,6 +209,7 @@ export async function withDb<T>(fn: (sql: Sql) => Promise<T>): Promise<T | undef
       poolInit ??= (async () => {
         const postgres = (await import('postgres')).default
         // max 5:库角色连接上限被多实例×并发爬取打爆过(too many connections);读路径双查并行 5 足够
+        testHooks?.onPoolCreate?.()
         const pool = postgres(DATABASE_URL, {
         max: 5,
         idle_timeout: 30,
@@ -330,7 +338,7 @@ export async function withDb<T>(fn: (sql: Sql) => Promise<T>): Promise<T | undef
         sqlSingleton = null
         poolInit = null
       }
-      try { await sql.end({ timeout: 3 }) } catch { /* 连接已死,忽略 */ }
+      try { testHooks?.onPoolEnd?.(); await sql.end({ timeout: 3 }) } catch { /* 连接已死,忽略 */ }
     }
     console.error('[snapshot]', error instanceof Error ? error.message : error)
     return undefined
