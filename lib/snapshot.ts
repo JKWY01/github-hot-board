@@ -37,10 +37,20 @@ let sqlSingleton: import('postgres').Sql | null = null
 /** 共享池初始化 Promise(评审四轮):冷启动并发请求共享同一次创建,防止动态 import
  * 窗口内各建一池互相覆盖、留下游离池白占连接。失败时置 null 允许下次重试。 */
 let poolInit: Promise<import('postgres').Sql> | null = null
-let tableReady = false
-/** 本进程已确认跑过 migrate(含 42P01 自愈路径)。进程内一次即可:DDL 全部 IF NOT EXISTS/幂等,
- * 版本化审计由 ghb_schema_migrations 版本表承担,不靠进程状态。 */
-let migratedThisProcess = false
+
+/* 仅供回归测试注入隔离池与读取状态机(tests/pool-lifecycle.test.ts)。
+ * 生产代码禁止调用 —— 状态机完整性由测试直接驱动真实 withDb 保证(评审五轮)。 */
+export function __testOnlyInjectPool(pool: Sql): void {
+  sqlSingleton = pool
+  poolInit = Promise.resolve(pool)
+}
+export function __testOnlyResetState(): void {
+  sqlSingleton = null
+  poolInit = null
+}
+export function __testOnlyPoolState(): { current: Sql | null; initializing: boolean } {
+  return { current: sqlSingleton, initializing: poolInit !== null && sqlSingleton === null }
+}
 
 /** 迁移版本账本:每个迁移步骤一行,applied_at 可审计。幂等设计下重复应用无害,
  * 账本的价值是"生产库结构演进有据可查"+"跳过已应用步骤省 DDL 往返"。
@@ -152,8 +162,6 @@ async function migrate(sql: Sql): Promise<number> {
         ON CONFLICT (repo) DO NOTHING`
     }
   })
-  tableReady = true
-  migratedThisProcess = true
   return appliedCount
 }
 
@@ -188,10 +196,13 @@ export async function withDb<T>(fn: (sql: Sql) => Promise<T>): Promise<T | undef
       // sqlSingleton 为空、各自 await import 后各建一池并互相覆盖 —— 进程里留下一个
       // 游离池白占连接(上限紧张时是真实浪费)。用共享初始化 Promise:第一个到的请求
       // 挂起创建,后续请求 await 同一个 Promise,保证进程内只建一次。
+      // 初始化成功必须写回 sqlSingleton(评审五轮抓到的阻断 bug:上一版只把实例留在
+      // poolInit 里,sqlSingleton 永远是 null → 致命错误时 sqlSingleton===sql 判假,
+      // poolInit 不会被清,后续请求全部复用已 end 的死池,恢复闭环断裂)。
       poolInit ??= (async () => {
         const postgres = (await import('postgres')).default
         // max 5:库角色连接上限被多实例×并发爬取打爆过(too many connections);读路径双查并行 5 足够
-        return postgres(DATABASE_URL, {
+        const pool = postgres(DATABASE_URL, {
         max: 5,
         idle_timeout: 30,
         connect_timeout: 10,
@@ -222,10 +233,20 @@ export async function withDb<T>(fn: (sql: Sql) => Promise<T>): Promise<T | undef
             }
           : undefined,
         })
+        // 身份判断再写回(评审五轮):旧初始化任务若被并发 reset 清掉(poolInit 已换新),
+        // 它建出的池是游离实例,绝不覆盖新现役池 —— 只 end 自己,连接不泄漏。
+        if (!sqlSingleton) {
+          sqlSingleton = pool
+        } else if (sqlSingleton !== pool) {
+          void pool.end({ timeout: 3 }).catch(() => undefined)
+        }
+        return sqlSingleton
       })()
       // 初始化失败(网络抖动/import 失败)时清掉 rejected Promise,下次调用重新尝试,
       // 否则进程内所有后续请求都会 await 到同一个 rejection 永远起不来。
-      poolInit.catch(() => { poolInit = null })
+      // 只清"自己这次的初始化"(身份判断):过期任务不得清除新任务(评审五轮)。
+      const thisInit = poolInit
+      thisInit.catch(() => { if (poolInit === thisInit) poolInit = null })
     }
     sql = await poolInit
     if (!sql) throw new Error('pool-init returned null')
@@ -254,8 +275,30 @@ export async function withDb<T>(fn: (sql: Sql) => Promise<T>): Promise<T | undef
       // 同样含 "does not exist",曾把同步窗口的数组绑定错误误判成缺表反复跑 migrate
       // (DDL 锁挤兑读路径,2026-10-27 锁案元凶之一)。
       if (code === '42P01') {
-        const applied = await migrate(sql)
-        if (applied > 0) return await fn(sql)
+        // migrate 自身抛错(如迁移事务内撞缺表)也按结构漂移处理 —— 不能只留普通日志。
+        // 评审五轮:重试仍 42P01 不会回到本 catch,告警必须在重试包裹内完成。
+        let applied = 0
+        try {
+          applied = await migrate(sql)
+        } catch (migErr) {
+          const migCode = (migErr as { code?: string })?.code
+          if (migCode === '42P01') {
+            console.error('[snapshot] 结构漂移:迁移事务自身撞缺表(42P01),fail-closed —— 生产缺表需显式迁移/人工介入')
+            return undefined
+          }
+          throw migErr
+        }
+        if (applied > 0) {
+          try {
+            return await fn(sql)
+          } catch (retryErr) {
+            if ((retryErr as { code?: string })?.code === '42P01') {
+              console.error('[snapshot] 结构漂移:迁移后重试仍缺表(42P01),fail-closed —— migrate 只补账本未覆盖的结构,需显式迁移/人工介入')
+              return undefined
+            }
+            throw retryErr
+          }
+        }
         console.error('[snapshot] 结构漂移:撞 42P01 但迁移账本已齐(无新步骤可应用),fail-closed —— 生产缺表需显式迁移/人工介入')
         return undefined
       }
@@ -272,10 +315,9 @@ export async function withDb<T>(fn: (sql: Sql) => Promise<T>): Promise<T | undef
     // (53xxx,含 53300 容量耗尽)由池自身回收/等待,reset 只会扩散失败或误杀健康连接。
     //
     // 身份护栏(评审三轮实装、四轮补状态隔离):销毁的对象永远是"本请求实际使用过的实例"
-    // (闭包里的 sql),绝不回头读全局 sqlSingleton。且 pool 状态与 schema readiness 是
-    // 两个独立状态:只有"我用的池就是现役池"时才同时清 sqlSingleton 与 tableReady
-    // (表结构确认从未失败过,失败的只是连接);旧池的延迟异常处理不碰 tableReady ——
-    // 关一个连接池不会让数据库表结构失效。
+    // (闭包里的 sql),绝不回头读全局 sqlSingleton —— 旧池的延迟异常不会误关新现役池。
+    // tableReady/migratedThisProcess 死状态已删(评审五轮):42P01 分流完全由 migrate
+    // 返回的应用步数决定,进程内存放的结构就绪标志不再参与任何判定。
     if (!isPoolFatal(error)) {
       console.error('[snapshot]', error instanceof Error ? error.message : error)
       return undefined
@@ -286,7 +328,6 @@ export async function withDb<T>(fn: (sql: Sql) => Promise<T>): Promise<T | undef
     if (sql) {
       if (sqlSingleton === sql) {
         sqlSingleton = null
-        tableReady = false
         poolInit = null
       }
       try { await sql.end({ timeout: 3 }) } catch { /* 连接已死,忽略 */ }
