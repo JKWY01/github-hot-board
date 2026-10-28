@@ -272,12 +272,20 @@ export async function withDb<T>(fn: (sql: Sql) => Promise<T>): Promise<T | undef
       // 超时走下方 catch → 返回 undefined → 调用方走各自的兜底路径。
       // 20s 而非 10s:board_head 全量 payload 的 meta 扫描在国内线路 >10s,10s 会把
       // 冷 fill 掐成空 Map 被 'use cache' 固化(实测:discover 页空结果 2 小时)。
-      return await Promise.race([
-        fn(sql),
-        new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('db-query-timeout(20s)')), 20_000),
-        ),
-      ])
+      // 定时器生命周期(评审十轮):竞速分出胜负即 clearTimeout —— 否则每个查询
+      // 都留一个最多活 20s 的 timer,长驻进程高并发下堆积大量待触发定时器
+      // (每 20s 一批无意义 reject 已被 race 丢弃,纯空转)。
+      let timer: ReturnType<typeof setTimeout> | undefined
+      try {
+        return await Promise.race([
+          fn(sql),
+          new Promise<never>((_, reject) => {
+            timer = setTimeout(() => reject(new Error('db-query-timeout(20s)')), 20_000)
+          }),
+        ])
+      } finally {
+        if (timer) clearTimeout(timer)
+      }
     } catch (error) {
       code = (error as { code?: string })?.code
       // 42P01 自愈的边界(评审三/四轮明确,冷启动统一):撞 42P01 时跑一次 migrate,
