@@ -74,6 +74,7 @@ export default function RepoArchiveView({
   topicPeers,
   readmeHtml,
   repoMeta,
+  descOf,
 }: {
   archive: RepoArchive
   locale: Locale
@@ -88,6 +89,8 @@ export default function RepoArchiveView({
   readmeHtml?: string | null
   /** 英雄区 chips 数据(语言/主题,board_head 汇总):取不到不渲染,不许编 */
   repoMeta?: { language: string | null; topics: string[] }
+  /** 相关列表行内描述(名字→视角语言/en 描述):缺省 null 不渲染 */
+  descOf?: (name: string) => string | null
 }) {
   const dict = getDict(locale)
   const t = T[locale]
@@ -203,14 +206,28 @@ export default function RepoArchiveView({
           </p>
         </div>
 
-        {/* 名牌:档案页的视觉锚 —— 最好名次大数字 */}
-        <div className={`${PLATE} w-full max-w-[210px] px-6 py-6 text-center md:w-[210px] ${topPlate ? 'ring-1 ring-accent/35' : ''}`}>
-          <p className="text-[11.5px] font-semibold uppercase tracking-[0.18em] text-sub">{t.bestAt}</p>
-          <p className={`mt-1 text-[52px] font-bold leading-none tracking-tight tabular-nums ${topPlate ? 'text-accent' : 'text-ink'}`}>
-            #{best.rank}
-          </p>
-          <p className="mt-2 truncate text-[12.5px] text-sub">{plateLabel}</p>
-        </div>
+        {/* 名牌:档案页的视觉锚 —— 最好名次大数字 + 当前状态行(2026-10-28 外部评审:
+            "最好成绩 #1"易被读成"现在第一",历史最佳与当前名次必须同框区分) */}
+        {(() => {
+          const cur =
+            archive.appearances.find((a) => a.current && a.board === 'overall' && a.language === '') ??
+            archive.appearances.find((a) => a.current && a.language === '') ??
+            archive.appearances.find((a) => a.current)
+          return (
+            <div className={`${PLATE} w-full max-w-[210px] px-6 py-6 text-center md:w-[210px] ${topPlate ? 'ring-1 ring-accent/35' : ''}`}>
+              <p className="text-[11.5px] font-semibold uppercase tracking-[0.18em] text-sub">{t.bestAt}</p>
+              <p className={`mt-1 text-[52px] font-bold leading-none tracking-tight tabular-nums ${topPlate ? 'text-accent' : 'text-ink'}`}>
+                #{best.rank}
+              </p>
+              <p className="mt-2 truncate text-[12.5px] text-sub">{plateLabel}</p>
+              <p className={`mt-3 border-t-[0.5px] border-black/10 pt-2.5 text-[12px] ${cur ? 'text-ink/75' : 'text-sub/80'}`}>
+                {cur
+                  ? `${t.current} · ${shortBoard(cur.board as BoardSlug)} #${cur.rank}`
+                  : t.offBoard}
+              </p>
+            </div>
+          )
+        })()}
       </div>
 
       {/* —— 数据总览(三砖合一,2026-10-27 重设计):三联数字 + 状态行 + 速览句同一块砖,
@@ -293,18 +310,6 @@ export default function RepoArchiveView({
         </div>
       </section>
 
-      {/* —— 项目文档:GitHub 渲染的 README(repo_docs 快照)—— 爬虫的正粮,访客的百科。
-          展开全文按钮(ReadmeExpand):默认限高 640px,正文始终完整 SSR(爬虫拿全文) —— */}
-      {readmeHtml && (
-        <section className="mt-10">
-          <h2 className="section-title">{t.docs}</h2>
-          <div className={`${PLATE} mt-3 px-5 py-4 sm:px-6`}>
-            <ReadmeExpand expand={t.expand} collapse={t.collapse}>
-              <div dangerouslySetInnerHTML={{ __html: readmeHtml }} />
-            </ReadmeExpand>
-          </div>
-        </section>
-      )}
 
       {/* —— 当前上榜:名次芯片 + 跳榜定位 —— */}
       <section className="mt-10">
@@ -371,9 +376,27 @@ export default function RepoArchiveView({
                   .replace('{avg}', String(peak.avgOthers))}
               </p>
             )}
+            {/* 数据覆盖窗口说明(2026-10-28 外部评审:30 天指标 vs 本站实际采集期必须可区分 ——
+                窗口短于 30 天时,用户有权知道曲线只覆盖采集期,复用 stNote 不新增 16 语键) */}
+            {starPoints.length > 0 && starPoints.length < 30 && (
+              <p className="mt-1.5 px-1 text-[11px] text-sub/80">{t.stNote}</p>
+            )}
           </div>
         )}
       </section>
+
+      {/* —— 项目文档:GitHub 渲染的 README(repo_docs 快照)—— 爬虫的正粮,访客的百科。
+          展开全文按钮(ReadmeExpand):默认限高 640px,正文始终完整 SSR(爬虫拿全文) —— */}
+      {readmeHtml && (
+        <section className="mt-10">
+          <h2 className="section-title">{t.docs}</h2>
+          <div className={`${PLATE} mt-3 px-5 py-4 sm:px-6`}>
+            <ReadmeExpand expand={t.expand} collapse={t.collapse}>
+              <div dangerouslySetInnerHTML={{ __html: readmeHtml }} />
+            </ReadmeExpand>
+          </div>
+        </section>
+      )}
 
       {/* —— 相关仓库:两栏 grid(2026-10-27 重设计,三块同构列表竖排太长)—— */}
       <div className="mt-10 grid gap-x-8 gap-y-10 md:grid-cols-2">
@@ -391,8 +414,13 @@ export default function RepoArchiveView({
                     <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-[#f5f5f7] text-[14px] font-semibold tabular-nums text-ink/70">
                       {r.rank}
                     </span>
-                    <span className="min-w-0 flex-1 truncate text-[14.5px] font-medium text-ink">{r.fullName}</span>
-                    <span className="text-[12.5px] tabular-nums text-sub">
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-[14.5px] font-medium text-ink">{r.fullName}</span>
+                      {descOf?.(r.fullName) && (
+                        <span className="block truncate text-[11.5px] leading-snug text-sub">{descOf(r.fullName)}</span>
+                      )}
+                    </span>
+                    <span className="shrink-0 text-[12.5px] tabular-nums text-sub">
                       {fmtNum(r.stars, locale)} {t.starUnit}
                     </span>
                   </Link>
@@ -412,9 +440,12 @@ export default function RepoArchiveView({
                   <Link
                     href={`/${locale}/repo/${sib}`}
                     prefetch={false}
-                    className="block px-4 py-3 text-[14.5px] font-medium text-ink transition-colors hover:bg-black/[0.03] sm:px-5"
+                    className="block px-4 py-3 transition-colors hover:bg-black/[0.03] sm:px-5"
                   >
-                    {sib}
+                    <span className="block truncate text-[14.5px] font-medium text-ink">{sib}</span>
+                    {descOf?.(sib) && (
+                      <span className="block truncate text-[11.5px] leading-snug text-sub">{descOf(sib)}</span>
+                    )}
                   </Link>
                 </li>
               ))}
@@ -433,7 +464,12 @@ export default function RepoArchiveView({
                     prefetch={false}
                     className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-black/[0.03] sm:px-5"
                   >
-                    <span className="min-w-0 flex-1 truncate text-[14.5px] font-medium text-ink">{peer.fullName}</span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-[14.5px] font-medium text-ink">{peer.fullName}</span>
+                      {descOf?.(peer.fullName) && (
+                        <span className="block truncate text-[11.5px] leading-snug text-sub">{descOf(peer.fullName)}</span>
+                      )}
+                    </span>
                     <span className="hidden shrink-0 gap-1.5 sm:flex">
                       {peer.sharedTopics.slice(0, 3).map((tp) => (
                         <span key={tp} className="rounded-full bg-black/6 px-2 py-0.5 text-[10.5px] text-ink/60">{tp}</span>

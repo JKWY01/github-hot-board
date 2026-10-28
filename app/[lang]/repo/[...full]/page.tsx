@@ -133,8 +133,24 @@ export default async function RepoPage({
 
   // README 正文(与抽屉 API 共用 serveRepoDoc,评审五轮统一读序):
   // 目标语缓存 → 上游语言探测 → 上游失败时英文缓存降级;超时(上游内部预算外)按无文档处理
-  const served = unTimeout(await withTimeout(serveRepoDoc(fullName, lang), 9000))
-  const readmeHtml = served?.html ?? null
+  // 相关列表的仓库描述(2026-10-28 评审:卡片只有名字+数字,读者无法判断要不要点):
+  // 批量查一次 repo_desc(自己+related+siblings+topicPeers 全部名字),与 README 并行,失败静默
+  const allNames = Array.from(new Set([
+    fullName,
+    ...related.map((r) => r.fullName),
+    ...siblings,
+    ...(topicPeers ?? []).map((p) => p.fullName),
+  ]))
+  const [served, relDescsRaw] = await Promise.all([
+    withTimeout(serveRepoDoc(fullName, lang), 9000),
+    withTimeout(readRepoDescs(allNames), 9000).catch(() => null),
+  ])
+  const readmeHtml = unTimeout(served)?.html ?? null
+  const relDescs = unTimeout(relDescsRaw)
+  const descOf = (name: string): string | null => {
+    const d = relDescs?.get(name)
+    return d?.[lang] ?? d?.en ?? null
+  }
 
   return (
     <RepoArchiveView
@@ -148,6 +164,7 @@ export default async function RepoPage({
       topicPeers={topicPeers ?? undefined}
       readmeHtml={readmeHtml}
       repoMeta={repoMeta ? { language: repoMeta.language, topics: repoMeta.topics } : undefined}
+      descOf={descOf}
     />
   )
 }

@@ -2,8 +2,9 @@
 
 import { useState } from 'react'
 
-/** README 展开全文(2026-10-27 档案页重设计):children 始终完整 SSR 输出(爬虫拿全文),
- *  默认限高 640px + 底部渐隐 + 展开按钮;点击撑开,再点收起并回滚到区块顶部。 */
+/** README 展开全文(2026-10-27 档案页重设计;2026-10-28 评审修:内部滚动→整体裁剪)。
+ *  children 始终完整 SSR 输出(爬虫拿全文);默认 640px 裁剪 + 底部渐隐 + 展开按钮,
+ *  不再使用容器内滚动 —— 页面滚动与内容框内滚动的双滚冲突(移动端尤其)由此消除。 */
 export default function ReadmeExpand({ expand, collapse, children }: {
   expand: string
   collapse: string
@@ -13,7 +14,7 @@ export default function ReadmeExpand({ expand, collapse, children }: {
   return (
     <div className="relative">
       <div
-        className={`${open ? 'max-h-none overflow-visible' : 'max-h-[640px] overflow-y-auto'} md-body ${open ? '' : 'rounded-[20px] px-5 py-4 sm:px-6'}`}
+        className={`md-body ${open ? 'max-h-none overflow-visible' : 'max-h-[640px] overflow-hidden'}`}
       >
         {children}
       </div>
