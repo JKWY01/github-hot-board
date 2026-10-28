@@ -156,7 +156,8 @@ export default function RepoArchiveView({
               loading="lazy"
               className="h-11 w-11 shrink-0 rounded-[12px] border-[0.5px] border-black/10 bg-[#f5f5f7] object-cover"
             />
-            <h1 className="hero-title min-w-0 break-all">
+            {/* 档案页标题用自有尺寸(semibold + tight),不吃榜单页的 hero 大字 —— 与轻名牌同一套音量 */}
+            <h1 className="min-w-0 break-all text-[1.8rem] font-semibold leading-tight tracking-tight text-ink sm:text-[2.2rem]">
               {archive.fullName}
             </h1>
           </div>
@@ -214,12 +215,14 @@ export default function RepoArchiveView({
             archive.appearances.find((a) => a.current && a.language === '') ??
             archive.appearances.find((a) => a.current)
           return (
-            <div className={`${PLATE} w-full max-w-[210px] px-6 py-6 text-center md:w-[210px] ${topPlate ? 'ring-1 ring-accent/35' : ''}`}>
-              <p className="text-[11.5px] font-semibold uppercase tracking-[0.18em] text-sub">{t.bestAt}</p>
-              <p className={`mt-1 text-[52px] font-bold leading-none tracking-tight tabular-nums ${topPlate ? 'text-accent' : 'text-ink'}`}>
+            /* Apple 式轻名牌(2026-10-28 用户反馈:#1 52px 太压):去灰底大卡,纯排版 +
+               发丝线分层,数字 34px semibold —— 层级靠字重与留白,不靠底色和音量 */
+            <div className="w-full max-w-[210px] px-2 py-1 text-center md:w-[210px]">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-sub">{t.bestAt}</p>
+              <p className={`mt-1.5 text-[34px] font-semibold leading-none tracking-tight tabular-nums ${topPlate ? 'text-accent' : 'text-ink'}`}>
                 #{best.rank}
               </p>
-              <p className="mt-2 truncate text-[12.5px] text-sub">{plateLabel}</p>
+              <p className="mt-1.5 truncate text-[12px] text-sub">{plateLabel}</p>
               <p className={`mt-3 border-t-[0.5px] border-black/10 pt-2.5 text-[12px] ${cur ? 'text-ink/75' : 'text-sub/80'}`}>
                 {cur
                   ? `${t.current} · ${shortBoard(cur.board as BoardSlug)} #${cur.rank}`
@@ -236,15 +239,15 @@ export default function RepoArchiveView({
         <div className={`${PLATE} px-5 py-4`}>
           <div className="grid gap-3 sm:grid-cols-3">
             <div>
-              <p className="text-[30px] font-bold leading-none tabular-nums tracking-tight text-ink">{fmtNum(archive.totalStars ?? 0, locale)}</p>
+              <p className="text-[28px] font-semibold leading-none tabular-nums tracking-tight text-ink">{fmtNum(archive.totalStars ?? 0, locale)}</p>
               <p className="mt-2 text-[12.5px] text-sub">{t.starCap}</p>
             </div>
             <div>
-              <p className="text-[30px] font-bold leading-none tabular-nums tracking-tight text-ink">{fmtNum(archive.totalForks ?? 0, locale)}</p>
+              <p className="text-[28px] font-semibold leading-none tabular-nums tracking-tight text-ink">{fmtNum(archive.totalForks ?? 0, locale)}</p>
               <p className="mt-2 text-[12.5px] text-sub">{t.forkCap}</p>
             </div>
             <div>
-              <p className="text-[30px] font-bold leading-none tabular-nums tracking-tight text-ink">{daysOnBoard}</p>
+              <p className="text-[28px] font-semibold leading-none tabular-nums tracking-tight text-ink">{daysOnBoard}</p>
               <p className="mt-2 text-[12.5px] text-sub">{t.daysOn}</p>
             </div>
           </div>
