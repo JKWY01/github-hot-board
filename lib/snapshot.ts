@@ -58,6 +58,13 @@ export function __testOnlyObserve(hooks: { onPoolCreate?: () => void; onPoolEnd?
   testHooks = hooks
 }
 let testHooks: { onPoolCreate?: () => void; onPoolEnd?: () => void } | null = null
+/** 测试屏障(评审七轮):置位后,withDb 故障恢复路径的 sql.end() 在真正调用前 await
+ * 这个 Promise —— 测试用它把 A 的故障处理确定性暂停在"同步清现役已完成、end 尚未
+ * 执行"的精确窗口,不用固定 sleep 猜时序。默认 null,生产路径零影响。 */
+export function __testOnlyEndBarrier(barrier: Promise<void> | null): void {
+  testEndBarrier = barrier
+}
+let testEndBarrier: Promise<void> | null = null
 
 /** 迁移版本账本:每个迁移步骤一行,applied_at 可审计。幂等设计下重复应用无害,
  * 账本的价值是"生产库结构演进有据可查"+"跳过已应用步骤省 DDL 往返"。
@@ -338,7 +345,11 @@ export async function withDb<T>(fn: (sql: Sql) => Promise<T>): Promise<T | undef
         sqlSingleton = null
         poolInit = null
       }
-      try { testHooks?.onPoolEnd?.(); await sql.end({ timeout: 3 }) } catch { /* 连接已死,忽略 */ }
+      try {
+        testHooks?.onPoolEnd?.()
+        if (testEndBarrier) await testEndBarrier
+        await sql.end({ timeout: 3 })
+      } catch { /* 连接已死,忽略 */ }
     }
     console.error('[snapshot]', error instanceof Error ? error.message : error)
     return undefined
