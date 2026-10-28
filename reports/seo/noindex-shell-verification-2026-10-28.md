@@ -33,3 +33,21 @@
 
 - 原始采样:`/tmp/noindex-evidence.json`(18 条,含时间/状态/双信号/vid/缓存态/age)
 - 审计轮次:14:54(P0=0)→ 01:42(P0=15,其中 unexpected-noindex 12)→ 本报告复测确认
+
+## 追加:根因代码链定位(2026-10-28 补)
+
+评审意见"数据库暂时超时不应被等同于仓库不存在"经代码核对**属实**,完整链路:
+
+```
+withDb() 失败 → 返回 undefined
+  → readRepoArchiveRows(): `... ?? base`(空 appearances,失败被吞)
+  → getRepoArchiveCached(): appearances.length === 0 → return null
+  → 页面:if (!archive) notFound() → noindex 404 壳烤进 ISR
+```
+
+页面顶层虽有 `TIMEOUT` 哨兵拦 9 秒级超时,但 `withDb` 内部的失败(连接池挤爆/20s 竞速超时/非致命
+SQL 错)返回 `undefined` 后被 `?? base` 吞掉——**在哨兵起作用之前就已经变成了"确认查无此仓"**。
+
+**修复归属:可靠性专项(不进 SEO 分支)**。建议形态:`readRepoArchiveRows` 区分"查询失败"与
+"空结果"(失败抛错 → 页面顶层 5xx;只有真正无记录才返回空),与可靠性四条同批验收。
+本报告的根因链由"推断"升级为"代码级实锤"。
