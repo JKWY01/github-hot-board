@@ -27,14 +27,24 @@ let ready: Promise<void> | null = null
 
 async function ensure(): Promise<void> {
   await withDb(async (sql) => {
-    await sql`CREATE TABLE IF NOT EXISTS repo_docs (
-      full_name text NOT NULL,
-      lang text NOT NULL,
-      html text NOT NULL,
-      bytes integer NOT NULL DEFAULT 0,
-      fetched_at timestamptz NOT NULL DEFAULT now(),
-      PRIMARY KEY (full_name, lang)
-    )`
+    try {
+      await sql`CREATE TABLE IF NOT EXISTS repo_docs (
+        full_name text NOT NULL,
+        lang text NOT NULL,
+        html text NOT NULL,
+        bytes integer NOT NULL DEFAULT 0,
+        fetched_at timestamptz NOT NULL DEFAULT now(),
+        PRIMARY KEY (full_name, lang)
+      )`
+    } catch (err) {
+      // 建表竞态(评审十轮,隔离库多进程实测):IF NOT EXISTS 存在窗口 —— 多进程同时
+      // 检查到"表不存在"并同时 CREATE,输家的报错不是 42P07 NOTICE 而是
+      // 23505 duplicate key on pg_type_typname(隔离库 10 进程实验:1 OK/9 ERR)。
+      // 表实际已由赢家建好,按成功处理;真错(权限/连接)不在此列,继续抛。
+      const code = (err as { code?: string })?.code
+      if (code === '23505' || code === '42P07') return
+      throw err
+    }
   })
 }
 

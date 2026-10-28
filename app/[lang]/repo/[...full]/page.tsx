@@ -7,6 +7,7 @@ import { getRepoArchiveCached, isRepoFullName } from '@/lib/repoarchive'
 import { readBoardNeighbors, readRepoDescs, readDiscoverMeta, readRepoStatusFacts, readSiblingRepos, readTopicPeers } from '@/lib/snapshot'
 import { serveRepoDoc } from '@/lib/repodocs'
 import RepoArchiveView, { repoArchiveMetadata } from '@/components/repo-archive'
+import RepoUnavailable, { RepoUnavailableBody } from '@/components/RepoUnavailable'
 
 /** 超时哨兵(2026-10-26 六轮审查):超时/出错 resolve TIMEOUT,与"仓库不存在"(null)可区分 ——
  *  慢查询把在榜仓库当不存在打成 404,是收录面最怕的死链来源。 */
@@ -56,7 +57,12 @@ export async function generateMetadata({
   if (!isLocale(lang)) return {}
   const fullName = fullNameOf(full)
   if (!fullName) return {}
-  const archive = await getRepoArchiveCached(fullName)
+  const archive = await withTimeout(getRepoArchiveCached(fullName), 9000)
+  // 超时 = 暂时故障:显式 metadata 级 noindex(robots 字段是 Next 合并树的原生 key,
+  // 页面值覆盖 layout 的 index,follow,不产生重复 meta 标签)。与 body 的降级视图
+  // RepoUnavailable 保持同一判定源;组件内提升的 meta 是双保险(实测双 meta 场景
+  // 爬虫取最严格,但显式字段消除了重复标签本身)。
+  if (archive === TIMEOUT) return { robots: { index: false, follow: false } }
   if (!archive) return {}
   return repoArchiveMetadata(lang, archive)
 }
@@ -85,9 +91,19 @@ export default async function RepoPage({
     withTimeout(getRepoArchiveCached(fullName), 9000),
     withTimeout(readRepoDescs([fullName]), 9000),
   ])
-  // 超时 ≠ 不存在:库慢时抛 5xx(爬虫稍后重试),只有确认查无此仓(null)才 404 ——
-  // 慢查询给在榜仓库打 404 会被 Search Console 收成死链(六轮审查 P1)
-  if (archiveRes === TIMEOUT) throw new Error('repo archive timeout (db slow)')
+  // 超时 ≠ 不存在。实测(2026-10-28 本地生产构建+故障注入):[lang]/layout 的 await
+  // 完成前 Next 已发出响应头,此处无论 throw 还是 notFound 都只能流中处理 ——
+  // 产出"200 + noindex + 空壳"并被 CDN 当正常页缓存 13h+(生产 5 URL 实锤)。
+  // 所以超时分支不改变状态码,改渲染诚实的降级视图(RepoUnavailable):
+  // 可见正文说明"数据暂时不可用"+ <meta robots noindex> 压过 layout 的 index,follow,
+  // 搜索引擎不收录;正常完成的渲染照常缓存(脏窗 ≤5min),DB 恢复后自愈。
+  if (archiveRes === TIMEOUT)
+    return (
+      <>
+        <RepoUnavailable />
+        <RepoUnavailableBody />
+      </>
+    )
   const archive = archiveRes
   if (!archive) notFound()
 
