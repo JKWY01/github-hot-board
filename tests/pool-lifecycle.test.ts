@@ -201,6 +201,12 @@ describe.skipIf(!hasPg)('withDb 应用层状态机(真实驱动,GHB_TEST_PG=1)',
 
   it('预置迁移账本后冷启动撞 42P01 → fail-closed,不做无效重试(真实 migrate 路径)', async () => {
     __testOnlyResetState()
+    // 目标库保护(评审十轮):本测试会 DROP board_head —— 若 GHB_TEST_PG_URL 被误配成
+    // 生产库,这里必须拒绝执行,绝不对非隔离库做破坏性操作。
+    if (!/ghb_a1_verify|ghb_test|127\.0\.0\.1|localhost/.test(GHB_TEST_URL)) {
+      console.warn('SKIP: GHB_TEST_PG_URL 未指向隔离库,拒绝执行 DROP 测试')
+      return
+    }
     const admin = postgres(GHB_TEST_URL, { max: 1, prepare: false })
     // 预置账本(模拟生产 0001-baseline 已应用):
     await admin`CREATE TABLE IF NOT EXISTS ghb_schema_migrations (id TEXT PRIMARY KEY, applied_at TIMESTAMPTZ NOT NULL DEFAULT now())`
@@ -208,19 +214,22 @@ describe.skipIf(!hasPg)('withDb 应用层状态机(真实驱动,GHB_TEST_PG=1)',
     // 制造结构漂移:基线表不存在(账本却说已应用)
     await admin`DROP TABLE IF EXISTS board_head`
 
-    // withDb:查询 board_head → 42P01 → migrate(账本已齐,applied=0)→ 必须失败返回,
-    // 且不能把表凭空建回来(账本跳过基线 DDL —— 漂移只能显式迁移修复)
-    const r = await withDb(async (sql) => {
-      const rows = (await sql`SELECT payload FROM board_head WHERE key = 'weekly'`) as unknown as Array<{ payload: unknown }>
-      return rows
-    })
-    expect(r).toBeUndefined() // fail-closed:不做无效重试
-    const still = await admin`SELECT to_regclass('board_head') AS t`
-    expect(still[0].t).toBeNull() // 表未被"自愈"凭空重建
+    try {
+      // withDb:查询 board_head → 42P01 → migrate(账本已齐,applied=0)→ 必须失败返回,
+      // 且不能把表凭空建回来(账本跳过基线 DDL —— 漂移只能显式迁移修复)
+      const r = await withDb(async (sql) => {
+        const rows = (await sql`SELECT payload FROM board_head WHERE key = 'weekly'`) as unknown as Array<{ payload: unknown }>
+        return rows
+      })
+      expect(r).toBeUndefined() // fail-closed:不做无效重试
+      const still = await admin`SELECT to_regclass('board_head') AS t`
+      expect(still[0].t).toBeNull() // 表未被"自愈"凭空重建
 
-    await admin`DELETE FROM ghb_schema_migrations WHERE id = '0001-baseline'`
-    await admin.end({ timeout: 2 }).catch(() => undefined)
-    __testOnlyResetState()
+      await admin`DELETE FROM ghb_schema_migrations WHERE id = '0001-baseline'`
+    } finally {
+      void admin.end({ timeout: 2 }).catch(() => undefined)
+      __testOnlyResetState()
+    }
   })
 
   it('冷启动并发 5 请求只创建一次池、无游离池(创建/销毁计数观测)', async () => {
