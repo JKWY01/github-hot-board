@@ -44,7 +44,7 @@ let migratedThisProcess = false
  * 新增结构变更 = 在 MIGRATIONS 追加 { id, up } 并在提交信息里说明(独立迁移 commit)。 */
 interface Migration {
   id: string
-  up: (sql: Sql) => Promise<void>
+  up: (sql: Sql | import('postgres').TransactionSql) => Promise<void>
 }
 
 const MIGRATIONS: Migration[] = [
@@ -116,19 +116,27 @@ const MIGRATIONS: Migration[] = [
 
 /** 版本化迁移:按 ghb_schema_migrations 账本执行 MIGRATIONS 里未应用的步骤。
  * 正常读路径不跑 DDL —— 只有 42P01(表真缺失)自愈或显式调用才进来;
- * 幂等 DDL + 账本审计,重复应用无害,已应用步骤直接跳过(省 DDL 往返与锁窗口)。 */
+ * 幂等 DDL + 账本审计,重复应用无害,已应用步骤直接跳过(省 DDL 往返与锁窗口)。
+ * 并发保护:pg_advisory_xact_lock 串行化整个检查+执行,保证(a)多请求同时触发缺表
+ * 自愈时 DDL 只跑一次;(b)某步骤的 DDL 与其账本记录在同一事务里,要么都在要么都不在。 */
 async function migrate(sql: Sql): Promise<void> {
-  await sql`CREATE TABLE IF NOT EXISTS ghb_schema_migrations (
-    id         TEXT PRIMARY KEY,
-    applied_at TIMESTAMPTZ NOT NULL DEFAULT now()
-  )`
-  const applied = await sql`SELECT id FROM ghb_schema_migrations`
-  const done = new Set((applied as unknown as Array<{ id: string }>).map((r) => r.id))
-  for (const m of MIGRATIONS) {
-    if (done.has(m.id)) continue
-    await m.up(sql)
-    await sql`INSERT INTO ghb_schema_migrations (id) VALUES (${m.id}) ON CONFLICT (id) DO NOTHING`
-  }
+  // 事务包全程:advisory lock 是 xact 级(事务结束自动释放,不需要手动 unlock),
+  // 账本 INSERT 与 DDL 同事务提交 —— 拿不到锁的并发请求会等在这里,拿到后先查账本,
+  // 看到别人已应用的记录就跳过,不会重复执行。
+  await sql.begin(async (tx) => {
+    await tx`SELECT pg_advisory_xact_lock(hashtext('ghb_schema_migrations'))`
+    await tx`CREATE TABLE IF NOT EXISTS ghb_schema_migrations (
+      id         TEXT PRIMARY KEY,
+      applied_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )`
+    const applied = await tx`SELECT id FROM ghb_schema_migrations`
+    const done = new Set((applied as unknown as Array<{ id: string }>).map((r) => r.id))
+    for (const m of MIGRATIONS) {
+      if (done.has(m.id)) continue
+      await m.up(tx)
+      await tx`INSERT INTO ghb_schema_migrations (id) VALUES (${m.id})`
+    }
+  })
   // repo_seen 回填保留在账本外(数据回填非 DDL):空表才跑,跑完即免。
   const seeded = await sql`SELECT 1 FROM repo_seen LIMIT 1`
   if (seeded.length === 0) {
@@ -139,6 +147,22 @@ async function migrate(sql: Sql): Promise<void> {
   }
   tableReady = true
   migratedThisProcess = true
+}
+
+/** 判定一个错误是否"池已不可信"必须销毁重建:连接级故障(断连/认证/协议错)或应用竞速超时
+ * (底层操作可能仍在跑,池里有挂着的事务)。普通 SQL 错误(语法/约束/代码 bug/数据问题)
+ * 由连接池自身回收连接,销毁整池只会把一个请求的失败扩散给所有并发调用方 —— 不 reset。 */
+function isPoolFatal(error: unknown): boolean {
+  if (error instanceof Error && error.message.startsWith('db-query-timeout')) return true
+  const code = (error as { code?: string })?.code
+  if (!code) {
+    // 无 PG 错误码的非竞速异常:驱动层网络错误(postgres.js 的连接错误没有标准 code,
+    // message 形如 'write CONNECT_TIMEOUT' / "terminating connection ...")按池级处理
+    const msg = error instanceof Error ? error.message : String(error)
+    return /CONNECT_?TIMEOUT|CONNECTION|terminating|ECONNRESET|EPIPE|socket/i.test(msg)
+  }
+  // PG 连接失败类(SQLSTATE 连接异常段 08xxx)+ 系统错误 53xxx(连接数耗尽等)
+  return /^08/.test(code) || /^53/.test(code)
 }
 
 export async function withDb<T>(fn: (sql: Sql) => Promise<T>): Promise<T | undefined> {
@@ -211,13 +235,21 @@ export async function withDb<T>(fn: (sql: Sql) => Promise<T>): Promise<T | undef
     // 关键(2026-10-27 锁案根因):竞速超时只是"不再等待",底层的查询/事务仍在跑 ——
     // 直接把 sqlSingleton 置 null 会留下一个还持有连接甚至 idle-in-transaction 的孤儿池
     // (实测一条 0.177ms 的 board_head 查询所在事务挂了 2 小时+,钉死连接池 16 分钟)。
-    // 这里必须显式终止旧客户端的全部连接再重建:sql.end({ timeout }) 关闭的是整个
-    // postgres.js 实例,但走到这个 catch 的场景本身就是"该实例已不可信"(超时/连接错误),
-    // 丢弃整池是正确语义;结束等待中的在途请求会收到连接关闭错误,由各自调用方兜底。
+    //
+    // 但销毁是重操作(end 关整个实例,并发在途请求一起失败),只对"池已不可信"的故障执行:
+    // 竞速超时 + 连接级错误(08xxx/53xxx/驱动网络错)。普通 SQL 错误(约束/语法/业务)
+    // 由池自身回收连接,reset 只会把单个请求的失败扩散给全部并发调用方 —— 直接按失败返回。
+    //
+    // 身份护栏:reset 只销毁"我刚才用过的那个实例"。若在 end() 期间别的调用已建了新池
+    // (sqlSingleton !== stale),绝不误关新池 —— 旧实例引用仍在闭包里,由它自己 end。
+    if (!isPoolFatal(error)) {
+      console.error('[snapshot]', error instanceof Error ? error.message : error)
+      return undefined
+    }
     const stale = sqlSingleton
-    sqlSingleton = null
-    tableReady = false
     if (stale) {
+      sqlSingleton = null
+      tableReady = false
       // 终止 grace 3s:给在途简单查询一个收尾窗口;拿不回来就被服务端/超时兜底。
       // end() 自身失败(网络已死)不影响后续流程 —— 新客户端下一次调用照常重建。
       try { await stale.end({ timeout: 3 }) } catch { /* 连接已死,忽略 */ }
