@@ -34,6 +34,9 @@ export function dbUrlConfigured(): boolean {
  * max=8:同步风暴(writeHeadAndRows 逐榜大事务)+ 访客读(RSC 洞)/api 读同时上线,
  * 2 条会被写队列把读请求拖到秒级,导航洞渲染变长(体感就是切榜卡)。Neon 免费层上限远高于此。 */
 let sqlSingleton: import('postgres').Sql | null = null
+/** 共享池初始化 Promise(评审四轮):冷启动并发请求共享同一次创建,防止动态 import
+ * 窗口内各建一池互相覆盖、留下游离池白占连接。失败时置 null 允许下次重试。 */
+let poolInit: Promise<import('postgres').Sql> | null = null
 let tableReady = false
 /** 本进程已确认跑过 migrate(含 42P01 自愈路径)。进程内一次即可:DDL 全部 IF NOT EXISTS/幂等,
  * 版本化审计由 ghb_schema_migrations 版本表承担,不靠进程状态。 */
@@ -120,11 +123,12 @@ const MIGRATIONS: Migration[] = [
  * 只会跳过基线 DDL)。生产缺表 = 显式版本化迁移或人工介入的事,请求路径 fail-closed。
  * 幂等 DDL + 账本审计,重复应用无害,已应用步骤直接跳过(省 DDL 往返与锁窗口)。
  * 并发保护:pg_advisory_xact_lock 串行化整个检查+执行,保证(a)多请求同时触发缺表
- * 自愈时 DDL 只跑一次;(b)某步骤的 DDL 与其账本记录在同一事务里,要么都在要么都不在。 */
-async function migrate(sql: Sql): Promise<void> {
-  // 事务包全程:advisory lock 是 xact 级(事务结束自动释放,不需要手动 unlock),
-  // 账本 INSERT 与 DDL 同事务提交 —— 拿不到锁的并发请求会等在这里,拿到后先查账本,
-  // 看到别人已应用的记录就跳过,不会重复执行。
+ * 自愈时 DDL 只跑一次;(b)某步骤的 DDL 与其账本记录在同一事务里,要么都在要么都不在。
+ * repo_seen 回填也收进同一把锁(评审四轮):避免并发首次迁移各自发现空表重复聚合回填。
+ * 返回本次实际应用的迁移数:0 = 账本已齐、没动任何结构 —— 调用方据此区分
+ * "修好了"与"根本没修"(后者再撞 42P01 就是结构漂移,fail-closed)。 */
+async function migrate(sql: Sql): Promise<number> {
+  let appliedCount = 0
   await sql.begin(async (tx) => {
     await tx`SELECT pg_advisory_xact_lock(hashtext('ghb_schema_migrations'))`
     await tx`CREATE TABLE IF NOT EXISTS ghb_schema_migrations (
@@ -137,24 +141,30 @@ async function migrate(sql: Sql): Promise<void> {
       if (done.has(m.id)) continue
       await m.up(tx)
       await tx`INSERT INTO ghb_schema_migrations (id) VALUES (${m.id})`
+      appliedCount += 1
+    }
+    // repo_seen 回填在同一把锁下(空表才跑):并发首次迁移只有一个请求能看到空表。
+    const seeded = await tx`SELECT 1 FROM repo_seen LIMIT 1`
+    if (seeded.length === 0) {
+      await tx`
+        INSERT INTO repo_seen (repo, last_seen)
+        SELECT repo, max(taken_at) FROM board_snapshots GROUP BY repo
+        ON CONFLICT (repo) DO NOTHING`
     }
   })
-  // repo_seen 回填保留在账本外(数据回填非 DDL):空表才跑,跑完即免。
-  const seeded = await sql`SELECT 1 FROM repo_seen LIMIT 1`
-  if (seeded.length === 0) {
-    await sql`
-      INSERT INTO repo_seen (repo, last_seen)
-      SELECT repo, max(taken_at) FROM board_snapshots GROUP BY repo
-      ON CONFLICT (repo) DO NOTHING`
-  }
   tableReady = true
   migratedThisProcess = true
+  return appliedCount
 }
 
 /** 判定一个错误是否"池已不可信"必须销毁重建:连接级故障(断连/认证/协议错)或应用竞速超时
  * (底层操作可能仍在跑,池里有挂着的事务)。普通 SQL 错误(语法/约束/代码 bug/数据问题)
- * 由连接池自身回收连接,销毁整池只会把一个请求的失败扩散给所有并发调用方 —— 不 reset。 */
-function isPoolFatal(error: unknown): boolean {
+ * 由连接池自身回收连接,销毁整池只会把一个请求的失败扩散给所有并发调用方 —— 不 reset。
+ * 53300(too many connections)不在此列(评审四轮):它是连接容量耗尽,不是现有连接失效
+ * —— 池里已建立的连接仍可正常查询,reset 整池反而杀掉健康连接扩大故障面。按容量告警 +
+ * 失败返回处理(调用方各自兜底),等服务端连接被释放后自然恢复。 */
+/** 导出仅供测试(pool-lifecycle 回归矩阵);生产代码不要依赖此判定做业务分支。 */
+export function isPoolFatal(error: unknown): boolean {
   if (error instanceof Error && error.message.startsWith('db-query-timeout')) return true
   const code = (error as { code?: string })?.code
   if (!code) {
@@ -163,11 +173,9 @@ function isPoolFatal(error: unknown): boolean {
     const msg = error instanceof Error ? error.message : String(error)
     return /CONNECT_?TIMEOUT|CONNECTION|terminating|ECONNRESET|EPIPE|socket/i.test(msg)
   }
-  // PG 连接失败类(SQLSTATE 连接异常段 08xxx)。
-  // 53 段(资源不足)只认 53300(too many connections)——它意味着连接建立被拒,池里
-  // 的连接同样不可信;53100/53200(磁盘满/内存不足)是服务器资源问题,reset 池无济于事
-  // 反而丢掉还能用的连接,按普通失败返回交调用方兜底。
-  return /^08/.test(code) || code === '53300'
+  // 只认连接失效段(SQLSTATE 08xxx:断连/认证失败/协议错)。资源不足段(53xxx)
+  // 一律不 reset:磁盘满/内存不足/连接数耗尽都不是"池已损坏"的证据。
+  return /^08/.test(code)
 }
 
 export async function withDb<T>(fn: (sql: Sql) => Promise<T>): Promise<T | undefined> {
@@ -176,9 +184,14 @@ export async function withDb<T>(fn: (sql: Sql) => Promise<T>): Promise<T | undef
   let sql: Sql | null = null
   try {
     if (!sqlSingleton) {
-      const postgres = (await import('postgres')).default
-      // max 5:库角色连接上限被多实例×并发爬取打爆过(too many connections);读路径双查并行 5 足够
-      sqlSingleton = postgres(DATABASE_URL, {
+      // 并发初始化协调(评审四轮):动态 import 是异步的,冷启动并发请求 A/B 都会看到
+      // sqlSingleton 为空、各自 await import 后各建一池并互相覆盖 —— 进程里留下一个
+      // 游离池白占连接(上限紧张时是真实浪费)。用共享初始化 Promise:第一个到的请求
+      // 挂起创建,后续请求 await 同一个 Promise,保证进程内只建一次。
+      poolInit ??= (async () => {
+        const postgres = (await import('postgres')).default
+        // max 5:库角色连接上限被多实例×并发爬取打爆过(too many connections);读路径双查并行 5 足够
+        return postgres(DATABASE_URL, {
         max: 5,
         idle_timeout: 30,
         connect_timeout: 10,
@@ -208,9 +221,14 @@ export async function withDb<T>(fn: (sql: Sql) => Promise<T>): Promise<T | undef
               console.error('[sql]', typeof query, String(dump).slice(0, 260), '| params:', Array.isArray(params) ? params.length : 0)
             }
           : undefined,
-      })
+        })
+      })()
+      // 初始化失败(网络抖动/import 失败)时清掉 rejected Promise,下次调用重新尝试,
+      // 否则进程内所有后续请求都会 await 到同一个 rejection 永远起不来。
+      poolInit.catch(() => { poolInit = null })
     }
-    sql = sqlSingleton
+    sql = await poolInit
+    if (!sql) throw new Error('pool-init returned null')
     let code: string | undefined
     try {
       // 查询级竞速超时(20s):连接池被同步/并发爬取挤爆时,postgres 驱动会无界排队,
@@ -226,19 +244,20 @@ export async function withDb<T>(fn: (sql: Sql) => Promise<T>): Promise<T | undef
       ])
     } catch (error) {
       code = (error as { code?: string })?.code
-      // 42P01 自愈的边界(评审三轮明确):只在"本进程从未确认过结构"(!tableReady)时
-      // 尝试一次 migrate。若 migrate 已成功过(tableReady=true)却又撞 42P01 = 生产结构
-      // 漂移(表被误删/换库)——账本会跳过已应用的基线 DDL,重跑 migrate 并不能修复,
-      // 再试只会掩盖问题。fail-closed:告警 + 按失败返回,结构修复由显式版本化迁移承担。
-      // 只认 42P01 代码,不做 message 子串匹配:42703(column does not exist)、
-      // 3D000(database does not exist)等错误文本同样含 "does not exist",
-      // 曾把同步窗口的数组绑定错误误判成缺表,反复跑 migrate(DDL 锁挤兑读路径,2026-10-27 锁案元凶之一)。
-      if (code === '42P01' && !tableReady) {
-        await migrate(sql)
-        return await fn(sql)
-      }
+      // 42P01 自愈的边界(评审三/四轮明确,冷启动统一):撞 42P01 时跑一次 migrate,
+      // 但按"本次实际应用的迁移数"分流 ——
+      // · applied > 0:有新结构落库,重试原查询是合理的自愈;
+      // · applied === 0:账本已齐、这次什么都没建(生产预置 0001-baseline 后的冷启动
+      //   就是这个形态)——重试注定失败,不是自愈,直接告警 fail-closed,不掩盖问题。
+      // 结构修复由显式版本化迁移承担。只认 42P01 代码,不做 message 子串匹配:
+      // 42703(column does not exist)、3D000(database does not exist)等错误文本
+      // 同样含 "does not exist",曾把同步窗口的数组绑定错误误判成缺表反复跑 migrate
+      // (DDL 锁挤兑读路径,2026-10-27 锁案元凶之一)。
       if (code === '42P01') {
-        console.error('[snapshot] 结构漂移:migrate 已完成仍报缺表(42P01),fail-closed 不自动修复,需人工/显式迁移介入')
+        const applied = await migrate(sql)
+        if (applied > 0) return await fn(sql)
+        console.error('[snapshot] 结构漂移:撞 42P01 但迁移账本已齐(无新步骤可应用),fail-closed —— 生产缺表需显式迁移/人工介入')
+        return undefined
       }
       throw error
     }
@@ -249,13 +268,14 @@ export async function withDb<T>(fn: (sql: Sql) => Promise<T>): Promise<T | undef
     // (实测一条 0.177ms 的 board_head 查询所在事务挂了 2 小时+,钉死连接池 16 分钟)。
     //
     // 但销毁是重操作(end 关整个实例,并发在途请求一起失败),只对"池已不可信"的故障执行:
-    // 竞速超时 + 连接级错误(08xxx/53300/驱动网络错)。普通 SQL 错误(约束/语法/业务)
-    // 由池自身回收连接,reset 只会把单个请求的失败扩散给全部并发调用方 —— 直接按失败返回。
+    // 竞速超时 + 连接失效(08xxx/驱动网络错)。普通 SQL 错误(约束/语法/业务)与资源不足
+    // (53xxx,含 53300 容量耗尽)由池自身回收/等待,reset 只会扩散失败或误杀健康连接。
     //
-    // 身份护栏(评审三轮实装):销毁的对象永远是"本请求实际使用过的实例"(闭包里的 sql),
-    // 绝不回头读全局 sqlSingleton —— 旧池 A 的请求延迟进入异常处理时,全局可能已被并发
-    // 调用换成新池 B,读全局会把 B 误关。只有 sqlSingleton === sql(我用的实例仍是现役池)
-    // 才清空全局;否则全局已经是别人的新池,只 end 自己的旧实例。
+    // 身份护栏(评审三轮实装、四轮补状态隔离):销毁的对象永远是"本请求实际使用过的实例"
+    // (闭包里的 sql),绝不回头读全局 sqlSingleton。且 pool 状态与 schema readiness 是
+    // 两个独立状态:只有"我用的池就是现役池"时才同时清 sqlSingleton 与 tableReady
+    // (表结构确认从未失败过,失败的只是连接);旧池的延迟异常处理不碰 tableReady ——
+    // 关一个连接池不会让数据库表结构失效。
     if (!isPoolFatal(error)) {
       console.error('[snapshot]', error instanceof Error ? error.message : error)
       return undefined
@@ -264,8 +284,11 @@ export async function withDb<T>(fn: (sql: Sql) => Promise<T>): Promise<T | undef
     // end() 自身失败(网络已死)不影响后续流程 —— 新客户端下一次调用照常重建。
     // sql 为 null 的唯一可能是"池还没建成就抛错"(import 失败等)—— 无池可关,跳过。
     if (sql) {
-      if (sqlSingleton === sql) sqlSingleton = null
-      tableReady = false
+      if (sqlSingleton === sql) {
+        sqlSingleton = null
+        tableReady = false
+        poolInit = null
+      }
       try { await sql.end({ timeout: 3 }) } catch { /* 连接已死,忽略 */ }
     }
     console.error('[snapshot]', error instanceof Error ? error.message : error)
