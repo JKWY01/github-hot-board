@@ -45,13 +45,15 @@ describe('repo page 暂时故障降级契约(静态)', () => {
     expect(src).toMatch(/if \(!archive\) notFound\(\)/)
   })
 
-  it('generateMetadata 的 archive 读必须限时并在超时返回 {}', () => {
+  it('generateMetadata 的 archive 读必须限时并在超时返回显式 noindex', () => {
     const metaBlock = src.slice(
       src.indexOf('export async function generateMetadata'),
       src.indexOf('export async function generateStaticParams'),
     )
     expect(metaBlock).toMatch(/withTimeout\(getRepoArchiveCached\(fullName\), 9000\)/)
-    expect(metaBlock).toMatch(/archive === TIMEOUT\) return \{\}/)
+    // 超时返回显式 noindex(实测:流式场景 metadata API 不可靠,组件提升是主通道,
+    // metadata robots 是语义兼容的第二通道 —— 双通道都指向不收录)
+    expect(metaBlock).toMatch(/archive === TIMEOUT\) return \{ robots: \{ index: false, follow: false \} \}/)
     expect(metaBlock).toMatch(/if \(!archive\) return \{\}/)
     expect(metaBlock).not.toMatch(/await getRepoArchiveCached\(fullName\)(?!\s*,)/)
   })

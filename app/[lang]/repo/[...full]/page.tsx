@@ -58,7 +58,11 @@ export async function generateMetadata({
   const fullName = fullNameOf(full)
   if (!fullName) return {}
   const archive = await withTimeout(getRepoArchiveCached(fullName), 9000)
-  if (archive === TIMEOUT) return {}
+  // 超时 = 暂时故障:显式 metadata 级 noindex(robots 字段是 Next 合并树的原生 key,
+  // 页面值覆盖 layout 的 index,follow,不产生重复 meta 标签)。与 body 的降级视图
+  // RepoUnavailable 保持同一判定源;组件内提升的 meta 是双保险(实测双 meta 场景
+  // 爬虫取最严格,但显式字段消除了重复标签本身)。
+  if (archive === TIMEOUT) return { robots: { index: false, follow: false } }
   if (!archive) return {}
   return repoArchiveMetadata(lang, archive)
 }
