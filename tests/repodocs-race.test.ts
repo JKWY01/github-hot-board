@@ -6,8 +6,10 @@
  * 1 OK / 9 ERR 23505 duplicate key on pg_type_typname —— IF NOT EXISTS 有检查
  * 窗口,输家报的不是 42P07 而是 23505。修复:ensure 捕获 23505/42P07 按成功处理。
  *
- * 本测试用同进程高并发 Promise 模拟并发建表(真实多进程形态见提交信息实验记录);
- * 断言:全部并发 ensure 成功、表恰好一个。
+ * 覆盖口径(评审十一轮明确):本测试验证【同进程】并发下 ensure 的竞态容忍与
+ * 不抛错保证;【跨进程】23505 竞态由独立 Node 多进程实验证实(隔离库 10 进程:
+ * 1 OK / 9 ERR 23505 → 修复后 8 进程 8/8),实验记录见提交信息,不属于本测试文件
+ * 的断言范围 —— 两者证据等级分开,不互相冒充。
  */
 import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest'
 import postgres from 'postgres'
@@ -20,8 +22,12 @@ import { readRepoDoc } from '../lib/repodocs'
 
 const URL_ = process.env.DATABASE_URL!
 const hasPg = Boolean(process.env.GHB_TEST_PG)
+// 目标库保护(评审十一轮):本测试 beforeAll 会 DROP repo_docs —— 与环境变量名无关,
+// 直接校验连接串本身。非隔离库(生产/任何远程库)一律拒绝执行,防误配置删生产表。
+const isIsolatedPg = /(?:\/\/|@)(?:127\.0\.0\.1|localhost)[:/]/.test(URL_) &&
+  /ghb_a1_verify|ghb_test/.test(URL_)
 
-describe.skipIf(!hasPg)('repo_docs 建表竞态(ensure 23505/42P07 容忍)', () => {
+describe.skipIf(!hasPg || !isIsolatedPg)('repo_docs 建表竞态(ensure 23505/42P07 容忍;仅隔离库)', () => {
   const admin = postgres(URL_, { max: 1, prepare: false })
 
   beforeAll(async () => {

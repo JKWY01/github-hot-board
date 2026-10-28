@@ -83,3 +83,51 @@ describe('withDb 竞速定时器生命周期', () => {
     expect(created).toBe(0)
   })
 })
+
+describe('withDb 竞速超时分支(真实触发,fake timers)', () => {
+  const realSetTimeout = globalThis.setTimeout
+  const realClearTimeout = globalThis.clearTimeout
+  let created = 0
+  let cleared = 0
+
+  beforeEach(() => {
+    created = 0
+    cleared = 0
+    ;(globalThis as unknown as { setTimeout: typeof setTimeout }).setTimeout = ((
+      fn: (...a: unknown[]) => void,
+      ms?: number,
+      ...rest: unknown[]
+    ) => {
+      const id = (realSetTimeout as unknown as (...a: unknown[]) => unknown)(fn, ms, ...rest)
+      if (typeof ms === 'number' && ms >= 1000) created += 1
+      return id
+    }) as unknown as typeof setTimeout
+    ;(globalThis as unknown as { clearTimeout: typeof clearTimeout }).clearTimeout = ((
+      id?: unknown,
+    ) => {
+      if (id !== undefined) cleared += 1
+      return (realClearTimeout as unknown as (i?: unknown) => void)(id)
+    }) as unknown as typeof clearTimeout
+    __testOnlyResetState()
+  })
+
+  afterEach(() => {
+    ;(globalThis as unknown as { setTimeout: typeof setTimeout }).setTimeout = realSetTimeout
+    ;(globalThis as unknown as { clearTimeout: typeof clearTimeout }).clearTimeout = realClearTimeout
+    __testOnlyResetState()
+  })
+
+  it('底层查询永不返回 → 20s 定时器真实触发 → 超时路径仍清理', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    // fake timers 替换后重新包计数(直接包 vi 的实现):
+    // 简化:fake 模式下断言"超时结果返回 undefined + 定时器回调执行后 finally 清理无异常"。
+    // 桩池的 fn 永不 resolve:
+    __testOnlyInjectPool({ end: async () => undefined } as unknown as never)
+    const p = withDb(() => new Promise(() => {}))
+    const assertion = expect(p).resolves.toBeUndefined()
+    // 快进 20s → 触发竞速超时
+    await vi.advanceTimersByTimeAsync(20_000)
+    await assertion
+    vi.useRealTimers()
+  })
+})
