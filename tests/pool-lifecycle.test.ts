@@ -24,6 +24,7 @@ vi.hoisted(() => {
 import {
   isPoolFatal,
   withDb,
+  __testOnlyObserve,
   __testOnlyResetState,
   __testOnlyPoolState,
 } from '../lib/snapshot'
@@ -108,40 +109,68 @@ describe.skipIf(!hasPg)('withDb 应用层状态机(真实驱动,GHB_TEST_PG=1)',
     __testOnlyResetState()
   })
 
-  it('旧池延迟异常处理不误关新池、不影响新池服务(身份护栏)', async () => {
+  it('真实并发竞态:A 故障处理未完成时 B 建立 —— B 现役不被误关,A 被正确 end(身份护栏)', async () => {
     __testOnlyResetState()
     const admin = postgres(GHB_TEST_URL, { max: 1, prepare: false })
     await admin`SELECT 1`
 
-    // 场景:池 A 请求故障 → A 被正确 reset(end 由 withDb 执行);随后 B 建立;
-    // "旧池 A 的恢复动作"此刻才延迟补一记 end(A) —— 语义上只允许 end A 自己,
-    // B 必须毫发无损继续服务(修复前的 bug:读全局会把 B 误关)。
+    // 场景时序(评审六轮指定):A 请求已失败、故障处理尚未执行完;B 先建立;
+    // A 的旧故障处理随后才继续执行。做法:A 的故障处理走真实 withDb catch(其 end
+    // 是 3s grace 的慢异步),期间真实并发发起来自同一请求路径的 B 建池与查询。
+    // onPoolCreate/onPoolEnd 计数 + 现役池身份断言全程验证。
+    let createCount = 0
+    let endCount = 0
+    __testOnlyObserve({
+      onPoolCreate: () => { createCount += 1 },
+      onPoolEnd: () => { endCount += 1 },
+    })
+
+    // ① 建池 A
     const r1 = await withDb(async (sql) => 1)
     expect(r1).toBe(1)
     const poolA = __testOnlyPoolState().current!
+    expect(createCount).toBe(1)
 
-    await withDb(async () => {
+    // ② 并发:路1 = A 上致命故障(withDb 进入 catch → 身份判断 → end A,3s grace 慢路径);
+    //    路2 = 不等路1,立即发起请求(B 将被建池)。两路真实并发交错。
+    const failA = withDb(async () => {
       throw Object.assign(new Error('connection failure'), { code: '08006' })
     })
-    expect(__testOnlyPoolState().current).toBeNull()
-
-    await withDb(async (sql) => {
-      const rows = (await sql`SELECT 99 AS b`) as unknown as Array<{ b: number }>
-      return rows[0].b
+    // 让 failA 先走完同步的"清现役"(进入 3s grace 的慢 end),再启动 B ——
+    // 一个事件循环 tick 足够 catch 执行到 sql.end() 挂起处;此刻 B 建池正是
+    // "A 故障处理未完成时 B 建立"的窗口。
+    await new Promise((r) => setTimeout(r, 50))
+    const buildB = withDb(async (sql) => {
+      const rows = (await sql`SELECT 99 AS b`) as unknown as Array<{ b: number | string }>
+      return Number(rows[0].b)
     })
+    const rB = await buildB
+    expect(rB).toBe(99)                       // B 建池并成功
     const poolB = __testOnlyPoolState().current!
-    expect(poolB).not.toBe(poolA)
+    expect(poolB).not.toBeNull()
+    expect(poolB).not.toBe(poolA)             // B 是新现役池
+    expect(createCount).toBe(2)               // 恰好两次建池(A、B)
+    await failA                               // 路1 的恢复流程走完
+    expect(endCount).toBe(1)                  // A 被 end(且只 end 一次)
 
-    // 旧池 A 的延迟恢复动作:只 end 自己(与身份护栏一致的语义)
-    void poolA.end({ timeout: 2 }).catch(() => undefined)
-    // B 仍正常服务,且仍是现役
-    const r2 = await withDb(async (sql) => {
-      const rows = (await sql`SELECT 100 AS c`) as unknown as Array<{ c: number }>
-      return rows[0].c
-    })
-    expect(r2).toBe(100)
+    // ③ 四断言(评审指定):B 仍是现役;B 连续查询成功;poolInit 指向 B 的现役状态;
+    //    A 已被正确关闭(endCount 已证)且不再回来
     expect(__testOnlyPoolState().current).toBe(poolB)
+    expect(__testOnlyPoolState().initializing).toBe(false)
+    for (let i = 0; i < 3; i++) {
+      const r = await withDb(async (sql) => {
+        const rows = (await sql`SELECT ${100 + i} AS c`) as unknown as Array<{ c: number | string }>
+        return Number(rows[0].c)
+      })
+      expect(r).toBe(100 + i)
+    }
+    expect(__testOnlyPoolState().current).toBe(poolB)
+    // 判别力断言:B 现役后连续查询阶段不得再触发建池(若旧故障处理误清了 B,
+    // 这里会出现第 3 次建池 —— 回归即红)
+    expect(createCount).toBe(2)
+    expect(endCount).toBe(1)
 
+    __testOnlyObserve({}) // 清观测钩子
     await admin.end({ timeout: 2 }).catch(() => undefined)
     __testOnlyResetState()
   })
@@ -170,10 +199,16 @@ describe.skipIf(!hasPg)('withDb 应用层状态机(真实驱动,GHB_TEST_PG=1)',
     __testOnlyResetState()
   })
 
-  it('冷启动并发 5 请求只创建一个池(poolInit 协调)', async () => {
+  it('冷启动并发 5 请求只创建一次池、无游离池(创建/销毁计数观测)', async () => {
     __testOnlyResetState()
     const admin = postgres(GHB_TEST_URL, { max: 1, prepare: false })
     await admin`SELECT 1`
+    let createCount = 0
+    let endCount = 0
+    __testOnlyObserve({
+      onPoolCreate: () => { createCount += 1 },
+      onPoolEnd: () => { endCount += 1 },
+    })
     const results = await Promise.all([
       withDb(async (sql) => { const r = (await sql`SELECT 1 AS n`) as unknown as Array<{ n: number | string }>; return Number(r[0].n) }),
       withDb(async (sql) => { const r = (await sql`SELECT 2 AS n`) as unknown as Array<{ n: number | string }>; return Number(r[0].n) }),
@@ -182,9 +217,13 @@ describe.skipIf(!hasPg)('withDb 应用层状态机(真实驱动,GHB_TEST_PG=1)',
       withDb(async (sql) => { const r = (await sql`SELECT 5 AS n`) as unknown as Array<{ n: number | string }>; return Number(r[0].n) }),
     ])
     expect(results).toEqual([1, 2, 3, 4, 5])
-    // 状态机单例不变量:并发初始化竞态若回归,现役池不可能保持唯一且稳定
+    // 评审六轮指定断言:5 个并发请求只触发一次池创建;0 次销毁 = 没有游离池被丢弃
+    expect(createCount).toBe(1)
+    expect(endCount).toBe(0)
+    // 状态机单例不变量
     expect(__testOnlyPoolState().current).not.toBeNull()
     expect(__testOnlyPoolState().initializing).toBe(false)
+    __testOnlyObserve({}) // 清观测钩子
     await admin.end({ timeout: 2 }).catch(() => undefined)
     __testOnlyResetState()
   })
