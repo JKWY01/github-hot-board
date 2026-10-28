@@ -21,6 +21,7 @@ vi.hoisted(() => {
   process.env.DATABASE_URL = process.env.GHB_TEST_PG_URL ?? 'postgres://127.0.0.1:5432/ghb_a1_verify'
 })
 
+import { isIsolatedTestDatabase } from './helpers/isolated-pg'
 import {
   isPoolFatal,
   withDb,
@@ -201,10 +202,9 @@ describe.skipIf(!hasPg)('withDb 应用层状态机(真实驱动,GHB_TEST_PG=1)',
 
   it('预置迁移账本后冷启动撞 42P01 → fail-closed,不做无效重试(真实 migrate 路径)', async () => {
     __testOnlyResetState()
-    // 目标库保护(评审十轮):本测试会 DROP board_head —— 若 GHB_TEST_PG_URL 被误配成
-    // 生产库,这里必须拒绝执行,绝不对非隔离库做破坏性操作。
-    if (!/ghb_a1_verify|ghb_test|127\.0\.0\.1|localhost/.test(GHB_TEST_URL)) {
-      console.warn('SKIP: GHB_TEST_PG_URL 未指向隔离库,拒绝执行 DROP 测试')
+    // 目标库保护(评审十二轮:URL 字段级解析,双条件同时满足才放行;建连前拦截)
+    if (!isIsolatedTestDatabase(GHB_TEST_URL)) {
+      console.warn('SKIP: GHB_TEST_PG_URL 未指向隔离库(host+库名双校验失败),拒绝执行 DROP 测试')
       return
     }
     const admin = postgres(GHB_TEST_URL, { max: 1, prepare: false })

@@ -22,10 +22,9 @@ import { readRepoDoc } from '../lib/repodocs'
 
 const URL_ = process.env.DATABASE_URL!
 const hasPg = Boolean(process.env.GHB_TEST_PG)
-// 目标库保护(评审十一轮):本测试 beforeAll 会 DROP repo_docs —— 与环境变量名无关,
-// 直接校验连接串本身。非隔离库(生产/任何远程库)一律拒绝执行,防误配置删生产表。
-const isIsolatedPg = /(?:\/\/|@)(?:127\.0\.0\.1|localhost)[:/]/.test(URL_) &&
-  /ghb_a1_verify|ghb_test/.test(URL_)
+// 目标库保护(评审十二轮:URL 字段级解析,与 pool-lifecycle 同一守卫函数)
+import { isIsolatedTestDatabase } from './helpers/isolated-pg'
+const isIsolatedPg = isIsolatedTestDatabase(URL_)
 
 describe.skipIf(!hasPg || !isIsolatedPg)('repo_docs 建表竞态(ensure 23505/42P07 容忍;仅隔离库)', () => {
   const admin = postgres(URL_, { max: 1, prepare: false })
