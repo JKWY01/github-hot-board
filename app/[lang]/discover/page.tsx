@@ -96,7 +96,9 @@ export default async function DiscoverPage({
     if (invalidParams) {
       facets = await discoverFacets()
     } else {
-      ;[rows, facets] = await Promise.all([discoverQuery(filters), discoverFacets()])
+      // 先取 facets(预计算行直读,极快~1-2ms),作为常用参数判定的基准
+      facets = await discoverFacets()
+      rows = await discoverQuery({ ...filters, facetsRef: facets })
     }
   } catch {
     degraded = true

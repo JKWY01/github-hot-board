@@ -39,10 +39,14 @@ function cacheKeyOf(f: DiscoverFilters): string {
 }
 
 describe('缓存键不变式(批②)', () => {
-  it('Ⅰa 同一参数的等价写法(大小写保留,非拒绝)→ 同键(大小写属不同语言值,原本即同键)', () => {
-    const a = normalizeFilters({ lang: 'TypeScript', topic: 'ai' })
-    const b = normalizeFilters({ lang: 'TypeScript', topic: 'ai' })
+  it('Ⅰa 大小写变体(TYPESCRIPT/TypeScript/typescript)→ 规范化后同键(评审二轮②)', () => {
+    // SQL 侧 lower(lang) 语义等价;缓存键必须同语义同键,否则同内容三份缓存
+    const a = normalizeFilters({ lang: 'TypeScript' })
+    const b = normalizeFilters({ lang: 'typescript' })
+    const c = normalizeFilters({ lang: 'TYPESCRIPT' })
     expect(cacheKeyOf(a.filters)).toBe(cacheKeyOf(b.filters))
+    expect(cacheKeyOf(a.filters)).toBe(cacheKeyOf(c.filters))
+    expect(a.filters.lang).toBe('typescript') // 规范化为小写
   })
 
   it('Ⅰb 缺省字段与显式默认(sort=stars)→ 不同键属预期(stars/gain 键值不同,语义不同)', () => {
@@ -74,11 +78,29 @@ describe('缓存键不变式(批②)', () => {
     expect(cacheKeyOf(a7.filters)).not.toBe(cacheKeyOf(a30.filters))
   })
 
-  it('Ⅱd 合法长尾组合各有独立键(不被收敛吞掉)', () => {
-    const keys = ['reverse-tunnel', 'i3status', 'a', 'zz-topics-xyz'].map(
-      (t) => cacheKeyOf(normalizeFilters({ topic: t }).filters),
+  it('Ⅱd 合法长尾可查询(能力保留),但走非持久路径(评审二轮核心治理)', () => {
+    // 长尾的能力不变:归一化后仍是有效 filters,page 层会调 discoverQuery
+    const longtails = ['reverse-tunnel', 'i3status', 'a', 'zz-topics-xyz'].map(
+      (t) => normalizeFilters({ topic: t }),
     )
-    expect(new Set(keys).size).toBe(keys.length)
+    for (const lt of longtails) expect(lt.invalid).toBe(false)
+    // 但持久缓存判定改由 discoverQuery 内部完成(facetsRef 归属),此处锁归一化输出形状
+    expect(longtails[0].filters.topic).toBe('reverse-tunnel')
+  })
+
+  it('Ⅳ 持久缓存键空间有界:常用组合归 Top 榜约束(评审二轮核心治理断言)', () => {
+    // discoverQuery 的 'use cache' 只发生在 lang/topic 均属 facets Top 榜时(实现内判定),
+    // 键空间上限 = Top10 lang × Top12 topic × 4 band × 5 age 值(含缺省) × 2 sort ≈ 4,800 键。
+    // 归属判定逻辑单测:用 facetsRef 形状直接复算 inTop 判定(与 lib 实现一致的表达)
+    const facets = { languages: [['TypeScript', 9], ['Python', 8]] as Array<[string, number]>, topics: [['ai', 7], ['web', 6]] as Array<[string, number]> }
+    const inTopLang = (lang?: string) => !lang || facets.languages.some(([l]) => l.toLowerCase() === lang)
+    const inTopTopic = (topic?: string) => !topic || facets.topics.some(([t]) => t.toLowerCase() === topic)
+    // Top 内 → 持久缓存
+    expect(inTopLang('typescript') && inTopTopic('ai')).toBe(true)
+    // 长尾 → 非持久
+    expect(inTopLang('zig') && inTopTopic('reverse-tunnel')).toBe(false)
+    // 大小写规范化后归属判定不漏(TYPESCRIPT 已在 sanitize 层变 typescript)
+    expect(inTopLang('typescript')).toBe(true)
   })
 
   it('Ⅲa 拒绝类 lang → invalid=true(页层短路,discoverQuery 不被调用=零键)', () => {

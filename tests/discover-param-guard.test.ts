@@ -14,19 +14,19 @@ describe('sanitizeDiscoverLang', () => {
     expect(sanitizeDiscoverLang('')).toBeUndefined()
   })
 
-  it('合法主流语言 → 原样放行', () => {
-    expect(sanitizeDiscoverLang('TypeScript')).toBe('TypeScript')
+  it('合法主流语言 → 放行并小写规范化(评审二轮②:同语义同键)', () => {
+    expect(sanitizeDiscoverLang('TypeScript')).toBe('typescript')
     expect(sanitizeDiscoverLang('python')).toBe('python')
-    expect(sanitizeDiscoverLang('C++')).toBe('C++')
-    expect(sanitizeDiscoverLang('C#')).toBe('C#')
-    expect(sanitizeDiscoverLang('Objective-C')).toBe('Objective-C')
-    expect(sanitizeDiscoverLang('Emacs Lisp')).toBe('Emacs Lisp')
+    expect(sanitizeDiscoverLang('C++')).toBe('c++')
+    expect(sanitizeDiscoverLang('C#')).toBe('c#')
+    expect(sanitizeDiscoverLang('Objective-C')).toBe('objective-c')
+    expect(sanitizeDiscoverLang('Emacs Lisp')).toBe('emacs lisp')
   })
 
   it('合法长尾语言 → 放行(不拿 Top 榜当白名单,SEO 长尾保全)', () => {
-    expect(sanitizeDiscoverLang('Zig')).toBe('Zig')
-    expect(sanitizeDiscoverLang('Nushell')).toBe('Nushell')
-    expect(sanitizeDiscoverLang('VBA')).toBe('VBA')
+    expect(sanitizeDiscoverLang('Zig')).toBe('zig')
+    expect(sanitizeDiscoverLang('Nushell')).toBe('nushell')
+    expect(sanitizeDiscoverLang('VBA')).toBe('vba')
   })
 
   it('注入/非法字符形态 → null(拒绝)', () => {

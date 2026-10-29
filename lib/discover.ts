@@ -1,4 +1,4 @@
-import { cacheLife } from 'next/cache'
+import { cacheLife, cacheTag } from 'next/cache'
 
 import { readPrecomputedFacets } from './discover-facets-store'
 import { readDiscoverMeta, withDb } from './snapshot'
@@ -62,7 +62,9 @@ export function sanitizeDiscoverLang(raw: string | undefined): string | null | u
   if (!raw) return undefined
   if (raw.length > 24) return null
   if (!/^[a-zA-Z+#. -]+$/.test(raw)) return null
-  return raw
+  // 大小写规范化(评审二轮②):SQL 侧 lower(lang) 语义等价,缓存键必须同语义同键,
+  // 否则 TypeScript/typescript/TYPESCRIPT 三份缓存同内容(键空间 ×3 且全是重复计算)
+  return raw.toLowerCase()
 }
 
 /** topic 参数边界校验(独立提交①,与 lang 同批)。
@@ -76,9 +78,7 @@ export function sanitizeDiscoverTopic(raw: string | undefined): string | null | 
   return raw
 }
 
-async function discoverFiltered(f: DiscoverFilters): Promise<DiscoverRow[]> {
-  'use cache'
-  cacheLife({ stale: 60, revalidate: 300, expire: 3600 })
+async function discoverFilteredUncached(f: DiscoverFilters): Promise<DiscoverRow[]> {
   const bandCond = f.band ? ` AND stars BETWEEN ${BAND_SQL[f.band]}` : ''
   const ageCond = f.age ? ` AND created_at IS NOT NULL AND created_at > ${AGE_SQL[f.age]}` : ''
   // lang/topic 是用户输入:必须参数化($1/$2),此前字符串拼接既是注入面,
@@ -148,10 +148,49 @@ async function discoverFiltered(f: DiscoverFilters): Promise<DiscoverRow[]> {
   }))
 }
 
-export async function discoverQuery(f: DiscoverFilters): Promise<DiscoverRow[]> {
+/** 查询入口(评审二轮重构):分层缓存治理——
+ *  ①【常用组合】lang/topic 均在 facets Top 榜内 → 'use cache' 持久缓存
+ *     (键空间 = Top10 lang × Top12 topic × 4 band × 4 age × 2 sort ≈ 有界数千,可治理);
+ *  ②【合法长尾】不在 Top 榜 → 绕过 'use cache',直查库不落盘(进程内短 TTL 去重抖动),
+ *     键空间再大也不产生持久缓存文件——这是"格式校验≠键数量收敛"缺口的真解;
+ *  ③【拒绝类】上层已短路,不进本函数。
+ *  常用判定用 f.facetsRef(调用方传入的 Top 榜引用,page 层已并行拿到,零额外查询)。 */
+export async function discoverQuery(f: DiscoverFilters & { facetsRef?: { languages: Array<[string, number]>; topics: Array<[string, number]> } }): Promise<DiscoverRow[]> {
+  const inTopLang = !f.lang || (f.facetsRef?.languages ?? []).some(([l]) => l.toLowerCase() === f.lang)
+  const inTopTopic = !f.topic || (f.facetsRef?.topics ?? []).some(([t]) => t.toLowerCase() === f.topic)
+  if (inTopLang && inTopTopic) {
+    // 持久缓存路径(facetsRef 是引用不参与序列化键——需剥离,否则整个 Top 榜进键)
+    const { facetsRef: _omit, ...cacheable } = f
+    return discoverQueryCached(cacheable)
+  }
+  // 长尾路径:直查库,进程内 30s 微缓存挡同键抖动(不落盘、重启即清)
+  return discoverQueryEphemeral(f)
+}
+
+async function discoverQueryCached(f: DiscoverFilters): Promise<DiscoverRow[]> {
   'use cache'
   cacheLife({ stale: 60, revalidate: 300, expire: 3600 })
-  return discoverFiltered(f)
+  return discoverFilteredUncached(f)
+}
+
+// 长尾微缓存:Map<key,{at,rows}>,容量与年龄双帽——溢出/过期即逐出,绝不持久化
+const _ephemeral = new Map<string, { at: number; rows: DiscoverRow[] }>()
+const EPHEMERAL_TTL_MS = 30_000
+const EPHEMERAL_MAX = 500
+
+async function discoverQueryEphemeral(f: DiscoverFilters): Promise<DiscoverRow[]> {
+  const key = JSON.stringify([f.lang ?? null, f.topic ?? null, f.band ?? null, f.age ?? null, f.sort])
+  const hit = _ephemeral.get(key)
+  const now = Date.now()
+  if (hit && now - hit.at < EPHEMERAL_TTL_MS) return hit.rows
+  const rows = await discoverFilteredUncached(f)
+  if (_ephemeral.size >= EPHEMERAL_MAX) {
+    // 最老逐出:Map 迭代序即插入序
+    const oldest = _ephemeral.keys().next().value
+    if (oldest !== undefined) _ephemeral.delete(oldest)
+  }
+  _ephemeral.set(key, { at: now, rows })
+  return rows
 }
 
 /** 筛选项(语言/主题 Top 榜):读预计算行(OOM 批④,零扫描);
@@ -159,6 +198,9 @@ export async function discoverQuery(f: DiscoverFilters): Promise<DiscoverRow[]> 
 export async function discoverFacets(): Promise<{ languages: Array<[string, number]>; topics: Array<[string, number]> }> {
   'use cache'
   cacheLife({ stale: 300, revalidate: 1800, expire: 7200 })
+  // tag 关联(评审二轮④):revalidateTag('discover-facets','max') 需条目先关联 tag 才能命中;
+  // 此前只 revalidate 不 cacheTag = 失效链路断开(同步更新后页面可能读到旧 facets)
+  cacheTag('discover-facets')
   const precomputed = await readPrecomputedFacets()
   if (precomputed) return precomputed
   const ok = await withDb(async (sql) => {

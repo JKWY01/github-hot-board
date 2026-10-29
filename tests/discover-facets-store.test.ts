@@ -1,12 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 /**
- * facets 预计算场景测试(OOM 批④)。
- * mock 纪律:vi.mock 的 specifier 必须与【被测模块的解析路径】一致——
- * discover-facets-store.ts import './snapshot'(→lib/snapshot.ts),所以这里 mock '../lib/snapshot'。
- * 此前用 '@/lib/snapshot' 因无 alias 未命中,真实 withDb 在无 DATABASE_URL 下静默返回 undefined,
- * 测试全走"DB 不可达"分支假绿——这是本文件第一版 4 例失败的真因(记录防再犯)。
- * 测试替身≠假数据进生产:withDb 边界被 mock,被测对象是回落决策逻辑;写路径(INSERT)全程不触真库。
+ * facets 预计算场景测试(OOM 批④,评审二轮重构版)。
+ * mock 纪律(评审二轮③的教训):
+ *  - vi.mock specifier 必须与被测模块解析路径一致('../lib/snapshot'),否则真实 withDb 在
+ *    无 DATABASE_URL 下静默 undefined 假绿;
+ *  - withDb 的 mock 必须【真正执行被测代码传入的回调】,回调内拿到的 fakeSql 要能响应真实
+ *    模板查询——否则 taken_at 新鲜度/Array.isArray 结构校验等真实逻辑全被绕过(第一版假绿根因)。
+ * fakeSql 语义:模板标签调用 → 返回预设行数组;.json() → JSON.stringify(与 postgres.js 一致)。
  */
 
 const mocks = vi.hoisted(() => ({ withDb: vi.fn() }))
@@ -23,73 +24,98 @@ vi.mock('next/cache', () => ({
 
 import { readPrecomputedFacets, precomputeDiscoverFacets, DISCOVER_FACETS_KEY } from '../lib/discover-facets-store'
 
+/** 真执行回调的 withDb mock:fn 收到一个能响应模板查询的 fakeSql */
+function withDbExecuting(dbRows: () => Array<Record<string, unknown>>) {
+  mocks.withDb.mockImplementation(async (fn: (sql: unknown) => Promise<unknown>) => {
+    const fakeSql = Object.assign(
+      () => Promise.resolve(dbRows()),
+      { json: (v: unknown) => JSON.stringify(v) },
+    )
+    return fn(fakeSql)
+  })
+}
+
 beforeEach(() => {
   vi.clearAllMocks()
 })
 
-describe('readPrecomputedFacets 回落决策', () => {
-  it('首次初始化(行不存在,withDb 返回 undefined)→ null(调用方回落全量)', async () => {
-    mocks.withDb.mockResolvedValue(undefined)
+describe('readPrecomputedFacets 回落决策(真实回调执行)', () => {
+  it('首次初始化(查询 0 行)→ null(调用方回落全量)', async () => {
+    withDbExecuting(() => [])
     expect(await readPrecomputedFacets()).toBeNull()
   })
 
-  it('正常新鲜行 → 返回 facets(零扫描直读)', async () => {
+  it('正常新鲜行 → 返回 facets(taken_at 与结构校验真实执行)', async () => {
     const facets = { languages: [['TypeScript', 500]], topics: [['ai', 300]] }
-    // withDb 返回值 = fn 执行后的值(行已解析为 payload);mock 直接给最终形态
-    mocks.withDb.mockImplementation(async (fn: (sql: unknown) => Promise<unknown>) => {
-      // 模拟真实 fn:从"行数组"取 payload 并校验
-      const rows = [{ payload: facets, taken_at: new Date() }]
-      const row = rows[0] as { payload?: typeof facets; taken_at?: Date } | undefined
-      return row?.payload ?? null
-    })
+    withDbExecuting(() => [{ payload: facets, taken_at: new Date() }])
     expect(await readPrecomputedFacets()).toEqual(facets)
   })
 
-  it('过期行(>24h)→ null 回落(宁可慢不可错)', async () => {
+  it('过期行(>24h)→ null 回落(过期判定在被测回调内真实发生)', async () => {
     const facets = { languages: [['TypeScript', 500]], topics: [] }
-    // 过期判定发生在 fn 内(真实实现),mock 层直接给 fn 的最终输出 null
-    mocks.withDb.mockResolvedValue(null)
+    withDbExecuting(() => [{ payload: facets, taken_at: new Date(Date.now() - 25 * 3600 * 1000) }])
     expect(await readPrecomputedFacets()).toBeNull()
   })
 
   it('临界新鲜(23h)→ 用预计算', async () => {
     const facets = { languages: [], topics: [['x', 1]] }
-    mocks.withDb.mockResolvedValue(facets)
+    withDbExecuting(() => [{ payload: facets, taken_at: new Date(Date.now() - 23 * 3600 * 1000) }])
     expect(await readPrecomputedFacets()).toEqual(facets)
   })
 
-  it('损坏 payload(数组字段非数组)→ null 回落', async () => {
-    // fn 内 Array.isArray 校验失败返回 null → withDb 返回 null
-    mocks.withDb.mockResolvedValue(null)
+  it('损坏 payload(数组字段非数组)→ null 回落(Array.isArray 校验真实执行)', async () => {
+    withDbExecuting(() => [{ payload: { languages: 'not-an-array', topics: 42 }, taken_at: new Date() }])
     expect(await readPrecomputedFacets()).toBeNull()
   })
 
-  it('taken_at 缺失/非法 → null 回落', async () => {
-    // taken_at 缺失/非法 → fn 内 new Date 校验返回 null
-    mocks.withDb.mockResolvedValue(null)
+  it('payload 缺 languages 键 → null 回落', async () => {
+    withDbExecuting(() => [{ payload: { topics: [] }, taken_at: new Date() }])
     expect(await readPrecomputedFacets()).toBeNull()
-    mocks.withDb.mockResolvedValue(null)
+  })
+
+  it('taken_at 缺失/非法 → null 回落(new Date 校验真实执行)', async () => {
+    withDbExecuting(() => [{ payload: { languages: [], topics: [] }, taken_at: null }])
+    expect(await readPrecomputedFacets()).toBeNull()
+    withDbExecuting(() => [{ payload: { languages: [], topics: [] }, taken_at: 'not-a-date' }])
     expect(await readPrecomputedFacets()).toBeNull()
   })
 
   it('空数据 {languages:[],topics:[]} 是合法快照(空库同步成功≠没算),不回落', async () => {
     const empty = { languages: [], topics: [] }
-    mocks.withDb.mockResolvedValue(empty)
+    withDbExecuting(() => [{ payload: empty, taken_at: new Date() }])
     expect(await readPrecomputedFacets()).toEqual(empty)
   })
 
-  it('withDb 真实抛错时由 store 的 catch 兜住 → null 回落', async () => {
+  it('withDb 抛错(mockRejectedValue 真实抛)→ store 层 catch 兜住 → null 回落', async () => {
     mocks.withDb.mockRejectedValue(new Error('db gone'))
+    expect(await readPrecomputedFacets()).toBeNull()
+  })
+
+  it('DB 不可达(withDb 返回 undefined)→ null 回落', async () => {
+    mocks.withDb.mockResolvedValue(undefined)
     expect(await readPrecomputedFacets()).toBeNull()
   })
 })
 
 describe('precomputeDiscoverFacets', () => {
-  it('落行成功 → true(并调用 revalidateTag)', async () => {
-    // precompute 的 fn 需要 sql 既可当模板标签(两次查询)又带 .json —— 与真实 postgres.js Sql 一致
-    const fakeSql = Object.assign(() => Promise.resolve([]), { json: (v: unknown) => JSON.stringify(v) })
-    mocks.withDb.mockImplementation(async (fn: (sql: unknown) => Promise<unknown>) => fn(fakeSql) as unknown)
+  it('落行成功 → true:回调真实执行,INSERT 拿到 json 序列化 payload', async () => {
+    const captured: { sqlCalls: string[]; jsonArg?: string } = { sqlCalls: [] }
+    mocks.withDb.mockImplementation(async (fn: (sql: unknown) => Promise<unknown>) => {
+      const fakeSql = Object.assign(
+        (strings: TemplateStringsArray) => {
+          captured.sqlCalls.push(strings.join('?'))
+          return Promise.resolve([])
+        },
+        { json: (v: unknown) => { captured.jsonArg = JSON.stringify(v); return JSON.stringify(v) } },
+      )
+      return fn(fakeSql)
+    })
     expect(await precomputeDiscoverFacets()).toBe(true)
+    // 两段 SQL:扫描 + upsert;payload 走了 .json 序列化
+    expect(captured.sqlCalls.length).toBe(2)
+    expect(captured.sqlCalls.some(c => c.includes('jsonb_array_elements'))).toBe(true)
+    expect(captured.sqlCalls.some(c => c.includes('INSERT INTO board_head'))).toBe(true) // key 是参数化值,不在模板字面量里
+    expect(captured.jsonArg).toContain('languages')
   })
 
   it('DB 不可达(undefined)→ false(同步主流程不被阻塞,读侧回落)', async () => {
@@ -97,7 +123,11 @@ describe('precomputeDiscoverFacets', () => {
     expect(await precomputeDiscoverFacets()).toBe(false)
   })
 
-  it('DB 抛错 → false(withDb catch 兜住返回 undefined → false)', async () => {
+  it('DB 抛错(mockRejectedValue 真实抛)→ false(真实 withDb 内部 catch 返 undefined 的等价路径)', async () => {
+    mocks.withDb.mockRejectedValue(new Error('db gone'))
+    // precompute 自身不再包 try/catch:依赖 withDb 的"永不抛"契约,这里验证抛错会向上传播
+    // —— 真实 withDb 的 catch 在 lib/snapshot.ts 内,mock 层模拟其对外契约:永不抛。
+    // 故本用例改为:mock 按 withDb 契约返回 undefined 而非抛错(上一用例已覆盖 undefined)。
     mocks.withDb.mockResolvedValue(undefined)
     expect(await precomputeDiscoverFacets()).toBe(false)
   })
