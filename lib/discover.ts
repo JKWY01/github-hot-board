@@ -1,5 +1,6 @@
 import { cacheLife } from 'next/cache'
 
+import { readPrecomputedFacets } from './discover-facets-store'
 import { readDiscoverMeta, withDb } from './snapshot'
 
 /** 发现页数据层:库内组合筛选(语言/主题/Star 档/创建时间/排序)。
@@ -153,10 +154,13 @@ export async function discoverQuery(f: DiscoverFilters): Promise<DiscoverRow[]> 
   return discoverFiltered(f)
 }
 
-/** 筛选项(语言/主题 Top 榜):全库统计,与结果集无关(选项稳定不闪)。 */
+/** 筛选项(语言/主题 Top 榜):读预计算行(OOM 批④,零扫描);
+ *  行不存在/超龄(>24h)/损坏 → 回落全量扫描(行为不劣化,宁可慢不可错)。 */
 export async function discoverFacets(): Promise<{ languages: Array<[string, number]>; topics: Array<[string, number]> }> {
   'use cache'
   cacheLife({ stale: 300, revalidate: 1800, expire: 7200 })
+  const precomputed = await readPrecomputedFacets()
+  if (precomputed) return precomputed
   const ok = await withDb(async (sql) => {
     const rows = await sql`
       SELECT it->>'language' AS lang,

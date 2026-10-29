@@ -1,6 +1,7 @@
 import { BOARD_META, BOARD_ORDER, getBoardData } from './boards'
 import type { BoardSlug } from './boards'
 import { prefillRepoDescs } from './descfill'
+import { precomputeDiscoverFacets } from './discover-facets-store'
 import { BOARD_SLUGS, FACET_LANGUAGES } from './facet'
 import { sendMilestonePushes } from './push'
 import { savePersistedBoard } from './persist'
@@ -122,6 +123,15 @@ export async function syncAllBoards(
   }
 
   const pruned = await pruneOld()
+
+  // facets 预计算(2026-10-29 OOM 批④):榜单写完顺手把全库语言/主题 Top 榜物化成单行,
+  // 读路径消掉每次冷 miss 的全量 JSONB 扫描。失败不阻塞同步(读侧自动回落全量计算)。
+  let facetsOk: boolean | undefined
+  if (doBoards) {
+    const t0f = Date.now()
+    facetsOk = await precomputeDiscoverFacets()
+    console.error(`[sync] discover-facets ${facetsOk ? 'ok' : 'FAILED(读侧回落全量)'} ${Date.now() - t0f}ms`)
+  }
 
   // Web Push 跨线提醒:VAPID 未配置时零成本跳过;有订阅才逐个对账(每轮上限 300 发)。
   // 失败静默 —— 推送是馈赠,不是依赖。
