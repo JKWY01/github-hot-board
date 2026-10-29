@@ -195,8 +195,9 @@ let _running = 0
 const _waitQueue: Array<{ done: boolean; wake: (v: boolean) => void; timer: NodeJS.Timeout }> = []
 // 队列等待预算:排队超过 → 可控降级(空结果),不让请求无限堆积。3s=冷 miss P99(~1s)的 3 倍。
 const QUEUE_WAIT_BUDGET_MS = 3_000
-// 队列容量硬上限(评审四轮 P0-2):超出立即降级,不创建新的等待 Promise/计时器。
-// 50 = 2 在途 × 每查询 ~1s × 3s 预算窗口内的合理积压上界,超出即说明过载,快速失败优于深排队。
+// 队列容量硬上限(评审四轮 P0-2,六轮注记纠偏):超出立即降级,不创建新的等待 Promise/计时器。
+// QUEUE_MAX = 50 是未经生产压测校准的【暂定工程阈值】——不再为它补造数学依据;
+// 正式阈值待上线后结合实际到达率、查询耗时分布和业务允许的拒绝率确定。
 const QUEUE_MAX = 50
 const LONGTAIL_DEGRADED: DiscoverRow[] = []
 // 过载观测(评审四轮:降级要有明确状态与可观测计数,不伪装成正常查询)
@@ -209,6 +210,8 @@ async function acquireLongtailSlot(): Promise<'acquired' | 'budget-exceeded' | '
   }
   if (_waitQueue.length >= QUEUE_MAX) {
     _overloadStats.queueFullRejects++
+    // 生产监控采集(评审六轮 P1-4):应用进程内直接输出结构化日志,采样侧 grep 'ghb-overload' 汇总
+    console.error(JSON.stringify({ event: 'ghb-overload', kind: 'queue-full', running: _running, queued: _waitQueue.length, total: _overloadStats.queueFullRejects }))
     return 'budget-exceeded' // 立即降级,不创建等待者
   }
   return await new Promise<'acquired' | 'budget-exceeded'>((resolve) => {
@@ -228,6 +231,7 @@ async function acquireLongtailSlot(): Promise<'acquired' | 'budget-exceeded' | '
       const idx = _waitQueue.indexOf(waiter)
       if (idx >= 0) _waitQueue.splice(idx, 1)
       _overloadStats.budgetTimeouts++
+      console.error(JSON.stringify({ event: 'ghb-overload', kind: 'budget-timeout', running: _running, queued: _waitQueue.length - 1, total: _overloadStats.budgetTimeouts }))
       waiter.wake(false)
     }, QUEUE_WAIT_BUDGET_MS)
     _waitQueue.push(waiter)
