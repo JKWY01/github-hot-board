@@ -173,24 +173,93 @@ async function discoverQueryCached(f: DiscoverFilters): Promise<DiscoverRow[]> {
   return discoverFilteredUncached(f)
 }
 
+// ===== 长尾路径的三重资源边界(评审三轮 P0)=====
 // 长尾微缓存:Map<key,{at,rows}>,容量与年龄双帽——溢出/过期即逐出,绝不持久化
 const _ephemeral = new Map<string, { at: number; rows: DiscoverRow[] }>()
 const EPHEMERAL_TTL_MS = 30_000
 const EPHEMERAL_MAX = 500
+
+// single-flight:同键并发共享一个在途 Promise(评审三轮 P0-1)
+const _inflight = new Map<string, Promise<DiscoverRow[]>>()
+
+// 数据库并发硬上限(评审三轮 P0-2,最关键):信号量限制同时进行的昂贵长尾查询数。
+// MAX_CONCURRENT=2:与生产读池 max=5 对齐留余量——长尾最多占 2 条连接,
+// 榜单页/API/同步永远有连接可用,discover 不可能再掏空池。
+const MAX_LONGTAIL_CONCURRENT = 2
+let _running = 0
+const _waitQueue: Array<() => void> = []
+// 队列等待上限(评审三轮 P0-3):排队超过预算 → 可控降级(空结果,页面渲染"没有符合"),
+// 不让请求无限堆积。3s=冷 miss P99(实测 ~1s)的 3 倍余量。
+const QUEUE_WAIT_BUDGET_MS = 3_000
+const LONGTAIL_DEGRADED: DiscoverRow[] = []
+
+async function acquireLongtailSlot(): Promise<'acquired' | 'budget-exceeded'> {
+  if (_running < MAX_LONGTAIL_CONCURRENT) {
+    _running++
+    return 'acquired'
+  }
+  // 排队:带预算的等待
+  const ok = await new Promise<boolean>((resolve) => {
+    const entry = { resolve: (v: boolean) => resolve(v) }
+    _waitQueue.push(() => entry.resolve(true))
+    setTimeout(() => {
+      const idx = _waitQueue.indexOf(wake)
+      if (idx >= 0) {
+        _waitQueue.splice(idx, 1)
+        entry.resolve(false)
+      }
+    }, QUEUE_WAIT_BUDGET_MS)
+    const wake = () => entry.resolve(true)
+  })
+  if (!ok) return 'budget-exceeded'
+  // 槽位由 releaseLongtailSlot 转交时已 ++,此处不得重复计数
+  return 'acquired'
+}
+
+function releaseLongtailSlot(): void {
+  _running--
+  const next = _waitQueue.shift()
+  if (next) {
+    _running++
+    next()
+  }
+}
 
 async function discoverQueryEphemeral(f: DiscoverFilters): Promise<DiscoverRow[]> {
   const key = JSON.stringify([f.lang ?? null, f.topic ?? null, f.band ?? null, f.age ?? null, f.sort])
   const hit = _ephemeral.get(key)
   const now = Date.now()
   if (hit && now - hit.at < EPHEMERAL_TTL_MS) return hit.rows
-  const rows = await discoverFilteredUncached(f)
-  if (_ephemeral.size >= EPHEMERAL_MAX) {
-    // 最老逐出:Map 迭代序即插入序
-    const oldest = _ephemeral.keys().next().value
-    if (oldest !== undefined) _ephemeral.delete(oldest)
+  // single-flight:在途同键共享(并发 N 个同键 = 1 次打库)
+  const flight = _inflight.get(key)
+  if (flight) return flight
+  const exec = (async (): Promise<DiscoverRow[]> => {
+    const slot = await acquireLongtailSlot()
+    if (slot === 'budget-exceeded') return LONGTAIL_DEGRADED
+    try {
+      return await discoverFilteredUncached(f)
+    } finally {
+      releaseLongtailSlot()
+    }
+  })()
+  _inflight.set(key, exec)
+  try {
+    const rows = await exec
+    if (_ephemeral.size >= EPHEMERAL_MAX) {
+      // 最老逐出:Map 迭代序即插入序
+      const oldest = _ephemeral.keys().next().value
+      if (oldest !== undefined) _ephemeral.delete(oldest)
+    }
+    _ephemeral.set(key, { at: Date.now(), rows })
+    return rows
+  } finally {
+    _inflight.delete(key)
   }
-  _ephemeral.set(key, { at: now, rows })
-  return rows
+}
+
+/** 测试观察口(仅测试用,不触生产语义):当前在途长尾查询数 */
+export function __testOnlyLongtailState(): { running: number; queued: number; inflight: number } {
+  return { running: _running, queued: _waitQueue.length, inflight: _inflight.size }
 }
 
 /** 筛选项(语言/主题 Top 榜):读预计算行(OOM 批④,零扫描);

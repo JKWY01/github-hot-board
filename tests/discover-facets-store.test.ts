@@ -123,13 +123,18 @@ describe('precomputeDiscoverFacets', () => {
     expect(await precomputeDiscoverFacets()).toBe(false)
   })
 
-  it('DB 抛错(mockRejectedValue 真实抛)→ false(真实 withDb 内部 catch 返 undefined 的等价路径)', async () => {
-    mocks.withDb.mockRejectedValue(new Error('db gone'))
-    // precompute 自身不再包 try/catch:依赖 withDb 的"永不抛"契约,这里验证抛错会向上传播
-    // —— 真实 withDb 的 catch 在 lib/snapshot.ts 内,mock 层模拟其对外契约:永不抛。
-    // 故本用例改为:mock 按 withDb 契约返回 undefined 而非抛错(上一用例已覆盖 undefined)。
+  it('withDb 按契约返回 undefined(真实 withDb 内部 catch 的对外行为)→ false', async () => {
+    // 契约:lib/snapshot.ts 的 withDb 永不抛,catch 后返回 undefined。
+    // (原版先 mockRejectedValue 又立即 mockResolvedValue 覆盖,实际测的是 undefined——名不副实,已按评审三轮修正命名与实现。)
     mocks.withDb.mockResolvedValue(undefined)
     expect(await precomputeDiscoverFacets()).toBe(false)
+  })
+
+  it('withDb 违约真实抛错 → 异常向上传播(precompute 无自吞 catch,同步层可见失败)', async () => {
+    // 这是"真实异常"用例:若未来 withDb 契约改变开始抛错,precompute 不会静默 false,
+    // 而是把异常交给 sync 层——失败可见性优于静默。
+    mocks.withDb.mockRejectedValue(new Error('db gone'))
+    await expect(precomputeDiscoverFacets()).rejects.toThrow('db gone')
   })
 
   it('落行使用保留 key __discover_facets__(不与真实榜单键冲突)', async () => {

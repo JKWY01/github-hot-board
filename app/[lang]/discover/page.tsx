@@ -87,9 +87,11 @@ export default async function DiscoverPage({
   let rows: Awaited<ReturnType<typeof discoverQuery>> = []
   let facets: Awaited<ReturnType<typeof discoverFacets>> = { languages: [], topics: [] }
   let degraded = false
-  // 非法参数短路:rows 留空(页面自然渲染"没有符合条件的仓库"),facets 照常(有独立缓存),
-  // 不调用 discoverQuery → 不产生 'use cache' 键 → 拒绝类请求对缓存键空间零贡献。
-  // facets 照常的原因:筛选 chips 是 UI 导航,非法参数访客也需要看到合法选项。
+  // 拒绝类短路(评审二轮+三轮口径校准):
+  // ① 不调用 discoverQuery() → 不创建该查询的持久缓存条目(键空间零膨胀);
+  // ② 仍调用 discoverFacets() → 筛选项是 UI 导航(访客需要看到合法选项);
+  //    注意:discoverFacets() 在冷缓存或预计算回退时仍可能访问 DB(不是绝对零 DB 访问,
+  //    但热态走 tag 缓存 ~1-2ms,见 discover-facets-store.ts)。
   const invalidParams = pick(sp, 'lang') !== undefined && langF === undefined
     || pick(sp, 'topic') !== undefined && topicF === undefined
   try {
