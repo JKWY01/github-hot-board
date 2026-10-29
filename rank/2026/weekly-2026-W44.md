@@ -5,31 +5,31 @@
 
 | # | 项目 | 累计 Star | 本周新增 Star | 简介 |
 |---|---|---|---|---|
-| 1 | [morluto/rea](https://git.vaiox.xyz/zh/repo/morluto/rea) | 403.7k | 30.7k |  |
-| 2 | [debpalash/VoiceStudio](https://git.vaiox.xyz/zh/repo/debpalash/VoiceStudio) | 93.3k | 10.0k |  |
-| 3 | [cloudflare/security-audit-skill](https://git.vaiox.xyz/zh/repo/cloudflare/security-audit-skill) | 51.9k | 9.8k |  |
+| 1 | [morluto/rea](https://git.vaiox.xyz/zh/repo/morluto/rea) | 407.6k | 34.5k |  |
+| 2 | [debpalash/VoiceStudio](https://git.vaiox.xyz/zh/repo/debpalash/VoiceStudio) | 94.2k | 11.0k |  |
+| 3 | [cloudflare/security-audit-skill](https://git.vaiox.xyz/zh/repo/cloudflare/security-audit-skill) | 52.7k | 10.7k |  |
 | 4 | [Gathin23/cleanyourtv](https://git.vaiox.xyz/zh/repo/Gathin23/cleanyourtv) | 37.6k | 9.8k |  |
-| 5 | [pbakaus/impeccable](https://git.vaiox.xyz/zh/repo/pbakaus/impeccable) | 93.3k | 7.8k |  |
-| 6 | [deepseek-ai/deepseek-harness](https://git.vaiox.xyz/zh/repo/deepseek-ai/deepseek-harness) | 265.1k | 5.7k |  |
-| 7 | [Zagitta/gpu-unlock](https://git.vaiox.xyz/zh/repo/Zagitta/gpu-unlock) | 8.5k | 5.6k |  |
-| 8 | [stablyai/orca](https://git.vaiox.xyz/zh/repo/stablyai/orca) | 109.3k | 5.5k |  |
-| 9 | [Ebony-Vinyl/dsh-our-free-model](https://git.vaiox.xyz/zh/repo/Ebony-Vinyl/dsh-our-free-model) | 44.2k | 5.1k |  |
-| 10 | [affaan-m/ECC](https://git.vaiox.xyz/zh/repo/affaan-m/ECC) | 291.9k | 4.6k |  |
-| 11 | [DietrichGebert/ponytail](https://git.vaiox.xyz/zh/repo/DietrichGebert/ponytail) | 179.4k | 4.6k |  |
-| 12 | [TauricResearch/TradingAgents](https://git.vaiox.xyz/zh/repo/TauricResearch/TradingAgents) | 118.0k | 4.6k |  |
-| 13 | [Panniantong/Agent-Reach](https://git.vaiox.xyz/zh/repo/Panniantong/Agent-Reach) | 105.8k | 4.4k |  |
-| 14 | [mattpocock/skills](https://git.vaiox.xyz/zh/repo/mattpocock/skills) | 305.9k | 4.1k |  |
-| 15 | [Graphify-Labs/graphify](https://git.vaiox.xyz/zh/repo/Graphify-Labs/graphify) | 138.0k | 4.1k |  |
-| 16 | [heygen-com/hyperframes](https://git.vaiox.xyz/zh/repo/heygen-com/hyperframes) | 74.9k | 4.1k |  |
-| 17 | [elayadesign/ai-design-skills](https://git.vaiox.xyz/zh/repo/elayadesign/ai-design-skills) | 7.1k | 4.0k |  |
-| 18 | [Nutlope/hallmark](https://git.vaiox.xyz/zh/repo/Nutlope/hallmark) | 35.2k | 3.8k |  |
-| 19 | [peach-mitao/peach](https://git.vaiox.xyz/zh/repo/peach-mitao/peach) | 12.0k | 3.7k |  |
-| 20 | [hugohe3/ppt-master](https://git.vaiox.xyz/zh/repo/hugohe3/ppt-master) | 70.4k | 3.7k |  |
-| 21 | [obra/superpowers](https://git.vaiox.xyz/zh/repo/obra/superpowers) | 307.6k | 3.4k |  |
-| 22 | [ai-job-search-dev/ai-job-search](https://git.vaiox.xyz/zh/repo/ai-job-search-dev/ai-job-search) | 67.2k | 3.2k |  |
-| 23 | [multica-ai/andrej-karpathy-skills](https://git.vaiox.xyz/zh/repo/multica-ai/andrej-karpathy-skills) | 226.1k | 3.1k |  |
-| 24 | [Leonxlnx/taste-skill](https://git.vaiox.xyz/zh/repo/Leonxlnx/taste-skill) | 104.7k | 3.1k |  |
-| 25 | [tt-a1i/archify](https://git.vaiox.xyz/zh/repo/tt-a1i/archify) | 91.1k | 2.8k |  |
+| 5 | [pbakaus/impeccable](https://git.vaiox.xyz/zh/repo/pbakaus/impeccable) | 95.2k | 9.7k |  |
+| 6 | [deepseek-ai/deepseek-harness](https://git.vaiox.xyz/zh/repo/deepseek-ai/deepseek-harness) | 265.8k | 6.3k |  |
+| 7 | [stablyai/orca](https://git.vaiox.xyz/zh/repo/stablyai/orca) | 110.1k | 6.3k |  |
+| 8 | [Zagitta/gpu-unlock](https://git.vaiox.xyz/zh/repo/Zagitta/gpu-unlock) | 8.5k | 5.6k |  |
+| 9 | [affaan-m/ECC](https://git.vaiox.xyz/zh/repo/affaan-m/ECC) | 292.7k | 5.4k |  |
+| 10 | [DietrichGebert/ponytail](https://git.vaiox.xyz/zh/repo/DietrichGebert/ponytail) | 180.1k | 5.3k |  |
+| 11 | [Ebony-Vinyl/dsh-our-free-model](https://git.vaiox.xyz/zh/repo/Ebony-Vinyl/dsh-our-free-model) | 44.2k | 5.1k |  |
+| 12 | [Panniantong/Agent-Reach](https://git.vaiox.xyz/zh/repo/Panniantong/Agent-Reach) | 106.3k | 4.9k |  |
+| 13 | [TauricResearch/TradingAgents](https://git.vaiox.xyz/zh/repo/TauricResearch/TradingAgents) | 118.3k | 4.9k |  |
+| 14 | [mattpocock/skills](https://git.vaiox.xyz/zh/repo/mattpocock/skills) | 306.6k | 4.8k |  |
+| 15 | [Graphify-Labs/graphify](https://git.vaiox.xyz/zh/repo/Graphify-Labs/graphify) | 138.6k | 4.7k |  |
+| 16 | [heygen-com/hyperframes](https://git.vaiox.xyz/zh/repo/heygen-com/hyperframes) | 75.4k | 4.7k |  |
+| 17 | [obra/superpowers](https://git.vaiox.xyz/zh/repo/obra/superpowers) | 308.5k | 4.3k |  |
+| 18 | [hugohe3/ppt-master](https://git.vaiox.xyz/zh/repo/hugohe3/ppt-master) | 70.8k | 4.1k |  |
+| 19 | [elayadesign/ai-design-skills](https://git.vaiox.xyz/zh/repo/elayadesign/ai-design-skills) | 7.1k | 4.0k |  |
+| 20 | [Leonxlnx/taste-skill](https://git.vaiox.xyz/zh/repo/Leonxlnx/taste-skill) | 105.5k | 3.9k |  |
+| 21 | [Nutlope/hallmark](https://git.vaiox.xyz/zh/repo/Nutlope/hallmark) | 35.2k | 3.8k |  |
+| 22 | [peach-mitao/peach](https://git.vaiox.xyz/zh/repo/peach-mitao/peach) | 12.0k | 3.7k |  |
+| 23 | [multica-ai/andrej-karpathy-skills](https://git.vaiox.xyz/zh/repo/multica-ai/andrej-karpathy-skills) | 226.4k | 3.5k |  |
+| 24 | [ai-job-search-dev/ai-job-search](https://git.vaiox.xyz/zh/repo/ai-job-search-dev/ai-job-search) | 67.5k | 3.4k |  |
+| 25 | [sindresorhus/awesome](https://git.vaiox.xyz/zh/repo/sindresorhus/awesome) | 526.8k | 3.2k |  |
 
 ---
 

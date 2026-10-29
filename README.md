@@ -11,44 +11,44 @@
 
 | # | 项目 | 累计 Star | 本周新增 Star |
 |---|---|---|---|
-| 1 | [morluto/rea](https://git.vaiox.xyz/zh/repo/morluto/rea) | 403.7k | 30.7k |
-| 2 | [debpalash/VoiceStudio](https://git.vaiox.xyz/zh/repo/debpalash/VoiceStudio) | 93.3k | 10.0k |
-| 3 | [cloudflare/security-audit-skill](https://git.vaiox.xyz/zh/repo/cloudflare/security-audit-skill) | 51.9k | 9.8k |
+| 1 | [morluto/rea](https://git.vaiox.xyz/zh/repo/morluto/rea) | 407.6k | 34.5k |
+| 2 | [debpalash/VoiceStudio](https://git.vaiox.xyz/zh/repo/debpalash/VoiceStudio) | 94.2k | 11.0k |
+| 3 | [cloudflare/security-audit-skill](https://git.vaiox.xyz/zh/repo/cloudflare/security-audit-skill) | 52.7k | 10.7k |
 | 4 | [Gathin23/cleanyourtv](https://git.vaiox.xyz/zh/repo/Gathin23/cleanyourtv) | 37.6k | 9.8k |
-| 5 | [pbakaus/impeccable](https://git.vaiox.xyz/zh/repo/pbakaus/impeccable) | 93.3k | 7.8k |
-| 6 | [deepseek-ai/deepseek-harness](https://git.vaiox.xyz/zh/repo/deepseek-ai/deepseek-harness) | 265.1k | 5.7k |
-| 7 | [Zagitta/gpu-unlock](https://git.vaiox.xyz/zh/repo/Zagitta/gpu-unlock) | 8.5k | 5.6k |
-| 8 | [stablyai/orca](https://git.vaiox.xyz/zh/repo/stablyai/orca) | 109.3k | 5.5k |
-| 9 | [Ebony-Vinyl/dsh-our-free-model](https://git.vaiox.xyz/zh/repo/Ebony-Vinyl/dsh-our-free-model) | 44.2k | 5.1k |
-| 10 | [affaan-m/ECC](https://git.vaiox.xyz/zh/repo/affaan-m/ECC) | 291.9k | 4.6k |
+| 5 | [pbakaus/impeccable](https://git.vaiox.xyz/zh/repo/pbakaus/impeccable) | 95.2k | 9.7k |
+| 6 | [deepseek-ai/deepseek-harness](https://git.vaiox.xyz/zh/repo/deepseek-ai/deepseek-harness) | 265.8k | 6.3k |
+| 7 | [stablyai/orca](https://git.vaiox.xyz/zh/repo/stablyai/orca) | 110.1k | 6.3k |
+| 8 | [Zagitta/gpu-unlock](https://git.vaiox.xyz/zh/repo/Zagitta/gpu-unlock) | 8.5k | 5.6k |
+| 9 | [affaan-m/ECC](https://git.vaiox.xyz/zh/repo/affaan-m/ECC) | 292.7k | 5.4k |
+| 10 | [DietrichGebert/ponytail](https://git.vaiox.xyz/zh/repo/DietrichGebert/ponytail) | 180.1k | 5.3k |
 
 **本月飙升 Top 10** · [打开完整榜单 →](https://git.vaiox.xyz/zh/boards/monthly)
 
 | # | 项目 | 累计 Star | 本月新增 Star |
 |---|---|---|---|
-| 1 | [morluto/rea](https://git.vaiox.xyz/zh/repo/morluto/rea) | 403.7k | 37.9k |
+| 1 | [morluto/rea](https://git.vaiox.xyz/zh/repo/morluto/rea) | 407.6k | 41.7k |
 | 2 | [Gathin23/cleanyourtv](https://git.vaiox.xyz/zh/repo/Gathin23/cleanyourtv) | 37.6k | 13.7k |
-| 3 | [cloudflare/security-audit-skill](https://git.vaiox.xyz/zh/repo/cloudflare/security-audit-skill) | 51.9k | 12.5k |
-| 4 | [debpalash/VoiceStudio](https://git.vaiox.xyz/zh/repo/debpalash/VoiceStudio) | 93.3k | 11.6k |
-| 5 | [peach-mitao/peach](https://git.vaiox.xyz/zh/repo/peach-mitao/peach) | 12.0k | 9.8k |
-| 6 | [pbakaus/impeccable](https://git.vaiox.xyz/zh/repo/pbakaus/impeccable) | 93.3k | 8.3k |
-| 7 | [Ebony-Vinyl/dsh-our-free-model](https://git.vaiox.xyz/zh/repo/Ebony-Vinyl/dsh-our-free-model) | 44.2k | 7.5k |
-| 8 | [deepseek-ai/deepseek-harness](https://git.vaiox.xyz/zh/repo/deepseek-ai/deepseek-harness) | 265.1k | 7.0k |
-| 9 | [stablyai/orca](https://git.vaiox.xyz/zh/repo/stablyai/orca) | 109.3k | 6.6k |
-| 10 | [DietrichGebert/ponytail](https://git.vaiox.xyz/zh/repo/DietrichGebert/ponytail) | 179.4k | 6.0k |
+| 3 | [cloudflare/security-audit-skill](https://git.vaiox.xyz/zh/repo/cloudflare/security-audit-skill) | 52.7k | 13.4k |
+| 4 | [debpalash/VoiceStudio](https://git.vaiox.xyz/zh/repo/debpalash/VoiceStudio) | 94.2k | 12.5k |
+| 5 | [pbakaus/impeccable](https://git.vaiox.xyz/zh/repo/pbakaus/impeccable) | 95.2k | 10.2k |
+| 6 | [peach-mitao/peach](https://git.vaiox.xyz/zh/repo/peach-mitao/peach) | 12.0k | 9.8k |
+| 7 | [deepseek-ai/deepseek-harness](https://git.vaiox.xyz/zh/repo/deepseek-ai/deepseek-harness) | 265.8k | 7.6k |
+| 8 | [Ebony-Vinyl/dsh-our-free-model](https://git.vaiox.xyz/zh/repo/Ebony-Vinyl/dsh-our-free-model) | 44.2k | 7.5k |
+| 9 | [stablyai/orca](https://git.vaiox.xyz/zh/repo/stablyai/orca) | 110.1k | 7.4k |
+| 10 | [DietrichGebert/ponytail](https://git.vaiox.xyz/zh/repo/DietrichGebert/ponytail) | 180.1k | 6.8k |
 
 **累计 Star Top 10** · [打开完整榜单 →](https://git.vaiox.xyz/zh/boards/overall)
 
 | # | 项目 | 累计 Star | 新增 |
 |---|---|---|---|
-| 1 | [codecrafters-io/build-your-own-x](https://git.vaiox.xyz/zh/repo/codecrafters-io/build-your-own-x) | 557.0k | — |
-| 2 | [sindresorhus/awesome](https://git.vaiox.xyz/zh/repo/sindresorhus/awesome) | 526.4k | — |
-| 3 | [public-apis/public-apis](https://git.vaiox.xyz/zh/repo/public-apis/public-apis) | 493.1k | — |
-| 4 | [freeCodeCamp/freeCodeCamp](https://git.vaiox.xyz/zh/repo/freeCodeCamp/freeCodeCamp) | 458.1k | — |
-| 5 | [morluto/rea](https://git.vaiox.xyz/zh/repo/morluto/rea) | 403.7k | — |
-| 6 | [EbookFoundation/free-programming-books](https://git.vaiox.xyz/zh/repo/EbookFoundation/free-programming-books) | 400.4k | — |
-| 7 | [openclaw/openclaw](https://git.vaiox.xyz/zh/repo/openclaw/openclaw) | 393.3k | — |
-| 8 | [donnemartin/system-design-primer](https://git.vaiox.xyz/zh/repo/donnemartin/system-design-primer) | 376.0k | — |
+| 1 | [codecrafters-io/build-your-own-x](https://git.vaiox.xyz/zh/repo/codecrafters-io/build-your-own-x) | 557.4k | — |
+| 2 | [sindresorhus/awesome](https://git.vaiox.xyz/zh/repo/sindresorhus/awesome) | 526.8k | — |
+| 3 | [public-apis/public-apis](https://git.vaiox.xyz/zh/repo/public-apis/public-apis) | 493.3k | — |
+| 4 | [freeCodeCamp/freeCodeCamp](https://git.vaiox.xyz/zh/repo/freeCodeCamp/freeCodeCamp) | 458.2k | — |
+| 5 | [morluto/rea](https://git.vaiox.xyz/zh/repo/morluto/rea) | 407.6k | — |
+| 6 | [EbookFoundation/free-programming-books](https://git.vaiox.xyz/zh/repo/EbookFoundation/free-programming-books) | 400.5k | — |
+| 7 | [openclaw/openclaw](https://git.vaiox.xyz/zh/repo/openclaw/openclaw) | 393.4k | — |
+| 8 | [donnemartin/system-design-primer](https://git.vaiox.xyz/zh/repo/donnemartin/system-design-primer) | 376.1k | — |
 | 9 | [nilbuild/developer-roadmap](https://git.vaiox.xyz/zh/repo/nilbuild/developer-roadmap) | 370.7k | — |
 | 10 | [jwasham/coding-interview-university](https://git.vaiox.xyz/zh/repo/jwasham/coding-interview-university) | 363.5k | — |
 
