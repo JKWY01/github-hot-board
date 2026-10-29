@@ -155,13 +155,15 @@ async function discoverFilteredUncached(f: DiscoverFilters): Promise<DiscoverRow
  *     键空间再大也不产生持久缓存文件——这是"格式校验≠键数量收敛"缺口的真解;
  *  ③【拒绝类】上层已短路,不进本函数。
  *  常用判定用 f.facetsRef(调用方传入的 Top 榜引用,page 层已并行拿到,零额外查询)。 */
-export async function discoverQuery(f: DiscoverFilters & { facetsRef?: { languages: Array<[string, number]>; topics: Array<[string, number]> } }): Promise<DiscoverRow[]> {
+export type DiscoverQueryResult = { rows: DiscoverRow[]; status: 'ok' | 'overloaded' }
+
+export async function discoverQuery(f: DiscoverFilters & { facetsRef?: { languages: Array<[string, number]>; topics: Array<[string, number]> } }): Promise<DiscoverQueryResult> {
   const inTopLang = !f.lang || (f.facetsRef?.languages ?? []).some(([l]) => l.toLowerCase() === f.lang)
   const inTopTopic = !f.topic || (f.facetsRef?.topics ?? []).some(([t]) => t.toLowerCase() === f.topic)
   if (inTopLang && inTopTopic) {
     // 持久缓存路径(facetsRef 是引用不参与序列化键——需剥离,否则整个 Top 榜进键)
     const { facetsRef: _omit, ...cacheable } = f
-    return discoverQueryCached(cacheable)
+    return { rows: await discoverQueryCached(cacheable), status: 'ok' }
   }
   // 长尾路径:直查库,进程内 30s 微缓存挡同键抖动(不落盘、重启即清)
   return discoverQueryEphemeral(f)
@@ -180,7 +182,7 @@ const EPHEMERAL_TTL_MS = 30_000
 const EPHEMERAL_MAX = 500
 
 // single-flight:同键并发共享一个在途 Promise(评审三轮 P0-1)
-const _inflight = new Map<string, Promise<[DiscoverRow[], boolean]>>()
+const _inflight = new Map<string, Promise<DiscoverQueryResult>>()
 
 // 数据库并发硬上限(评审三轮 P0,评审四轮重写):信号量限制同时进行的昂贵长尾查询数。
 // MAX_CONCURRENT=2:与生产读池 max=5 对齐留余量——长尾最多占 2 条连接/进程,
@@ -244,33 +246,38 @@ function releaseLongtailSlot(): void {
   }
 }
 
-/** 测试观察口:信号量与过载状态(仅测试/监控用) */
+/** 过载状态观察口(评审五轮⑤:计数≠监控,需采集通道)。
+ *  生产监控方案(随发版上线):①samples.sh 每 10 分钟采样时经 node -e 调本函数,追加到
+ *  observe/samples.log 新列(queueFullRejects/budgetTimeouts 差值=该窗口过载次数);
+ *  ②阈值告警:连续 3 个窗口 budgetTimeouts 增量 >100 → 评审/用户告警(=长尾持续过载);
+ *  ③页面 '查询繁忙' 渲染次数另由 nginx $request_time+页面特征字采样(观察 p99 尾部)。 */
 export function __testOnlyLongtailState(): { running: number; queued: number; inflight: number; queueFullRejects: number; budgetTimeouts: number } {
   return { running: _running, queued: _waitQueue.length, inflight: _inflight.size, queueFullRejects: _overloadStats.queueFullRejects, budgetTimeouts: _overloadStats.budgetTimeouts }
 }
 
-async function discoverQueryEphemeral(f: DiscoverFilters): Promise<DiscoverRow[]> {
+async function discoverQueryEphemeral(f: DiscoverFilters): Promise<DiscoverQueryResult> {
   const key = JSON.stringify([f.lang ?? null, f.topic ?? null, f.band ?? null, f.age ?? null, f.sort])
   const hit = _ephemeral.get(key)
   const now = Date.now()
-  if (hit && now - hit.at < EPHEMERAL_TTL_MS) return hit.rows
+  if (hit && now - hit.at < EPHEMERAL_TTL_MS) return { rows: hit.rows, status: 'ok' }
   // single-flight:在途同键共享(并发 N 个同键 = 1 次打库)
   const flight = _inflight.get(key)
-  if (flight) return flight.then(([rows]) => rows)
+  if (flight) return flight
   // exec 返回 [rows, degraded]:降级与结果分离(评审四轮 P1-2 修正——
   // 原实现降级空数组也被无条件写进 _ephemeral,30s 内同键命中空结果不再真查)
-  const exec = (async (): Promise<[DiscoverRow[], boolean]> => {
+  const exec = (async (): Promise<DiscoverQueryResult> => {
     const slot = await acquireLongtailSlot()
-    if (slot !== 'acquired') return [LONGTAIL_DEGRADED, true] // 降级(预算超时或队列满)
+    if (slot !== 'acquired') return { rows: LONGTAIL_DEGRADED, status: 'overloaded' } // 降级(预算超时或队列满)
     try {
-      return [await discoverFilteredUncached(f), false]
+      return { rows: await discoverFilteredUncached(f), status: 'ok' }
     } finally {
       releaseLongtailSlot()
     }
   })()
   _inflight.set(key, exec)
   try {
-    const [rows, degraded] = await exec
+    const { rows, status } = await exec
+    const degraded = status === 'overloaded'
     if (!degraded) {
       // 只有真实查询结果才进微缓存;降级不缓存,压力消退后同键立即真查
       if (_ephemeral.size >= EPHEMERAL_MAX) {
@@ -280,7 +287,8 @@ async function discoverQueryEphemeral(f: DiscoverFilters): Promise<DiscoverRow[]
       }
       _ephemeral.set(key, { at: Date.now(), rows })
     }
-    return rows
+    // 状态显式返回(评审五轮 P1:过载不再伪装成正常空结果,页面独立渲染繁忙提示)
+    return { rows, status: degraded ? 'overloaded' : 'ok' }
   } finally {
     _inflight.delete(key)
   }

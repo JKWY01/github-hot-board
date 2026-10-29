@@ -4,7 +4,7 @@ import type { Metadata } from 'next'
 import { connection } from 'next/server'
 
 import { isLocale } from '@/app/[lang]/dictionaries'
-import { discoverFacets, discoverQuery, type DiscoverFilters } from '@/lib/discover'
+import { discoverFacets, discoverQuery, type DiscoverFilters, type DiscoverRow } from '@/lib/discover'
 import { fmtNum } from '@/lib/format'
 import { LOCALES } from '@/lib/locales'
 import type { Locale } from '@/lib/types'
@@ -83,10 +83,13 @@ export default async function DiscoverPage({
   const sortF = pick(sp, 'sort') === 'gain' ? 'gain' : 'stars'
   const filters: DiscoverFilters = { lang: langF, topic: topicF, band: bandF, age: ageF, sort: sortF }
 
-  // 库不可达/超时时 fill 会 throw(discover-meta unavailable)——给降级卡,不裸 500
-  let rows: Awaited<ReturnType<typeof discoverQuery>> = []
+  // 库不可达/超时时 fill 会 throw(discover-meta unavailable)——给降级卡,不裸 500。
+  // 过载降级(评审五轮 P1):discoverQuery 显式返回 status='overloaded',
+  // 页面渲染独立繁忙提示,与"没有符合条件的仓库"(真查 0 行)严格区分——过载不再伪装成正常空结果。
+  let rows: DiscoverRow[] = []
   let facets: Awaited<ReturnType<typeof discoverFacets>> = { languages: [], topics: [] }
-  let degraded = false
+  let degraded = false      // 数据源不可用(throw)
+  let overloaded = false    // 长尾并发过载(预算超时/队列满,可控降级)
   // 拒绝类短路(评审二轮+三轮口径校准):
   // ① 不调用 discoverQuery() → 不创建该查询的持久缓存条目(键空间零膨胀);
   // ② 仍调用 discoverFacets() → 筛选项是 UI 导航(访客需要看到合法选项);
@@ -100,7 +103,9 @@ export default async function DiscoverPage({
     } else {
       // 先取 facets(预计算行直读,极快~1-2ms),作为常用参数判定的基准
       facets = await discoverFacets()
-      rows = await discoverQuery({ ...filters, facetsRef: facets })
+      const q = await discoverQuery({ ...filters, facetsRef: facets })
+      rows = q.rows
+      overloaded = q.status === 'overloaded'
     }
   } catch {
     degraded = true
@@ -154,6 +159,8 @@ export default async function DiscoverPage({
       <div className="mt-8">
         {degraded ? (
           <p className="py-14 text-center text-[13.5px] text-sub">{t.empty} ({lang === 'zh' ? '数据源暂不可用,稍后自愈' : 'data source briefly unavailable — it heals itself'})</p>
+        ) : overloaded ? (
+          <p className="py-14 text-center text-[13.5px] text-sub">{lang === 'zh' ? '查询繁忙,请稍后重试' : 'Search is busy right now — please retry shortly'}</p>
         ) : rows.length === 0 ? (
           <p className="card px-6 py-10 text-center text-[14px] text-sub">{t.empty}</p>
         ) : (

@@ -51,15 +51,17 @@ beforeEach(() => {
 describe('discoverQuery 行为边界(真实调用)', () => {
   it('Ⅰ 常用组合(Top 榜内)→ 走 discoverFiltered(withDb 被调)', async () => {
     mocks.withDb.mockImplementation(async (fn: (sql: unknown) => Promise<unknown>) => fn(fakeSql()) as never)
-    const rows = await discoverQuery({ ...filters({ lang: 'typescript', topic: 'ai' }), facetsRef: TOP_FACETS })
-    expect(Array.isArray(rows)).toBe(true)
+    const q = await discoverQuery({ ...filters({ lang: 'typescript', topic: 'ai' }), facetsRef: TOP_FACETS })
+    expect(q.status).toBe('ok')
+    expect(Array.isArray(q.rows)).toBe(true)
     expect(mocks.withDb).toHaveBeenCalledTimes(1)
   })
 
   it('Ⅱ 长尾组合 → 同样完成查询(withDb 被调),且可重复(微缓存命中后第二次不再打库)', async () => {
     mocks.withDb.mockImplementation(async (fn: (sql: unknown) => Promise<unknown>) => fn(fakeSql()) as never)
     const tail = { lang: 'ziglang', topic: 'reverse-tunnel', sort: 'stars' as const }
-    await discoverQuery({ ...filters(tail), facetsRef: TOP_FACETS })
+    const q1 = await discoverQuery({ ...filters(tail), facetsRef: TOP_FACETS })
+    expect(q1.status).toBe('ok')
     expect(mocks.withDb).toHaveBeenCalledTimes(1)
     await discoverQuery({ ...filters(tail), facetsRef: TOP_FACETS })
     expect(mocks.withDb).toHaveBeenCalledTimes(1) // 微缓存命中,零新查询
@@ -77,6 +79,7 @@ describe('discoverQuery 行为边界(真实调用)', () => {
       discoverQuery({ ...filters(tail), facetsRef: TOP_FACETS })))
     expect(dbCalls).toBe(1)
     expect(results.length).toBe(20)
+    for (const r of results) expect(r.status).toBe('ok')
   })
 
   it('Ⅳ 不同键并发 10,DB 并发帽 2:同时在途查询数从不超过 2', async () => {
@@ -109,9 +112,10 @@ describe('discoverQuery 行为边界(真实调用)', () => {
     const reqs = Array.from({ length: 5 }, (_, i) =>
       discoverQuery({ ...filters({ lang: 'vala', topic: `q-${stamp}-${i}`, sort: 'stars' as const }), facetsRef: TOP_FACETS }))
     const results = await Promise.all(reqs)
-    // 2 个占槽的最终成功;3 个排队的超时降级(空结果)
-    const degraded = results.filter(r => Array.isArray(r) && r.length === 0)
-    expect(degraded.length).toBeGreaterThanOrEqual(2)
+    // 2 个占槽的最终成功;3 个排队的超时降级——状态显式 'overloaded'(评审五轮:不再伪装空结果)
+    const degradedResults = results.filter(r => r.status === 'overloaded')
+    expect(degradedResults.length).toBeGreaterThanOrEqual(2)
+    for (const r of degradedResults) expect(Array.isArray(r.rows) && r.rows.length === 0).toBe(true)
     // 过载观测:预算超时计数真实发生
     expect(__testOnlyLongtailState().budgetTimeouts).toBeGreaterThanOrEqual(2)
     // 全部落定后资源归零(超时项不能滞留队列被后续 release 消费)
@@ -120,6 +124,35 @@ describe('discoverQuery 行为边界(真实调用)', () => {
     expect(state.queued).toBe(0)
     expect(state.inflight).toBe(0)
   }, 20000)
+
+  it('Ⅴ 队列满:压满 50 等待者后,新请求立即 overloaded 且队列不再增长(评审五轮补充)', async () => {
+    // 占 2 槽 + 塞满 50 队列(全部长挂)→ 第 53+ 个请求应立即 overloaded(queueFullRejects++)
+    mocks.withDb.mockImplementation(async (fn: (sql: unknown) => Promise<unknown>) => {
+      await new Promise(r => setTimeout(r, 8000)) // 长挂,保持槽与队列占满
+      return fn(fakeSql()) as never
+    })
+    const stamp = Date.now()
+    const before = __testOnlyLongtailState().queueFullRejects
+    // 前 52 个:2 占槽+50 排队(都在途)
+    const first = Array.from({ length: 52 }, (_, i) =>
+      discoverQuery({ ...filters({ lang: 'vala', topic: `full-${stamp}-${i}`, sort: 'stars' as const }), facetsRef: TOP_FACETS }))
+    await new Promise(r => setTimeout(r, 300)) // 等它们全部入队
+    const mid = __testOnlyLongtailState()
+    expect(mid.running).toBe(2)
+    expect(mid.queued).toBe(50) // 队列恰好帽满
+    // 第 53+ 个:立即降级,队列不增长
+    const rejects = Array.from({ length: 5 }, (_, i) =>
+      discoverQuery({ ...filters({ lang: 'vala', topic: `rej-${stamp}-${i}`, sort: 'stars' as const }), facetsRef: TOP_FACETS }))
+    const rejResults = await Promise.all(rejects) // 应立即返回(不等到 8s)
+    for (const r of rejResults) {
+      expect(r.status).toBe('overloaded')
+      expect(r.rows.length).toBe(0)
+    }
+    expect(__testOnlyLongtailState().queueFullRejects).toBeGreaterThan(before)
+    expect(__testOnlyLongtailState().queued).toBe(50) // 队列没被第 53+ 撑大
+    // 清理:等 first 落定
+    await Promise.all(first).catch(() => {})
+  }, 30000)
 
   it('Ⅳc 降级不进微缓存:占满槽制造真实排队超时,恢复后同键必须重新查库(withDb 计数增加)', async () => {
     let slow = true
@@ -136,15 +169,16 @@ describe('discoverQuery 行为边界(真实调用)', () => {
     // 目标键在队列中等待 → 超时降级
     const target = { lang: 'vala', topic: `dg-${stamp}`, sort: 'stars' as const }
     const r1 = await discoverQuery({ ...filters(target), facetsRef: TOP_FACETS })
-    expect(Array.isArray(r1) && r1.length === 0).toBe(true) // 降级空结果
+    expect(r1.status).toBe('overloaded') // 显式过载状态,不再是空数组伪装
+    expect(r1.rows.length).toBe(0)
     const callsAfterDegrade = dbCalls
     // 恢复
     slow = false
     await Promise.all(occupy)
     const r2 = await discoverQuery({ ...filters(target), facetsRef: TOP_FACETS })
-    // 降级未进缓存:恢复后同键重新打库(计数增加),且拿到真实查询结果
+    // 降级未进缓存:恢复后同键重新打库(计数增加),调用者获得 ok 状态+真实结果
     expect(dbCalls).toBeGreaterThan(callsAfterDegrade)
-    void r2
+    expect(r2.status).toBe('ok')
     expect(__testOnlyLongtailState().running).toBe(0)
   }, 25000)
 })
