@@ -231,7 +231,8 @@ async function acquireLongtailSlot(): Promise<'acquired' | 'budget-exceeded' | '
       const idx = _waitQueue.indexOf(waiter)
       if (idx >= 0) _waitQueue.splice(idx, 1)
       _overloadStats.budgetTimeouts++
-      console.error(JSON.stringify({ event: 'ghb-overload', kind: 'budget-timeout', running: _running, queued: _waitQueue.length - 1, total: _overloadStats.budgetTimeouts }))
+      // queued = 摘除自身后的实际队列长度(七轮①:此前 length-1 会持续低估排队数)
+      console.error(JSON.stringify({ event: 'ghb-overload', kind: 'budget-timeout', running: _running, queued: _waitQueue.length, total: _overloadStats.budgetTimeouts }))
       waiter.wake(false)
     }, QUEUE_WAIT_BUDGET_MS)
     _waitQueue.push(waiter)
@@ -250,11 +251,12 @@ function releaseLongtailSlot(): void {
   }
 }
 
-/** 过载状态观察口(评审五轮⑤:计数≠监控,需采集通道)。
- *  生产监控方案(随发版上线):①samples.sh 每 10 分钟采样时经 node -e 调本函数,追加到
- *  observe/samples.log 新列(queueFullRejects/budgetTimeouts 差值=该窗口过载次数);
- *  ②阈值告警:连续 3 个窗口 budgetTimeouts 增量 >100 → 评审/用户告警(=长尾持续过载);
- *  ③页面 '查询繁忙' 渲染次数另由 nginx $request_time+页面特征字采样(观察 p99 尾部)。 */
+/** 过载状态观察口(评审七轮②同步:实际部署方式,非 node -e 跨进程方案——
+ *  _overloadStats 是服务进程内存状态,跨进程读只会读到零,已弃用)。
+ *  实际链路:过载事件发生时【本进程】console.error 结构化日志(ghb-overload)
+ *  → docker json log → HK observe/sample.sh v3 每 10 分钟 grep -c 汇总为 ovld10m 列。
+ *  告警阈值(候选,待基线校准):连续 3 窗口 budgetTimeouts 增量>100;queueFullRejects 独立规则待补。
+ *  链路验证:隔离环境需真实触发一次过载,确认日志入 docker log 且 ovld10m 递增(待办)。 */
 export function __testOnlyLongtailState(): { running: number; queued: number; inflight: number; queueFullRejects: number; budgetTimeouts: number } {
   return { running: _running, queued: _waitQueue.length, inflight: _inflight.size, queueFullRejects: _overloadStats.queueFullRejects, budgetTimeouts: _overloadStats.budgetTimeouts }
 }
