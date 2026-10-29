@@ -48,6 +48,33 @@ const AGE_SQL: Record<NonNullable<DiscoverFilters['age']>, string> = {
   year: "now() - interval '365 days'",
 }
 
+/** lang 参数边界校验(2026-10-29 OOM 事故批,独立提交①)。
+ *  生产事故链:ClaudeBot 用无界 topic/lang 组合打 /discover(每 miss=全量 JSONB 展开+新缓存键),
+ *  限流只降速不封堵键空间。校验规则按外部评审三类拆分:
+ *  ①【拒绝】非法 lang:非字母串/超长(>24)/明显注入形态(含引号括号百分号)→ 返回 null,
+ *     上层直接短路,不进 'use cache'(拒绝类请求不产生缓存键=键空间有界);
+ *  ②【放行】合法长尾 lang:任何"形如语言名"的词都正常查询(库里没有就自然空结果,不 404)——
+ *     Top 榜是 UI 筛选选项,不是合法性边界,拿它当白名单会砍掉 SEO 长尾入口;
+ *  ③【既有枚举】band/age/sort 已在 page 层枚举匹配,非法值落默认,无需重复校验。
+ *  长度 24:GitHub 官方 languages 列表最长者(delphi/objc 类)远短于此,24 已宽裕。 */
+export function sanitizeDiscoverLang(raw: string | undefined): string | null | undefined {
+  if (!raw) return undefined
+  if (raw.length > 24) return null
+  if (!/^[a-zA-Z+#. -]+$/.test(raw)) return null
+  return raw
+}
+
+/** topic 参数边界校验(独立提交①,与 lang 同批)。
+ *  topic 是 GitHub 官方 topics 命名空间:[a-z0-9-](官方规则),长度上限 35(github 实际限制 50,收紧到 35 留余量)。
+ *  合法长尾 topic 全部放行(正常查询,空结果可缓存且键有界:字符集有界→组合有界);
+ *  大小写混合/下划线等变体 → null 拒绝(爬虫的笛卡尔积变体正是靠这些绕过缓存键)。 */
+export function sanitizeDiscoverTopic(raw: string | undefined): string | null | undefined {
+  if (!raw) return undefined
+  if (raw.length > 35) return null
+  if (!/^[a-z0-9-]+$/.test(raw)) return null
+  return raw
+}
+
 async function discoverFiltered(f: DiscoverFilters): Promise<DiscoverRow[]> {
   'use cache'
   cacheLife({ stale: 60, revalidate: 300, expire: 3600 })

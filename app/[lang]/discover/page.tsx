@@ -72,8 +72,12 @@ export default async function DiscoverPage({
   if (!isLocale(lang)) notFound()
   const t = T[lang]
 
-  const langF = pick(sp, 'lang')
-  const topicF = pick(sp, 'topic')
+  // 2026-10-29 OOM 批:参数边界在渲染入口收口(独立提交①配套)。
+  // sanitize 返回 null = 非法形态(注入/超长/非法字符):短路为空查询,
+  // 不进 'use cache'(拒绝类不产生缓存键)、不触发 DB;合法长尾照常全链路。
+  const { sanitizeDiscoverLang, sanitizeDiscoverTopic } = await import('@/lib/discover')
+  const langF = sanitizeDiscoverLang(pick(sp, 'lang')) ?? undefined
+  const topicF = sanitizeDiscoverTopic(pick(sp, 'topic')) ?? undefined
   const bandF = (['s0', 's1', 's2', 's3'] as const).find((b) => b === pick(sp, 'band'))
   const ageF = (['7', '30', '90', 'year'] as const).find((a) => a === pick(sp, 'age'))
   const sortF = pick(sp, 'sort') === 'gain' ? 'gain' : 'stars'
@@ -83,8 +87,17 @@ export default async function DiscoverPage({
   let rows: Awaited<ReturnType<typeof discoverQuery>> = []
   let facets: Awaited<ReturnType<typeof discoverFacets>> = { languages: [], topics: [] }
   let degraded = false
+  // 非法参数短路:rows 留空(页面自然渲染"没有符合条件的仓库"),facets 照常(有独立缓存),
+  // 不调用 discoverQuery → 不产生 'use cache' 键 → 拒绝类请求对缓存键空间零贡献。
+  // facets 照常的原因:筛选 chips 是 UI 导航,非法参数访客也需要看到合法选项。
+  const invalidParams = pick(sp, 'lang') !== undefined && langF === undefined
+    || pick(sp, 'topic') !== undefined && topicF === undefined
   try {
-    ;[rows, facets] = await Promise.all([discoverQuery(filters), discoverFacets()])
+    if (invalidParams) {
+      facets = await discoverFacets()
+    } else {
+      ;[rows, facets] = await Promise.all([discoverQuery(filters), discoverFacets()])
+    }
   } catch {
     degraded = true
   }
