@@ -180,49 +180,73 @@ const EPHEMERAL_TTL_MS = 30_000
 const EPHEMERAL_MAX = 500
 
 // single-flight:同键并发共享一个在途 Promise(评审三轮 P0-1)
-const _inflight = new Map<string, Promise<DiscoverRow[]>>()
+const _inflight = new Map<string, Promise<[DiscoverRow[], boolean]>>()
 
-// 数据库并发硬上限(评审三轮 P0-2,最关键):信号量限制同时进行的昂贵长尾查询数。
-// MAX_CONCURRENT=2:与生产读池 max=5 对齐留余量——长尾最多占 2 条连接,
-// 榜单页/API/同步永远有连接可用,discover 不可能再掏空池。
+// 数据库并发硬上限(评审三轮 P0,评审四轮重写):信号量限制同时进行的昂贵长尾查询数。
+// MAX_CONCURRENT=2:与生产读池 max=5 对齐留余量——长尾最多占 2 条连接/进程,
+// 榜单页/API/同步永远有连接可用。注意这是单进程上限,多实例需实例级监控佐证。
 const MAX_LONGTAIL_CONCURRENT = 2
 let _running = 0
-const _waitQueue: Array<() => void> = []
-// 队列等待上限(评审三轮 P0-3):排队超过预算 → 可控降级(空结果,页面渲染"没有符合"),
-// 不让请求无限堆积。3s=冷 miss P99(实测 ~1s)的 3 倍余量。
+// 等待队列:waiter 对象(身份唯一,超时与释放都通过它查找——评审四轮 P0-1 修正:
+// 原实现入队匿名函数与超时查找的 wake 引用不同,indexOf 永远 miss,超时项滞留队列
+// 被后续 release 消费 → 槽位转交给已放弃的请求 → _running 计数泄漏)
+const _waitQueue: Array<{ done: boolean; wake: (v: boolean) => void; timer: NodeJS.Timeout }> = []
+// 队列等待预算:排队超过 → 可控降级(空结果),不让请求无限堆积。3s=冷 miss P99(~1s)的 3 倍。
 const QUEUE_WAIT_BUDGET_MS = 3_000
+// 队列容量硬上限(评审四轮 P0-2):超出立即降级,不创建新的等待 Promise/计时器。
+// 50 = 2 在途 × 每查询 ~1s × 3s 预算窗口内的合理积压上界,超出即说明过载,快速失败优于深排队。
+const QUEUE_MAX = 50
 const LONGTAIL_DEGRADED: DiscoverRow[] = []
+// 过载观测(评审四轮:降级要有明确状态与可观测计数,不伪装成正常查询)
+const _overloadStats = { queueFullRejects: 0, budgetTimeouts: 0 }
 
-async function acquireLongtailSlot(): Promise<'acquired' | 'budget-exceeded'> {
+async function acquireLongtailSlot(): Promise<'acquired' | 'budget-exceeded' | 'queue-full'> {
   if (_running < MAX_LONGTAIL_CONCURRENT) {
     _running++
     return 'acquired'
   }
-  // 排队:带预算的等待
-  const ok = await new Promise<boolean>((resolve) => {
-    const entry = { resolve: (v: boolean) => resolve(v) }
-    _waitQueue.push(() => entry.resolve(true))
-    setTimeout(() => {
-      const idx = _waitQueue.indexOf(wake)
-      if (idx >= 0) {
-        _waitQueue.splice(idx, 1)
-        entry.resolve(false)
-      }
+  if (_waitQueue.length >= QUEUE_MAX) {
+    _overloadStats.queueFullRejects++
+    return 'budget-exceeded' // 立即降级,不创建等待者
+  }
+  return await new Promise<'acquired' | 'budget-exceeded'>((resolve) => {
+    // waiter 身份唯一:done 幂等护栏(成功/超时只能走一条路,评审四轮 P0-1 要求)
+    const waiter: { done: boolean; wake: (v: boolean) => void; timer: NodeJS.Timeout } = {
+      done: false,
+      wake: (v: boolean) => {
+        if (waiter.done) return
+        waiter.done = true
+        clearTimeout(waiter.timer)
+        resolve(v ? 'acquired' : 'budget-exceeded')
+      },
+      timer: null as unknown as NodeJS.Timeout,
+    }
+    waiter.timer = setTimeout(() => {
+      // 超时:自己把自己从队列摘除(身份查找),槽位从未被转交
+      const idx = _waitQueue.indexOf(waiter)
+      if (idx >= 0) _waitQueue.splice(idx, 1)
+      _overloadStats.budgetTimeouts++
+      waiter.wake(false)
     }, QUEUE_WAIT_BUDGET_MS)
-    const wake = () => entry.resolve(true)
+    _waitQueue.push(waiter)
   })
-  if (!ok) return 'budget-exceeded'
-  // 槽位由 releaseLongtailSlot 转交时已 ++,此处不得重复计数
-  return 'acquired'
 }
 
 function releaseLongtailSlot(): void {
   _running--
-  const next = _waitQueue.shift()
+  // 转交给队首【未完成】的等待者;waiter.wake 内部置 done,不会二次消费
+  const next = _waitQueue.find(w => !w.done)
   if (next) {
+    const idx = _waitQueue.indexOf(next)
+    _waitQueue.splice(idx, 1)
     _running++
-    next()
+    next.wake(true)
   }
+}
+
+/** 测试观察口:信号量与过载状态(仅测试/监控用) */
+export function __testOnlyLongtailState(): { running: number; queued: number; inflight: number; queueFullRejects: number; budgetTimeouts: number } {
+  return { running: _running, queued: _waitQueue.length, inflight: _inflight.size, queueFullRejects: _overloadStats.queueFullRejects, budgetTimeouts: _overloadStats.budgetTimeouts }
 }
 
 async function discoverQueryEphemeral(f: DiscoverFilters): Promise<DiscoverRow[]> {
@@ -232,34 +256,34 @@ async function discoverQueryEphemeral(f: DiscoverFilters): Promise<DiscoverRow[]
   if (hit && now - hit.at < EPHEMERAL_TTL_MS) return hit.rows
   // single-flight:在途同键共享(并发 N 个同键 = 1 次打库)
   const flight = _inflight.get(key)
-  if (flight) return flight
-  const exec = (async (): Promise<DiscoverRow[]> => {
+  if (flight) return flight.then(([rows]) => rows)
+  // exec 返回 [rows, degraded]:降级与结果分离(评审四轮 P1-2 修正——
+  // 原实现降级空数组也被无条件写进 _ephemeral,30s 内同键命中空结果不再真查)
+  const exec = (async (): Promise<[DiscoverRow[], boolean]> => {
     const slot = await acquireLongtailSlot()
-    if (slot === 'budget-exceeded') return LONGTAIL_DEGRADED
+    if (slot !== 'acquired') return [LONGTAIL_DEGRADED, true] // 降级(预算超时或队列满)
     try {
-      return await discoverFilteredUncached(f)
+      return [await discoverFilteredUncached(f), false]
     } finally {
       releaseLongtailSlot()
     }
   })()
   _inflight.set(key, exec)
   try {
-    const rows = await exec
-    if (_ephemeral.size >= EPHEMERAL_MAX) {
-      // 最老逐出:Map 迭代序即插入序
-      const oldest = _ephemeral.keys().next().value
-      if (oldest !== undefined) _ephemeral.delete(oldest)
+    const [rows, degraded] = await exec
+    if (!degraded) {
+      // 只有真实查询结果才进微缓存;降级不缓存,压力消退后同键立即真查
+      if (_ephemeral.size >= EPHEMERAL_MAX) {
+        // 最老逐出:Map 迭代序即插入序
+        const oldest = _ephemeral.keys().next().value
+        if (oldest !== undefined) _ephemeral.delete(oldest)
+      }
+      _ephemeral.set(key, { at: Date.now(), rows })
     }
-    _ephemeral.set(key, { at: Date.now(), rows })
     return rows
   } finally {
     _inflight.delete(key)
   }
-}
-
-/** 测试观察口(仅测试用,不触生产语义):当前在途长尾查询数 */
-export function __testOnlyLongtailState(): { running: number; queued: number; inflight: number } {
-  return { running: _running, queued: _waitQueue.length, inflight: _inflight.size }
 }
 
 /** 筛选项(语言/主题 Top 榜):读预计算行(OOM 批④,零扫描);
