@@ -172,7 +172,15 @@ export async function discoverQuery(f: DiscoverFilters & { facetsRef?: { languag
 async function discoverQueryCached(f: DiscoverFilters): Promise<DiscoverRow[]> {
   'use cache'
   cacheLife({ stale: 60, revalidate: 300, expire: 3600 })
-  return discoverFilteredUncached(f)
+  // 评审十轮:持久路径冷 miss 与长尾共享同一并发帽(单一全局 discover DB 预算=2)。
+  // 同键并发由 'use cache' 填充合并;不同键冷 miss 此前无界——现在有帽。
+  // 持久路径不排队不降级(帽满时等待,预算内必有结果——Top 组合查询快,队列帽 50+3s 兜底)。
+  const slot = await acquireLongtailSlot()
+  try {
+    return await discoverFilteredUncached(f)
+  } finally {
+    releaseLongtailSlot()
+  }
 }
 
 // ===== 长尾路径的三重资源边界(评审三轮 P0)=====
@@ -254,9 +262,11 @@ function releaseLongtailSlot(): void {
 /** 过载状态观察口(评审七轮②同步:实际部署方式,非 node -e 跨进程方案——
  *  _overloadStats 是服务进程内存状态,跨进程读只会读到零,已弃用)。
  *  实际链路:过载事件发生时【本进程】console.error 结构化日志(ghb-overload)
- *  → docker json log → HK observe/sample.sh v3 每 10 分钟 grep -c 汇总为 ovld10m 列。
+ *  → docker json log → HK observe/sample.sh v4 每 10 分钟直读 json log 文件过滤 10 分钟窗口,
+ *  分列为 qf10m(queue-full)/bt10m(budget-timeout)两列。
  *  告警阈值(候选,待基线校准):连续 3 窗口 budgetTimeouts 增量>100;queueFullRejects 独立规则待补。
- *  链路验证:隔离环境需真实触发一次过载,确认日志入 docker log 且 ovld10m 递增(待办)。 */
+ *  链路验证:queue-full 已隔离实测入日志(running=2/queued=50);budget-timeout 真实进程触发
+ *  待部署后由 bt10m 观察(路径已由行为测试 Ⅳb 封死)。 */
 export function __testOnlyLongtailState(): { running: number; queued: number; inflight: number; queueFullRejects: number; budgetTimeouts: number } {
   return { running: _running, queued: _waitQueue.length, inflight: _inflight.size, queueFullRejects: _overloadStats.queueFullRejects, budgetTimeouts: _overloadStats.budgetTimeouts }
 }

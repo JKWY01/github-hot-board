@@ -74,7 +74,8 @@ export default async function DiscoverPage({
 
   // 2026-10-29 OOM 批:参数边界在渲染入口收口(独立提交①配套)。
   // sanitize 返回 null = 非法形态(注入/超长/非法字符):短路为空查询,
-  // 不进 'use cache'(拒绝类不产生缓存键)、不触发 DB;合法长尾照常全链路。
+  // 不进 'use cache'(拒绝类不产生持久缓存键)、不调 discoverQuery;合法长尾照常全链路。
+  // 注意:下方 discoverFacets() 冷读仍可能触 DB(拒绝类≠绝对零 DB 访问)。
   const { sanitizeDiscoverLang, sanitizeDiscoverTopic } = await import('@/lib/discover')
   const langF = sanitizeDiscoverLang(pick(sp, 'lang')) ?? undefined
   const topicF = sanitizeDiscoverTopic(pick(sp, 'topic')) ?? undefined
