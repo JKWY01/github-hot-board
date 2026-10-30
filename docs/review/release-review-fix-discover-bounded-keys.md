@@ -349,3 +349,32 @@ budget-timeout 事件的 `queued` 字段改为**摘除自身后的实际队列�
 - P1-4 生产规模压测:✅ 60 并发完成(材料 3)
 - P1-5 连接预算核算:✅(P0-3 表)
 - P2 多语言:✅ 16 语 sourceUnavailable
+
+
+---
+
+# 评审十轮回应(2026-10-30,commit 2c75835,已 push force-with-lease)
+
+## 分叉澄清与 main 同步(评审十轮 P0)
+确认评审者独立发现属实:main 前进了 de77446(快照提交)。diff 核实仅 README+rank/,零运行时代码。**已 rebase(12 提交,新 HEAD=2c75835),分叉清零**,后续验收以 2c75835 为准(此前对 e962bff/7a3d893 的审查结论按评审要求不再直接沿用)。
+
+## 十轮核心新增验收项:Top 榜冷 miss 并发 — 已治理(评审预判证实)
+评审指出的覆盖缺口属实:持久路径(cached)此前无应用层并发帽,不同键冷 miss 可无界并发打库。
+- **行为测试如实暴露治理前形状**(tests/discover-cached-path-behavior.test.ts):同键并发 20 → withDb 20 次(测试 stub 直通,无缓存合并;Next 真实填充合并能力由 standalone 验证另行确认);不同键 8 并发 → maxConcurrent>2(无帽)。
+- **治理**:discoverQueryCached 套同一信号量——**discover 全部昂贵 DB 查询(持久+长尾)共享帽 2**。键空间 7,150 有界 × 并发 2 有帽 = 持久路径 DB 预算闭环。
+- **治理后测试**:不同键 8 并发 maxConcurrent ≤ 2 ✅。预算口径统一为"单一全局 discover DB 并发上限=2/进程"。
+
+## 两处过时注释 — 已修正
+- lib/discover.ts 监控说明:v3/ovld10m → v4/qf10m+bt10m(与服务器实际部署一致);链路验证状态更新(queue-full 已实测入日志;budget-timeout 待部署后 bt10m 观察)。
+- page.tsx:"不触发 DB" → "不调 discoverQuery,但 facets 冷读仍可能触 DB"。
+
+## sample.sh v4 源码 + 压测原始数据 — 已补进入库评审文档
+v4 全文(含 py2 兼容解析器 observe_parse.py)+ 60 并发压测原始数据(P50=1.33s/P95=2.56s/max 2.66s/4 降级/RSS 195→56MB/连接 2→0)已写入 docs/review/ 入库版,供独立审查:时区处理(utcnow=UTC 与日志 time 一致)、轮转文件(.1+当前都扫)、损坏行(try/except 跳过)、cron 重叠(10 分钟窗口+固定 cron 不重叠)、err10m 口径(db-query-timeout/unavailable/CONNECT_TIMEOUT 三类)。
+
+## 验收记录(新 HEAD 2c75835)
+全套件 **186 passed | 5 skipped**(净增 2:cached 路径行为 2 例);tsc 零错;build(隔离库)通过。
+
+## 待评审裁决事项
+1. 持久路径共享帽的治理方案是否认可(或要求独立帽/独立预算);
+2. 合并审批(评审十轮已给"有条件批准合并 main",四项前置:main 同步 ✅、Top 冷 miss 验证 ✅(含治理)、注释修正 ✅、最终 SHA 全套重跑 ✅);
+3. HK 部署审批(生产冻结中;HK RestartCount 持续恶化中,合并≠部署,等独立审批)。
