@@ -247,8 +247,12 @@ async function discoverQueryCached(f: DiscoverFilters): Promise<DiscoverRow[]> {
 // 判定:外层 catch 比较【调用前后】同键 generation;只有本请求期间增大=本次过载。
 // 为什么不用时间戳标记(评审十四轮发现的坑):Map<key,at> 有效期内不删=同键历史标记
 // 污染同键后续 DB 错;删了又破坏同键并发等待者的识别。generation 无清除时序问题。
-// 容量天然有界:持久键空间 ≈7,150(评审二轮键不变式),无需 TTL/清理——
-// 这就是不重置在途引用的根本解法(评审提醒:不为清理而重置 generation)。
+// 容量边界(评审十六轮裁决口径):7,150 是【单次 facets 快照】下的组合上限
+// (Top10 lang × Top12 topic × 4 band × 4 age × 2 sort,含缺省值组合)。
+// facets 随同步动态预计算、Top 榜会轮换,_overloadGen 永不清理,历史组合的
+// generation 跨快照留存——进程生命周期内 Map 上限 = 历史所有快照键集合并集,
+// 增长速率≈每次 Top 榜轮换(6h 同步)新增至多数千条、每条 ~百字节,
+// 不构成实际内存风险,但"严格封顶"未证明,已登记 P1(带生命周期的信号结构)。
 const _overloadGen = new Map<string, number>()
 
 // ===== 长尾路径的三重资源边界(评审三轮 P0)=====
