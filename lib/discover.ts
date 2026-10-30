@@ -210,9 +210,10 @@ const EPHEMERAL_MAX = 500
 // single-flight:同键并发共享一个在途 Promise(评审三轮 P0-1)
 const _inflight = new Map<string, Promise<DiscoverQueryResult>>()
 
-// 数据库并发硬上限(评审三轮 P0,评审四轮重写):信号量限制同时进行的昂贵长尾查询数。
-// MAX_CONCURRENT=2:与生产读池 max=5 对齐留余量——长尾最多占 2 条连接/进程,
-// 榜单页/API/同步永远有连接可用。注意这是单进程上限,多实例需实例级监控佐证。
+// 数据库并发硬上限(评审三轮 P0,评审四轮重写):信号量限制同时进行的昂贵 Discover 查询数
+// (持久路径冷 miss 与长尾共享,评审十轮起为单一全局预算)。
+// Discover 查询最多占用 2 个并发槽位,为其他数据库操作保留连接池容量;
+// 但其他业务之间仍共享同一连接池,这【不构成连接隔离保证】。注意这是单进程上限,多实例需实例级监控佐证。
 const MAX_DISCOVER_DB_CONCURRENT = 2
 let _running = 0
 // 等待队列:waiter 对象(身份唯一,超时与释放都通过它查找——评审四轮 P0-1 修正:

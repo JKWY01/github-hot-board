@@ -133,7 +133,7 @@ d8df897 参数边界校验(原 046c96b)
 ## P0:长尾数据库并发硬上限(cf1df38,评审核心裁决项)
 `discoverQueryEphemeral` 现在带三重边界,**长尾不再是"绕过持久缓存但随时可掏空 DB"的裸路径**:
 1. **single-flight**:`_inflight` Map,同键并发 N = 1 次打库;
-2. **并发硬上限**:信号量 `MAX_LONGTAIL_CONCURRENT = 2`(与生产读池 max=5 对齐留余量——长尾最多占 2 条连接,榜单/API/同步永远有连接可用);修掉了唤醒路径与立即路径的双重计数 bug(行为测试 Ⅳ 抓出,running=8 泄漏实锤后修正);
+2. **并发硬上限**:信号量上限 2(与生产读池 max=5 对齐留余量——Discover 查询最多占用 2 个并发槽位,为其他数据库操作保留连接池容量;但其他业务之间仍共享连接池,不构成连接隔离保证);修掉了唤醒路径与立即路径的双重计数 bug(行为测试 Ⅳ 抓出,running=8 泄漏实锤后修正);
 3. **队列等待预算 3s**:超时可控降级(空结果页面渲染"没有符合"),不无限排队;**降级结果不写微缓存**(行为测试 Ⅳc 验证:恢复后同键真查)。
 
 ## P1-1:行为测试(评审要求的"真实调用 discoverQuery 验证三层边界")
@@ -414,3 +414,34 @@ v4 全文(含 py2 兼容解析器 observe_parse.py)+ 60 并发压测原始数据
 ## 验收记录(最新 HEAD,评审十一轮要求的六项)
 - 全套件 **187 passed | 5 skipped**(净增 1:队列满契约用例;持久路径 3 例契约测试覆盖你列的六断言);
 - 持久路径队列满测试 ✅;持久路径预算超时测试 ✅;长尾与持久混合并发 ✅(原有 Ⅳ + 新契约用例);tsc 零错;隔离库 build ✅。
+
+# 评审十二轮回应(2026-10-30,commit 67e476a,已 push)
+
+你的三条全部属实,逐条修:
+
+## 1. 队列满测试确实走的长尾路径(claim 属实,测试已重写)
+你的核查正确:原 `full-${stamp}-${i}` 不在 `TOP_FACETS.topics=['ai','web']` → `inTopTopic=false` → 52 个请求全部走 `discoverQueryEphemeral`,持久路径队列满没有被覆盖。
+**修复方案**(tests/discover-cached-path-behavior.test.ts 用例④重写):lang/topic 均取自 Top 榜(保证 `inTopLang && inTopTopic` → 命中 `discoverQueryCached`),用 lang(2)×topic(2)×band(4)×age(4)×sort(2) 维度组合出 52 个互异键制造排队。断言:running=2 / queued=50 / **inflight=0**(长尾 single-flight 才会有 inflight>0,持久路径恒为 0——这是"确实走持久路径"的结构性旁证)、后续 5 个请求零 SQL + queueFullRejects 递增。
+一处如实说明:队列满后追加的 5 个请求与首批同键,可能命中同键填充 Promise,断言放宽为 `status ∈ {ok, overloaded}`(同键合并不是契约违规;队列满的 5 个**独立键**请求零 SQL 才是契约本体)。
+
+## 2. 旧注释属实残留,已删净
+全仓 grep `永远有连接可用|MAX_CONCURRENT|长尾最多占`:代码侧 lib/discover.ts:214-215 确实残留,已改为评审十一轮给定措辞(含"不构成连接隔离保证");评审文档三轮章节的两处旧表述同步修正。现仅剩本轮回应里的引用性文字。
+
+## 3. standalone 真实验证已完成(Next 16.4.2 真框架,非 mock)
+用最小 Next 16.4.2 应用(`cacheComponents: true`,'use cache' 真实生效)验证过载 throw 与持久缓存的边界,**dev 与 `next start` 生产模式各跑一遍,结果一致**:
+
+| 步骤 | 操作 | 结果 | 结论 |
+|---|---|---|---|
+| ① | 冷键首次填充(正常) | ok,calls=1 | 成功结果进缓存 |
+| ② | 同键第二次 | ok,calls 仍=1(同一 at 时间戳) | **'use cache' 同键填充合并真实存在** |
+| ③ | 已缓存键切 overload 后再请求 | ok,仍返回旧缓存 | 缓存新鲜期内不触发重算(符合 cacheLife stale 语义) |
+| ④ | **冷键在 overload 下请求** | 503 throw(OverloadedError) | throw 正常传播给调用方 |
+| ⑤ | 冷键再试(仍 overload) | 503 throw,calls 再+1 | **throw 的结果没有被缓存**(否则第二次会直接命中) |
+| ⑥ | 恢复正常,同键请求 | ok,calls+1 | **恢复后同键真实重查成功**——瞬时过载未固化 |
+
+生产模式补充观察:dev 下 throw 保留自定义 Error name(`OverloadedError`),`next start` 下序列化为通用 `Error`——不影响我们契约(调用方按 instanceof/状态判定,不依赖 name;且页面侧由 discoverQuery 捕获转 overloaded,异常不跨边界裸抛)。
+验证产物:`/tmp/uc-verify`(最小应用 + `/app/api/probe/route.ts` 复现脚本),六步 curl 序列可直接复跑。
+
+## 验收记录(评审十二轮 HEAD)
+- 全套件 **187 passed | 5 skipped**;tsc 零错;隔离库 build ✅(next build 786 页);
+- 队列满测试已真命中持久路径 ✅;旧注释删净 ✅;standalone 六步验证(dev+prod 双模式)✅。

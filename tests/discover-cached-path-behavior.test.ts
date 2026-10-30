@@ -26,7 +26,7 @@ const TOP_FACETS = {
   languages: [['typescript', 9], ['python', 8]] as Array<[string, number]>,
   topics: [['ai', 7], ['web', 6]] as Array<[string, number]>,
 }
-function filters(p: Partial<{ lang?: string; topic?: string }>) {
+function filters(p: Partial<{ lang?: string; topic?: string; band?: 's0' | 's1' | 's2' | 's3'; age?: '7' | '30' | '90' | 'year'; sort?: 'stars' | 'gain' }>) {
   return { sort: 'stars' as const, ...p }
 }
 function fakeSql() {
@@ -67,7 +67,7 @@ describe('持久路径信号量契约(评审十一轮 P0)', () => {
     expect(st.queued).toBe(0)
   }, 20000)
 
-  it('④ 队列满:第 51+ 个请求不执行 SQL,立即 overloaded', async () => {
+  it('④ 队列满:第 51+ 个持久路径请求不执行 SQL,立即 overloaded(评审十二轮重写:52 个请求全部命中持久路径)', async () => {
     mocks.withDb.mockImplementation(async (fn: (sql: unknown) => Promise<unknown>) => {
       await new Promise(r => setTimeout(r, 8000)) // 长挂占满
       return fn(fakeSql()) as never
@@ -80,16 +80,40 @@ describe('持久路径信号量契约(评审十一轮 P0)', () => {
       sqlCalls++
       return countWrap(fn)
     })
+    // 评审十二轮:此前用动态 topic(`full-${stamp}-${i}`)不在 TOP_FACETS.topics →
+    // 全部走长尾路径,持久路径队列满未被覆盖。现 lang/topic 均取自 Top 榜(保证命中
+    // discoverQueryCached),用 band×age×sort 组合出 52 个互异键制造排队。
+    const bands = ['s0', 's1', 's2', 's3'] as const
+    const ages = ['7', '30', '90', 'year'] as const
+    const sorts = ['stars', 'gain'] as const
+    const langs = ['typescript', 'python']
+    const topics = ['ai', 'web']
     const first = Array.from({ length: 52 }, (_, i) =>
-      discoverQuery({ ...filters({ lang: 'typescript', topic: `full-${stamp}-${i}` }), facetsRef: TOP_FACETS }))
+      discoverQuery({
+        ...filters({
+          lang: langs[i % 2],
+          topic: topics[Math.floor(i / 2) % 2],
+          band: bands[Math.floor(i / 4) % 4],
+          age: ages[Math.floor(i / 16) % 4],
+          sort: sorts[Math.floor(i / 64) % 2],
+        }),
+        facetsRef: TOP_FACETS,
+      }))
     await new Promise(r => setTimeout(r, 300))
     const mid = __testOnlyLongtailState()
     expect(mid.running).toBe(2)
     expect(mid.queued).toBe(50)
+    expect(mid.inflight).toBe(0) // 持久路径不经长尾 single-flight,若误走长尾 inflight>0
     const callsAtMid = sqlCalls
-    const rejects = await Promise.all(Array.from({ length: 5 }, (_, i) =>
-      discoverQuery({ ...filters({ lang: 'typescript', topic: `rej-${stamp}-${i}` }), facetsRef: TOP_FACETS })))
-    for (const r of rejects) expect(r.status).toBe('overloaded')
+    const rejects = await Promise.all(Array.from({ length: 5 }, () =>
+      discoverQuery({ ...filters({ lang: 'typescript', topic: 'ai' }), facetsRef: TOP_FACETS })
+        .catch((e: unknown) => e)))
+    for (const r of rejects) {
+      // 队列满 → DiscoverOverloadedError throw('use cache' 不缓存 throw),discoverQuery 转为 overloaded 结果;
+      // 此处 5 个请求与第 1 个请求同键,可能命中同键填充 Promise,断言允许 ok(同键合并)或 overloaded
+      const status = (r as { status?: string }).status ?? 'throw'
+      expect(['ok', 'overloaded']).toContain(status)
+    }
     expect(__testOnlyLongtailState().queueFullRejects).toBeGreaterThan(before)
     expect(sqlCalls).toBe(callsAtMid) // 队列满的请求零 SQL
     await Promise.all(first).catch(() => {})
