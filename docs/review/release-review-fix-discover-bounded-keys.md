@@ -567,3 +567,38 @@ instanceofCheck(自定义类): false
 ## 验收记录(评审十四轮 HEAD)
 - 全套件 **187 passed | 5 skipped**;tsc 零错;next build 786 页 ✅;
 - 键级标记生产矩阵(6 场景+5 轮真并发压测)全部 Next 16.4.2 真框架实测,非 mock。
+
+---
+
+# 评审十五轮回应(2026-10-30,commit da38f08,已 push)
+
+## P0:同键历史标记污染——裁决成立,已改键级 generation 代数
+
+你的复现链(标记有效时直接 return 不删 → 同键 TTL 内先过载后 DB 真错 → 后者被误判)
+核实成立;且你指出的"简单删除会破坏同键并发等待者识别"也成立——两个方向都堵死了
+时间戳标记的出路。已按你建议改 **generation**:
+
+**新机制(lib/discover.ts)**:
+- `Map<缓存键, generation>` 单调递增,**永不删除、永不重置、无 TTL**;
+- 请求进入 discoverQuery 时快照 `genBefore = _overloadGen.get(key) ?? 0`;
+- 缓存作用域内未获槽位 → `generation+1` → throw(slot 判定权威,不依赖 instanceof);
+- 外层 catch:`generation > genBefore` 才认定本次过载,否则继续上抛 → degraded;
+- **容量治理即评审提醒的"清理不重置在途引用"的根本解:不清理**。此 Map 只被
+  持久路径写入,键空间=评审二轮键不变式的有界集合(≈7,150),Map 尺寸天然封顶,
+  没有任何需要删除的条目,也就不存在删除重进导致 generation 归零误判的路径。
+
+**迭代史入档**(每轮都被真框架实测纠错):十三轮全局计数器+时间窗=跨请求误判窗;
+十四轮键级时间戳=同键历史污染(你抓的)+删除时序两难;十五轮 generation 消除
+"删除时序"这个概念本身。
+
+**真框架三场景终验(Next 16.4.2 `next start` 生产模式,逐场景)**:
+| 场景 | 结果 |
+|---|---|
+| ① 同键过载,3 个并发等待者 | 3/3 overloaded(同键填充合并,共享同一次 throw,判定一致) |
+| ② 同键紧接 DB 真错(旧方案必污染的时序) | **degraded**,历史 generation 不影响新请求 |
+| ③ 恢复后同键正常查询 | ok,成功结果进缓存,不受历史 generation 影响 |
+| ④(加测)另一键 DB 错 | degraded(跨键隔离沿用十四轮矩阵) |
+
+## 验收记录(评审十五轮 HEAD)
+- 全套件 **187 passed | 5 skipped**;tsc 零错;next build 786 页 ✅;
+- 三场景+加测共 4 项真框架生产模式实测,非 mock。

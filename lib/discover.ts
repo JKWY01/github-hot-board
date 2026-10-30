@@ -163,18 +163,18 @@ export async function discoverQuery(f: DiscoverFilters & { facetsRef?: { languag
   if (inTopLang && inTopTopic) {
     // 持久缓存路径(facetsRef 是引用不参与序列化键——需剥离,否则整个 Top 榜进键)
     const { facetsRef: _omit, ...cacheable } = f
-    // 评审十三轮 P0+十四轮:过载识别不依赖异常身份(生产 'use cache' 边界会重序列化
-    // 异常,外层 instanceof 恒 false)——读【键级】过载标记(见 _overloadMarks 注释):
-    // 用与缓存函数一致的稳定键查自己的标记,A 键的过载不会污染 B 键的故障分类。
+    // 评审十三/十四/十五轮:过载识别不依赖异常身份(生产 'use cache' 边界会重序列化
+    // 异常,外层 instanceof 恒 false)——读【键级 generation】过载信号(见 _overloadGen 注释):
+    // 只有【本请求期间】该键 generation 增大才认定本次过载。
+    // 快照在调用前取——同键历史过载不会污染后续请求;同键并发共享同一次 throw。
     const myKey = buildDiscoverCacheKey(cacheable)
+    const genBefore = _overloadGen.get(myKey) ?? 0
     try {
       return { rows: await discoverQueryCached(cacheable), status: 'ok' }
     } catch (e) {
-      const markedAt = _overloadMarks.get(myKey)
-      if (markedAt !== undefined) {
-        // 惰性过期:窗口内=本键刚发生过载;过期=陈旧标记,删掉并按非过载处理
-        if (Date.now() - markedAt < OVERLOAD_MARK_TTL_MS) return { rows: [], status: 'overloaded' }
-        _overloadMarks.delete(myKey)
+      if ((_overloadGen.get(myKey) ?? 0) > genBefore) {
+        // 本请求期间本键 generation 增大 = 本次调用(或与本调用合并的同键填充)遇到过载
+        return { rows: [], status: 'overloaded' }
       }
       // 非过载(数据源不可用/超时等)继续上抛 → 页面渲染 degraded
       throw e
@@ -184,29 +184,19 @@ export async function discoverQuery(f: DiscoverFilters & { facetsRef?: { languag
   return discoverQueryEphemeral(f)
 }
 
-/** 持久路径过载信号(评审十一轮 P0,十三轮重设计,十四轮改键级):
- *  过载仍必须经 throw 逃出 'use cache'(Next 对 throw 的处理=该次结果不写入持久缓存,
- *  防止瞬时过载被缓存成长期"繁忙")。但【十三轮 P0 实锤】:'use cache' 边界在生产模式
- *  会把 throw 的异常重新序列化——自定义原型(name/message 全部)被替换成脱敏的通用
- *  Server Components Error(digest 机制),instanceof DiscoverOverloadedError 在
- *  【外层】恒为 false。
- *  十三轮方案(全局计数器+时间窗)有并发误判窗:请求 A 的 DB 真错可能读到他人在
- *  时间窗内打的过载标记,故障分类被污染(评审十四轮指出,裁决成立)。
- *  十四轮修复=标记挂【键】不挂进程:
- *  - discoverQueryCached 在【缓存作用域内】(await discoverFilteredUncached 同栈,
- *    instanceof 可靠——十三轮真框架实测:外层 wrapper 的 catch 拿到的已被重序列化,
- *    但缓存函数内部的 try/catch 在 Next 碰它之前执行)catch 过载,把标记写入
- *    _overloadMarks(以稳定缓存键为键,Map<key,at>);
- *  - discoverQuery 外层 catch 用【同一个 buildDiscoverCacheKey 结果】查自己的键:
- *    A 键的过载标记只挂在 A 键上,B 请求(DB 真错)查 B 键查不到 → 不误判;
- *  - 同键并发:'use cache' 同键填充合并,同键请求共享同一次成功或同一次 throw,
- *    结果天然一致;同键"过载+DB错"不存在(同键同查询同结果);
- *  - 过期与清理:读取时惰性 TTL 检查 + 容量帽(满时先清过期项,再 FIFO 逐出),
- *    键空间本身有界(评审二轮键不变式),标记集不可能失控;
- *  - throw 语义不变:'use cache' 对 throw 不写持久缓存——防污染机制原样保留。
- *  真框架终验(Next 16.4.2 next start):A 过载与 B DB 错真同时(后台并行 5 轮)
- *  A=overloaded / B=degraded 全判对;同键并发 3 个全 overloaded 一致;
- *  持续过载重试仍不缓存;恢复后同键真实重查成功。 */
+/** 持久路径过载信号(评审十一轮 P0 → 十三轮/十四轮迭代 → 十五代数定稿):
+ *  过载必须经 throw 逃出 'use cache'(Next 对 throw 不写持久缓存——防瞬时过载固化),
+ *  但【十三轮实锤】生产模式 'use cache' 边界会重序列化异常(原型/message 全被脱敏替换),
+ *  外层 instanceof 恒 false——信号不能依赖异常身份跨边界。
+ *  迭代史(每轮都被真框架实测纠错):十三轮全局计数器+时间窗=跨请求误判窗(十四轮否);
+ *  十四轮键级时间戳标记=同键历史标记污染同键后续 DB 错(十五轮否:标记有效期不删=
+ *  陈旧状态泄漏,删了又破坏同键并发等待者识别);
+ *  十五轮定稿=键级 generation(单调代数):请求前快照同键 generation,catch 时比对——
+ *  只有【本请求期间】该键 generation 增大才认定本次过载;不清除、不重置、无 TTL,
+ *  容量天然有界(持久键空间 ≈7,150,见评审二轮键不变式),不存在"清理破坏在途引用"。
+ *  真框架终验(Next 16.4.2 next start):同键过载 3 并发等待者全识别;同键紧接 DB 真错
+ *  =degraded 不被历史标记污染;恢复后同键成功不受影响;跨键隔离(十四轮矩阵)沿用。
+ */
 class DiscoverOverloadedError extends Error {
   constructor() {
     super('discover overloaded (queue-full/budget-exceeded)')
@@ -221,12 +211,6 @@ function buildDiscoverCacheKey(f: DiscoverFilters): string {
   return JSON.stringify([f.lang ?? null, f.topic ?? null, f.band ?? null, f.age ?? null, f.sort])
 }
 
-// 键级过载标记(评审十四轮):Map<缓存键, 打标时刻>。TTL 之外的容量帽兜底,
-// 正常情况下键有界+TTL 1s,Map 尺寸自然收敛;MARK_MAX 只防极端恶意键空间。
-const OVERLOAD_MARK_TTL_MS = 1_000
-const OVERLOAD_MARK_MAX = 1_000
-const _overloadMarks = new Map<string, number>()
-
 async function discoverQueryCached(f: DiscoverFilters): Promise<DiscoverRow[]> {
   'use cache'
   cacheLife({ stale: 60, revalidate: 300, expire: 3600 })
@@ -235,35 +219,31 @@ async function discoverQueryCached(f: DiscoverFilters): Promise<DiscoverRow[]> {
   // 评审十一轮 P0 修复:严格信号量契约——未获得槽位(budget-exceeded/queue-full)
   // =不执行 SQL、不 release(此前无条件 release 会错误递减 _running 并击穿并发帽);
   // 过载=throw(不写持久缓存)。
-  // 评审十三轮 P0+十四轮:throw 身份跨 'use cache' 边界会被生产模式抹掉——
-  // 在【缓存作用域内】(此处 await 的 discoverFilteredUncached 同栈,instanceof 可靠)
-  // catch 过载打【键级】进程内标记,再 rethrow 普通 Error(身份丢给 Next 无所谓)。
+  // 评审十三轮 P0+十五轮:throw 身份跨 'use cache' 边界会被生产模式抹掉——
+  // 未获槽位时单调递增本键 generation(slot 判定权威,不依赖 instanceof),
+  // 再 throw 普通 Error(身份丢给 Next 无所谓);外层用 generation 增量识别。
   const slot = await acquireDiscoverSlot()
   if (slot !== 'acquired') {
-    const now = Date.now()
-    // 容量帽:先清过期,仍满则 FIFO 逐出最老(键空间有界,这是防御性兜底)
-    if (_overloadMarks.size >= OVERLOAD_MARK_MAX) {
-      for (const [k, at] of _overloadMarks) {
-        if (now - at > OVERLOAD_MARK_TTL_MS) _overloadMarks.delete(k)
-      }
-      if (_overloadMarks.size >= OVERLOAD_MARK_MAX) {
-        const oldest = _overloadMarks.keys().next().value
-        if (oldest !== undefined) _overloadMarks.delete(oldest)
-      }
-    }
-    _overloadMarks.set(buildDiscoverCacheKey(f), now)
+    // 单调递增该键的 generation(缓存作用域内,instanceof 不可靠此处也不用 instanceof——
+    // slot 判定本身权威)。throw 后由外层用 generation 增量识别。
+    const k = buildDiscoverCacheKey(f)
+    _overloadGen.set(k, (_overloadGen.get(k) ?? 0) + 1)
     throw new DiscoverOverloadedError()
   }
   try {
     return await discoverFilteredUncached(f)
-  } catch (e) {
-    // DB 不可达/超时(discoverFilteredUncached throw)不是过载——不打标记,
-    // 直接上抛:外层查不到键级标记,正确归为 degraded。
-    throw e
   } finally {
     releaseDiscoverSlot()
   }
 }
+
+// 键级过载信号(评审十五轮定稿):Map<缓存键, generation>——单调递增代数,不是时间戳。
+// 判定:外层 catch 比较【调用前后】同键 generation;只有本请求期间增大=本次过载。
+// 为什么不用时间戳标记(评审十四轮发现的坑):Map<key,at> 有效期内不删=同键历史标记
+// 污染同键后续 DB 错;删了又破坏同键并发等待者的识别。generation 无清除时序问题。
+// 容量天然有界:持久键空间 ≈7,150(评审二轮键不变式),无需 TTL/清理——
+// 这就是不重置在途引用的根本解法(评审提醒:不为清理而重置 generation)。
+const _overloadGen = new Map<string, number>()
 
 // ===== 长尾路径的三重资源边界(评审三轮 P0)=====
 // 长尾微缓存:Map<key,{at,rows}>,容量与年龄双帽——溢出/过期即逐出,绝不持久化
