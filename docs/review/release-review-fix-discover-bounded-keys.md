@@ -602,3 +602,48 @@ instanceofCheck(自定义类): false
 ## 验收记录(评审十五轮 HEAD)
 - 全套件 **187 passed | 5 skipped**;tsc 零错;next build 786 页 ✅;
 - 三场景+加测共 4 项真框架生产模式实测,非 mock。
+
+---
+
+# 评审十六轮回应(2026-10-30,commit 5193a2d,已 push)
+
+## 你推导的竞态窗口:已用真框架验证,结论=真实代码形状下窗口结构性为零 + 已加防回归警示
+
+### 验证过程(全部 Next 16.4.2 `next start` 真框架)
+**① 人为窗口实验(实锤你的推导路径存在)**:在 bump 与 throw 之间人为插入 500ms await,
+B 在 +200ms 进入(快照=1),join 同一次已 bump 的填充 → 收同一 reject →
+`1 > 1` 不成立 → **B=degraded,你的推导逐字复现**。这个窗口确实存在——
+但仅存在于"bump 与 throw 之间有 await"的代码形状。
+
+**② 真实代码形状验证(窗口=0 的结构性依据)**:项目代码里 bump 与 throw 是
+同步相邻语句(`_overloadGen.set(...)` 后立即 `throw`,lib/discover.ts,无任何 await)。
+JS 单线程模型下,同步段内不可能有其它请求读取快照——"后来者快照已含 bump"的事件
+序列在真实代码中无法发生。实测:
+- B 依次晚到 5 次:5/5 **重新执行**(calls 每次+1,证明 'use cache' 对 throw 不重放
+  rejected promise,而是当缓存 miss 重新进函数)→ 重新 acquire → 再次 bump →
+  `genAfter = genBefore+1` → 5/5 overloaded;
+- 同一 tick 并发 5 个:5/5 同样全识别;
+- 评审要求的四步时序矩阵:A 过载(gen 0→1)→ B 同键(gen 1→2,重新执行识别)→
+  同键 DB 真错(gen 2→2,**degraded**,不继承旧过载)→ 恢复后 ok。**全部符合预期。**
+
+### 你两个要求的"必须同时成立",逐条对应
+- "同一次填充的所有等待者都能识别过载":同一次填充的等待者共享同一次 bump 与同一次
+  reject,凡快照在 bump 前取得者 100% 识别(十五轮 3 并发 + 本轮同 tick 5 并发);
+  快照在 bump 后取得者在真实形状下不可能发生(同步段无 await),一旦发生(未来改动
+  引入 await)会退化为 degraded——已用警示注释把"bump 与 throw 之间禁止插入 await"
+  钉死在代码里,防回归。
+- "新一轮 DB 查询不能继承旧过载状态":generation 只在本请求期间有增量才判过载;
+  DB 真错场景实测 gen 不增(2→2)→ degraded;恢复后 ok。历史 generation 对新请求
+  零影响(十五轮已证,本轮矩阵③复证)。
+
+### 如实记录
+- "键空间上限仍需以键不变式测试为依据":接受,键不变式(评审二轮 04f6130 的
+  缓存键不变式测试)已存在且覆盖 52 键互异断言(十四轮 firstKeys.size===52),
+  generation Map 尺寸上限=持久键空间上限这一点依赖同一不变式,两处同源;
+- 全套件/tsc/build 在本轮最终 SHA 复跑:**187 passed | 5 skipped,tsc 零错,
+  next build 786 页**——供你独立复核。
+
+## 验收记录(评审十六轮 HEAD)
+- 竞态窗口:人为间隙实验(实锤窗口存在条件)+ 真实形状 5/5 + 同 tick 5/5 +
+  四步时序矩阵,全部真框架生产模式实测;
+- 代码侧唯一变更=lib/discover.ts 警示注释(bump-throw 同步相邻不变式),零逻辑改动。

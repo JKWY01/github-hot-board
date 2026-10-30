@@ -228,6 +228,12 @@ async function discoverQueryCached(f: DiscoverFilters): Promise<DiscoverRow[]> {
     // slot 判定本身权威)。throw 后由外层用 generation 增量识别。
     const k = buildDiscoverCacheKey(f)
     _overloadGen.set(k, (_overloadGen.get(k) ?? 0) + 1)
+    // 评审十六轮竞态分析:bump 与 throw 必须【同步相邻,中间不得插入任何 await】。
+    // JS 单线程下,同步段内不可能有其它请求读取快照——"后来者快照=已 bump 值、
+    // 却 join 同一次(已 bump 的)失败填充、增量比对落空"的窗口结构性为零。
+    // 【警示】若未来有人在 bump 与 throw 之间加 await(如重试、日志落盘),
+    // 窗口立即打开:后来者 join 同一次填充、快照已含 bump、收同一 reject 却判
+    // degraded——曾用真框架 500ms 间隙实验实锤该误判(B=degraded)。
     throw new DiscoverOverloadedError()
   }
   try {
