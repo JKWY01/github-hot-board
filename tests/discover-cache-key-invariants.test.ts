@@ -90,7 +90,11 @@ describe('缓存键不变式(批②)', () => {
 
   it('Ⅳ 持久缓存键空间有界:常用组合归 Top 榜约束(评审二轮核心治理断言)', () => {
     // discoverQuery 的 'use cache' 只发生在 lang/topic 均属 facets Top 榜时(实现内判定),
-    // 键空间上限 = Top10 lang × Top12 topic × 4 band × 5 age 值(含缺省) × 2 sort ≈ 4,800 键。
+    // 键空间上限 = (Top10 lang+1 缺省) × (Top12 topic+1 缺省) × 4 band × 5 age 值(含缺省)
+    // × 2 sort = 7,150(评审三轮校准;原 4,800 漏计缺省值)——这是【单次 facets 快照】
+    // 下的组合上限。facets 随同步轮换,跨快照的历史键集合并集(进程生命周期上限)
+    // 本测试【不覆盖】,已登记 P1(评审十六轮)。
+    // 本测试验证范围:单次快照内的路径归属(归一化+Top 榜归属判定),非生命周期上限。
     // 归属判定逻辑单测:用 facetsRef 形状直接复算 inTop 判定(与 lib 实现一致的表达)
     const facets = { languages: [['TypeScript', 9], ['Python', 8]] as Array<[string, number]>, topics: [['ai', 7], ['web', 6]] as Array<[string, number]> }
     const inTopLang = (lang?: string) => !lang || facets.languages.some(([l]) => l.toLowerCase() === lang)
