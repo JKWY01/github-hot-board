@@ -508,3 +508,62 @@ instanceofCheck(自定义类): false
 
 ---
 
+
+---
+
+# 评审十四轮回应(2026-10-30,commit 22dd356,已 push)
+
+## 1. 全局计数器的并发误判窗——裁决成立,标记已改【键级】+【缓存作用域内 catch】
+
+你的交错表逐行成立:全局计数器只能证明"进程里有人发生过载",不能证明"当前请求"。已重做:
+
+**新机制(lib/discover.ts)**:
+- 标记载体:`Map<稳定缓存键, 打标时刻>`(`_overloadMarks`),键 = `buildDiscoverCacheKey(f)`
+  (与长尾微缓存键同构,JSON.stringify 过滤五维——cacheable 恰为纯 DiscoverFilters,序列化稳定);
+- 打标位置:**'use cache' 函数内部**(discoverQueryCached 里 acquireDiscoverSlot 返回非
+  acquired 时,先打自己键的标记再 throw)。这里有个被真框架实测锁死的关键事实:
+  **外层 wrapper 的 catch 拿到的已被 Next 重序列化(生产模式下 instanceof 恒 false),
+  但缓存函数作用域内部的 try/catch 在 Next 碰它之前执行,instanceof 可靠**——
+  十三轮的 standalone 里 wrapper 版实验实测 name="Error"/isOverloaded=false,
+  内部 catch 版实测 instanceof 命中,这是打标点必须放在缓存函数内的实证依据;
+- 消费位置:discoverQuery 外层 catch 用【同一个 buildDiscoverCacheKey 结果】查自己的键;
+  惰性过期(1s TTL,过期标记当场删除);
+- 容量帽:OVERLOAD_MARK_MAX=1000,满时先清过期项再 FIFO 逐出(键空间有界,纯防御兜底);
+- 隔离性质:标记挂键不挂进程——A 键的过载标记只影响 A 键,B(DB 真错)查 B 键查不到 →
+  degraded,**并发误判窗从"1s 全进程"收敛为"同键时间窗"**;而同键的"过载+DB 错"不存在
+  (同键同查询同结果,'use cache' 同键填充合并保证同键请求要么共享成功要么共享 throw);
+- DB 真错路径显式不打标记(discoverQueryCached 的 try/catch 对 discoverFilteredUncached
+  的 throw 原样上抛,只 release 不打标)——故障分类不再被过载信号污染;
+- throw 语义不变:'use cache' 对 throw 不写持久缓存(防污染机制原样保留)。
+
+**真框架终验(Next 16.4.2 `next start` 生产模式)**:
+| 场景 | 结果 |
+|---|---|
+| A 冷键过载 | overloaded(键级标记识别) |
+| B 冷键 DB 真错(紧随其后同窗) | degraded,不误判 |
+| A 过载与 B DB 错【真同时】(后台并行 5 轮) | **5/5 A=overloaded / B=degraded** |
+| 同键并发 3 个(全过载) | 3/3 overloaded,结果一致 |
+| 持续过载重试 | 仍 throw(calls 每次+1),不缓存 |
+| 恢复后同键 | ok,真实重查 |
+
+十三轮披露的"1s 窗口 DB 错可能被误标"边界**已消除**,不再是折中项。
+
+## 2. 5 独立键测试——你的重复指控核实成立,已重做
+
+用独立脚本展开首批 52 键集合核验:旧第 2 组 `python/web/s2/90/stars`(=首批第 44 个)、
+第 4 组 `python/web/s0/7/stars`(=首批第 4 个)确实重复,我的"与首批也不重叠"注释是错的。
+
+**重做(tests/discover-cached-path-behavior.test.ts)**:
+- 首批 52 键生成时显式建 `firstKeys` 集合 + 防御性断言 `firstKeys.size === 52`
+  (生成器若退化立即暴露);
+- 5 个拒绝键改为显式表列(从 python/web 固定下 32 组合中剔除已被首批占用的 13 组、
+  取剩余 19 组中 5 组:s1/year/stars、s2/year/stars、s3/year/stars、s0/7/gain、s0/30/gain),
+  **逐键断言 `firstKeys.has(k) === false`** + `rejectKeys.size === 5`;
+- 如实声明两层边界(如你裁决所写):Vitest 层(next/cache 为直通 stub)验证的是
+  业务/信号量行为(拒绝计数+5、零 SQL);**Next 真实持久缓存层的同键填充合并行为
+  由 standalone 生产模式另行验证,不在此测试声称范围**。真 Next 生产模式下 5 个独立
+  冷键逐键过载的行为已在上表覆盖(每键各自 throw 不缓存、恢复后各自重查)。
+
+## 验收记录(评审十四轮 HEAD)
+- 全套件 **187 passed | 5 skipped**;tsc 零错;next build 786 页 ✅;
+- 键级标记生产矩阵(6 场景+5 轮真并发压测)全部 Next 16.4.2 真框架实测,非 mock。

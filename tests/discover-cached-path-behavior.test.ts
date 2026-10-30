@@ -83,43 +83,56 @@ describe('持久路径信号量契约(评审十一轮 P0)', () => {
     // 评审十二轮:此前用动态 topic(`full-${stamp}-${i}`)不在 TOP_FACETS.topics →
     // 全部走长尾路径,持久路径队列满未被覆盖。现 lang/topic 均取自 Top 榜(保证命中
     // discoverQueryCached),用 band×age×sort 组合出 52 个互异键制造排队。
+    // 评审十四轮:键生成器与首批【键集合】显式建表——后续拒绝键必须不在 firstKeySet 内,
+    // 杜绝十四轮指出的"第 2/4 组与首批第 44/4 个重复"。
     const bands = ['s0', 's1', 's2', 's3'] as const
     const ages = ['7', '30', '90', 'year'] as const
     const sorts = ['stars', 'gain'] as const
     const langs = ['typescript', 'python']
     const topics = ['ai', 'web']
-    const first = Array.from({ length: 52 }, (_, i) =>
-      discoverQuery({
-        ...filters({
-          lang: langs[i % 2],
-          topic: topics[Math.floor(i / 2) % 2],
-          band: bands[Math.floor(i / 4) % 4],
-          age: ages[Math.floor(i / 16) % 4],
-          sort: sorts[Math.floor(i / 64) % 2],
-        }),
-        facetsRef: TOP_FACETS,
-      }))
+    const firstKeys = new Set<string>()
+    const first = Array.from({ length: 52 }, (_, i) => {
+      const flt = filters({
+        lang: langs[i % 2],
+        topic: topics[Math.floor(i / 2) % 2],
+        band: bands[Math.floor(i / 4) % 4],
+        age: ages[Math.floor(i / 16) % 4],
+        sort: sorts[Math.floor(i / 64) % 2],
+      })
+      firstKeys.add(JSON.stringify([flt.lang ?? null, flt.topic ?? null, flt.band ?? null, flt.age ?? null, flt.sort]))
+      return discoverQuery({ ...flt, facetsRef: TOP_FACETS })
+    })
+    // 防御性自检:首批键集合必须恰为 52(若生成器退化出现重复键,测试立即暴露)
+    expect(firstKeys.size).toBe(52)
     await new Promise(r => setTimeout(r, 300))
     const mid = __testOnlyLongtailState()
     expect(mid.running).toBe(2)
     expect(mid.queued).toBe(50)
     expect(mid.inflight).toBe(0) // 持久路径不经长尾 single-flight,若误走长尾 inflight>0
     const callsAtMid = sqlCalls
-    // 评审十三轮:5 个拒绝请求改为【互不相同且均命中 Top 榜】的组合——
-    // 每个都是独立的持久缓存键,必须各自 queue-full 拒绝(queueFullRejects +5)。
-    // lang/topic 取自 Top 榜,band×age×sort 组合出 5 个互异键(与首批 52 键也不重叠:
-    // 首批 band 覆盖 s0-s3、age 全档——改用首批未用的 age 排列:sort 反转 + band 错位)。
-    const rejects = await Promise.all(Array.from({ length: 5 }, (_, i) =>
-      discoverQuery({
-        ...filters({
-          lang: 'python',
-          topic: 'web',
-          band: (['s1', 's2', 's3', 's0', 's1'] as const)[i],
-          age: (['30', '90', 'year', '7', 'year'] as const)[i],
-          sort: i % 2 === 0 ? 'gain' : 'stars',
-        }),
-        facetsRef: TOP_FACETS,
-      }).catch((e: unknown) => e)))
+    // 评审十三/十四轮:5 个拒绝请求 = 互不相同 + 均命中 Top 榜 + 与首批 52 键零交集。
+    // 生成方式:python/web 固定(均在 Top 榜),枚举 band×age×sort 全 32 组合,
+    // 剔除已被首批占用的 python/web 键(13 个),从剩余 19 组中取 5(独立脚本核验
+    // 生成器正确性,见评审文档十四轮章节)。
+    const rejectFlts = (['s1', 's2', 's3', 's0', 's1'] as const).map((b, i) => {
+      void b
+      return ([
+        { band: 's1', age: 'year', sort: 'stars' },
+        { band: 's2', age: 'year', sort: 'stars' },
+        { band: 's3', age: 'year', sort: 'stars' },
+        { band: 's0', age: '7', sort: 'gain' },
+        { band: 's0', age: '30', sort: 'gain' },
+      ] as const)[i]
+    })
+    for (const rf of rejectFlts) {
+      const k = JSON.stringify(['python', 'web', rf.band, rf.age, rf.sort])
+      expect(firstKeys.has(k)).toBe(false) // 与首批零交集(评审十四轮要求的显式断言)
+    }
+    const rejectKeys = new Set(rejectFlts.map(rf => JSON.stringify(['python', 'web', rf.band, rf.age, rf.sort])))
+    expect(rejectKeys.size).toBe(5) // 互不重复
+    const rejects = await Promise.all(rejectFlts.map(rf =>
+      discoverQuery({ ...filters({ lang: 'python', topic: 'web', ...rf }), facetsRef: TOP_FACETS })
+        .catch((e: unknown) => e)))
     for (const r of rejects) {
       const status = (r as { status?: string }).status ?? 'throw'
       expect(status).toBe('overloaded')
