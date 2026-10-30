@@ -150,7 +150,8 @@ async function discoverFilteredUncached(f: DiscoverFilters): Promise<DiscoverRow
 
 /** 查询入口(评审二轮重构):分层缓存治理——
  *  ①【常用组合】lang/topic 均在 facets Top 榜内 → 'use cache' 持久缓存
- *     (键空间 = Top10 lang × Top12 topic × 4 band × 4 age × 2 sort ≈ 有界数千,可治理);
+ *     (键空间 = (Top10 lang+1)×(Top12 topic+1)×(4 band+1)×(4 age+1)×2 sort = 7,150
+ *     单次快照组合上限,可治理;跨快照历史并集未严格封顶,评审十六轮登记 P1);
  *  ②【合法长尾】不在 Top 榜 → 绕过 'use cache',直查库不落盘(进程内短 TTL 去重抖动),
  *     键空间再大也不产生持久缓存文件——这是"格式校验≠键数量收敛"缺口的真解;
  *  ③【拒绝类】上层已短路,不进本函数。
