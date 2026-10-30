@@ -251,7 +251,7 @@ async function discoverQueryCached(f: DiscoverFilters): Promise<DiscoverRow[]> {
 // 为什么不用时间戳标记(评审十四轮发现的坑):Map<key,at> 有效期内不删=同键历史标记
 // 污染同键后续 DB 错;删了又破坏同键并发等待者的识别。generation 无清除时序问题。
 // 容量边界(评审十六轮裁决口径):7,150 是【单次 facets 快照】下的组合上限
-// (Top10 lang × Top12 topic × 4 band × 4 age × 2 sort,含缺省值组合)。
+// ((Top10 lang+1) × (Top12 topic+1) × (4 band+1) × (4 age+1) × 2 sort = 11×13×5×5×2)。
 // facets 随同步动态预计算、Top 榜会轮换,_overloadGen 永不清理,历史组合的
 // generation 跨快照留存——进程生命周期内 Map 上限 = 历史所有快照键集合并集,
 // 增长速率≈每次 Top 榜轮换(6h 同步)新增至多数千条、每条 ~百字节,
