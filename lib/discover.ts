@@ -163,10 +163,14 @@ export async function discoverQuery(f: DiscoverFilters & { facetsRef?: { languag
   if (inTopLang && inTopTopic) {
     // 持久缓存路径(facetsRef 是引用不参与序列化键——需剥离,否则整个 Top 榜进键)
     const { facetsRef: _omit, ...cacheable } = f
+    // 评审十三轮 P0:过载识别不依赖异常身份(生产 'use cache' 边界会重序列化异常,
+    // instanceof 恒 false)——改为读进程内过载标记(见 _overloadSignal 注释)。
+    const markBefore = _overloadSignal.count
     try {
       return { rows: await discoverQueryCached(cacheable), status: 'ok' }
     } catch (e) {
-      if (e instanceof DiscoverOverloadedError) return { rows: [], status: 'overloaded' }
+      if (consumeDiscoverOverloadSignal(markBefore)) return { rows: [], status: 'overloaded' }
+      // 非过载(数据源不可用/超时等)继续上抛 → 页面渲染 degraded
       throw e
     }
   }
@@ -174,14 +178,35 @@ export async function discoverQuery(f: DiscoverFilters & { facetsRef?: { languag
   return discoverQueryEphemeral(f)
 }
 
-/** 持久路径过载信号(评审十一轮 P0):'use cache' 函数对过载必须 throw——
- *  Next 对 throw 的处理=该次结果不写入持久缓存(防止瞬时过载被缓存成长期"繁忙"),
- *  同时把状态传给调用方。缓存函数只缓存成功查询结果。 */
+/** 持久路径过载信号(评审十一轮 P0,十三轮重设计):
+ *  过载仍必须经 throw 逃出 'use cache'(Next 对 throw 的处理=该次结果不写入持久缓存,
+ *  防止瞬时过载被缓存成长期"繁忙")。但【十三轮 P0 实锤】:'use cache' 边界在生产模式
+ *  会把 throw 的异常重新序列化——自定义原型(name/message 全部)被替换成脱敏的通用
+ *  Server Components Error(digest 机制),instanceof DiscoverOverloadedError 在外层
+ *  恒为 false,过载会被误归为 degraded("数据源不可用")而不是"查询繁忙"。
+ *  修复=信号不再依赖跨边界的异常身份:'use cache' 函数在【同栈内】(instanceof 可靠)
+ *  catch 过载并打进程内标记(_overloadSignal 计数器+时间窗),rethrow 普通 Error;
+ *  discoverQuery 的 catch 改读标记。该标记只在本进程内存,天然随进程生命周期存续,
+ *  不依赖 Next 序列化行为。已知边界(诚实记账):真并发下"过载"与"DB 真错"在
+ *  时间窗(1s)内重叠时,DB 错会被误标为 overloaded——两者渲染同一张降级卡,
+ *  差异仅文案("查询繁忙"vs"数据源不可用"),无正确性风险;顺序请求零歧义。 */
 class DiscoverOverloadedError extends Error {
   constructor() {
     super('discover overloaded (queue-full/budget-exceeded)')
     this.name = 'DiscoverOverloadedError'
   }
+}
+
+// 过载信号注册表(评审十三轮):'use cache' 内部 catch 过载时打标;外层 catch 读取。
+// 双条件判定:计数器增量(本请求期间发生过载)+时间窗(1s 内,防陈旧标记跨请求误判)。
+const OVERLOAD_SIGNAL_WINDOW_MS = 1_000
+const _overloadSignal = { count: 0, lastAt: 0 }
+function markDiscoverOverload(): void {
+  _overloadSignal.count++
+  _overloadSignal.lastAt = Date.now()
+}
+function consumeDiscoverOverloadSignal(before: number): boolean {
+  return _overloadSignal.count > before && Date.now() - _overloadSignal.lastAt < OVERLOAD_SIGNAL_WINDOW_MS
 }
 
 async function discoverQueryCached(f: DiscoverFilters): Promise<DiscoverRow[]> {
@@ -191,9 +216,14 @@ async function discoverQueryCached(f: DiscoverFilters): Promise<DiscoverRow[]> {
   // 同键并发由 'use cache' 填充合并;不同键冷 miss 此前无界——现在有帽。
   // 评审十一轮 P0 修复:严格信号量契约——未获得槽位(budget-exceeded/queue-full)
   // =不执行 SQL、不 release(此前无条件 release 会错误递减 _running 并击穿并发帽);
-  // 过载=throw(不写持久缓存),由 discoverQuery 捕获转为 status:'overloaded'。
+  // 过载=throw(不写持久缓存)。
+  // 评审十三轮 P0:throw 身份跨 'use cache' 边界会被生产模式抹掉——在【同栈内】
+  // (instanceof 可靠)先打进程内标记,再 rethrow 普通 Error(反正身份会丢)。
   const slot = await acquireDiscoverSlot()
-  if (slot !== 'acquired') throw new DiscoverOverloadedError()
+  if (slot !== 'acquired') {
+    markDiscoverOverload()
+    throw new DiscoverOverloadedError()
+  }
   try {
     return await discoverFilteredUncached(f)
   } finally {

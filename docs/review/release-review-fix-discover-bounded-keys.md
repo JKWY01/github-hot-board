@@ -445,3 +445,66 @@ v4 全文(含 py2 兼容解析器 observe_parse.py)+ 60 并发压测原始数据
 ## 验收记录(评审十二轮 HEAD)
 - 全套件 **187 passed | 5 skipped**;tsc 零错;隔离库 build ✅(next build 786 页);
 - 队列满测试已真命中持久路径 ✅;旧注释删净 ✅;standalone 六步验证(dev+prod 双模式)✅。
+
+---
+
+# 评审十三轮回应(2026-10-30,commit 6d726cb,已 push)
+
+## P0:生产模式过载识别——你说得完全对,已用真框架实测复现并修复
+
+### 复现(Next 16.4.2 真框架,`next start` 生产模式,非 mock)
+最小 'use cache' 应用,生产模式冷键过载 throw,外层捕获到的异常:
+```
+name: "Error"
+message: "An error occurred in the Server Components render. The specific message is
+omitted in production builds to avoid leaking sensitive details. A digest property is
+included on this error instance..."
+instanceofCheck(自定义类): false
+```
+**name、message、自定义字段、原型——四样全被生产脱敏替换**(dev 模式保留)。因此
+`instanceof DiscoverOverloadedError` 在生产恒 false → 过载被外层归入 degraded
+("数据源不可用")而非"查询繁忙"。你的推断逐字成立。
+
+### 方案选型(做了四组对照实验)
+| 方案 | 实测结果 | 裁决 |
+|---|---|---|
+| A. message 特征码 | 生产 message 整个被脱敏替换,includes 匹配不到 | ❌ 死路(也如你要求不采用这种脆弱方式) |
+| C. 不 throw,返回 sentinel 联合 | **sentinel 返回值被持久缓存**(恢复后同键仍返回过载标记,直到 expire) | ❌ 违反"瞬时过载不得固化"铁律 |
+| G. 信号量搬到 'use cache' 外 | 破坏"同键冷 miss 才占槽"的语义(缓存命中也会先过信号量) | ❌ 形状不对 |
+| **H''. 缓存函数内打进程内标记 + rethrow 普通 Error** | 全场景通过 | ✅ 采用 |
+
+### 采用方案 H''(lib/discover.ts)
+- `discoverQueryCached` 在 **同栈内**(instanceof 100% 可靠,Next 边界还没碰它)catch 到
+  `DiscoverOverloadedError` 后,先打进程内标记 `_overloadSignal`(计数器+时间戳),
+  再 rethrow——rethrow 的是普通 Error,身份被生产模式抹掉也无所谓;
+- `discoverQuery` 的 catch 改读标记:`本请求期间计数器有增量 && 时间窗(1s)内` →
+  `status:'overloaded'`;否则继续上抛 → 页面 degraded。
+- throw 语义不变:'use cache' 对 throw 不写持久缓存——防污染机制原样保留。
+
+### 生产模式六步终验(同 H'' 改造后复跑)
+| 场景 | 结果 |
+|---|---|
+| 冷键过载 | status:'overloaded'(标记识别,非 instanceof) |
+| 恢复后同键 | ok,真实重查(throw 未污染缓存,calls+1) |
+| DB 真错(无过载标记) | degraded,不误判 |
+| 过载标记过期(2s)后 DB 错 | degraded,时间窗防陈旧标记 |
+| 冷键持续过载重试 | 仍 throw(calls 每次+1),未缓存 |
+| 5 个高并发过载 | 5/5 各自识别 overloaded |
+
+### 已知边界(诚实记账)
+真并发下"过载 throw"与"DB 真错"在 1s 时间窗内重叠时,DB 错会被误标为 overloaded——
+两者渲染同一张降级卡,差异仅文案("查询繁忙"vs"数据源不可用"),**无正确性风险**;
+顺序请求(含高并发同型请求)零歧义(10 连发实测 5 过载 5 DB错全判对)。窗口收敛到
+亚秒级可再降误判率,但会开始漏判慢路径里的真过载,1s 是折中初值,待生产基线校准。
+
+## 队列满测试独立键断言(你的"小缺口",已补)
+5 个拒绝请求改为互不相同且均命中 Top 榜的组合(lang=python, topic=web, band×age×sort 5 组互异键):
+每个断言 `status === 'overloaded'`(不再允许同键合并的 ok)+ `queueFullRejects ≥ before+5`
++ `sqlCalls` 不变(独立键零 SQL)。
+
+## 验收记录(评审十三轮 HEAD)
+- 全套件 **187 passed | 5 skipped**;tsc 零错;next build 786 页 ✅;
+- 生产模式复现证据+四方案对照+H'' 六步终验:全部真实 Next 16.4.2 框架实测(非 mock)。
+
+---
+

@@ -105,16 +105,26 @@ describe('持久路径信号量契约(评审十一轮 P0)', () => {
     expect(mid.queued).toBe(50)
     expect(mid.inflight).toBe(0) // 持久路径不经长尾 single-flight,若误走长尾 inflight>0
     const callsAtMid = sqlCalls
-    const rejects = await Promise.all(Array.from({ length: 5 }, () =>
-      discoverQuery({ ...filters({ lang: 'typescript', topic: 'ai' }), facetsRef: TOP_FACETS })
-        .catch((e: unknown) => e)))
+    // 评审十三轮:5 个拒绝请求改为【互不相同且均命中 Top 榜】的组合——
+    // 每个都是独立的持久缓存键,必须各自 queue-full 拒绝(queueFullRejects +5)。
+    // lang/topic 取自 Top 榜,band×age×sort 组合出 5 个互异键(与首批 52 键也不重叠:
+    // 首批 band 覆盖 s0-s3、age 全档——改用首批未用的 age 排列:sort 反转 + band 错位)。
+    const rejects = await Promise.all(Array.from({ length: 5 }, (_, i) =>
+      discoverQuery({
+        ...filters({
+          lang: 'python',
+          topic: 'web',
+          band: (['s1', 's2', 's3', 's0', 's1'] as const)[i],
+          age: (['30', '90', 'year', '7', 'year'] as const)[i],
+          sort: i % 2 === 0 ? 'gain' : 'stars',
+        }),
+        facetsRef: TOP_FACETS,
+      }).catch((e: unknown) => e)))
     for (const r of rejects) {
-      // 队列满 → DiscoverOverloadedError throw('use cache' 不缓存 throw),discoverQuery 转为 overloaded 结果;
-      // 此处 5 个请求与第 1 个请求同键,可能命中同键填充 Promise,断言允许 ok(同键合并)或 overloaded
       const status = (r as { status?: string }).status ?? 'throw'
-      expect(['ok', 'overloaded']).toContain(status)
+      expect(status).toBe('overloaded')
     }
-    expect(__testOnlyLongtailState().queueFullRejects).toBeGreaterThan(before)
+    expect(__testOnlyLongtailState().queueFullRejects).toBeGreaterThanOrEqual(before + 5)
     expect(sqlCalls).toBe(callsAtMid) // 队列满的请求零 SQL
     await Promise.all(first).catch(() => {})
   }, 30000)
