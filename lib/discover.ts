@@ -163,10 +163,25 @@ export async function discoverQuery(f: DiscoverFilters & { facetsRef?: { languag
   if (inTopLang && inTopTopic) {
     // 持久缓存路径(facetsRef 是引用不参与序列化键——需剥离,否则整个 Top 榜进键)
     const { facetsRef: _omit, ...cacheable } = f
-    return { rows: await discoverQueryCached(cacheable), status: 'ok' }
+    try {
+      return { rows: await discoverQueryCached(cacheable), status: 'ok' }
+    } catch (e) {
+      if (e instanceof DiscoverOverloadedError) return { rows: [], status: 'overloaded' }
+      throw e
+    }
   }
   // 长尾路径:直查库,进程内 30s 微缓存挡同键抖动(不落盘、重启即清)
   return discoverQueryEphemeral(f)
+}
+
+/** 持久路径过载信号(评审十一轮 P0):'use cache' 函数对过载必须 throw——
+ *  Next 对 throw 的处理=该次结果不写入持久缓存(防止瞬时过载被缓存成长期"繁忙"),
+ *  同时把状态传给调用方。缓存函数只缓存成功查询结果。 */
+class DiscoverOverloadedError extends Error {
+  constructor() {
+    super('discover overloaded (queue-full/budget-exceeded)')
+    this.name = 'DiscoverOverloadedError'
+  }
 }
 
 async function discoverQueryCached(f: DiscoverFilters): Promise<DiscoverRow[]> {
@@ -174,12 +189,15 @@ async function discoverQueryCached(f: DiscoverFilters): Promise<DiscoverRow[]> {
   cacheLife({ stale: 60, revalidate: 300, expire: 3600 })
   // 评审十轮:持久路径冷 miss 与长尾共享同一并发帽(单一全局 discover DB 预算=2)。
   // 同键并发由 'use cache' 填充合并;不同键冷 miss 此前无界——现在有帽。
-  // 持久路径不排队不降级(帽满时等待,预算内必有结果——Top 组合查询快,队列帽 50+3s 兜底)。
-  const slot = await acquireLongtailSlot()
+  // 评审十一轮 P0 修复:严格信号量契约——未获得槽位(budget-exceeded/queue-full)
+  // =不执行 SQL、不 release(此前无条件 release 会错误递减 _running 并击穿并发帽);
+  // 过载=throw(不写持久缓存),由 discoverQuery 捕获转为 status:'overloaded'。
+  const slot = await acquireDiscoverSlot()
+  if (slot !== 'acquired') throw new DiscoverOverloadedError()
   try {
     return await discoverFilteredUncached(f)
   } finally {
-    releaseLongtailSlot()
+    releaseDiscoverSlot()
   }
 }
 
@@ -195,7 +213,7 @@ const _inflight = new Map<string, Promise<DiscoverQueryResult>>()
 // 数据库并发硬上限(评审三轮 P0,评审四轮重写):信号量限制同时进行的昂贵长尾查询数。
 // MAX_CONCURRENT=2:与生产读池 max=5 对齐留余量——长尾最多占 2 条连接/进程,
 // 榜单页/API/同步永远有连接可用。注意这是单进程上限,多实例需实例级监控佐证。
-const MAX_LONGTAIL_CONCURRENT = 2
+const MAX_DISCOVER_DB_CONCURRENT = 2
 let _running = 0
 // 等待队列:waiter 对象(身份唯一,超时与释放都通过它查找——评审四轮 P0-1 修正:
 // 原实现入队匿名函数与超时查找的 wake 引用不同,indexOf 永远 miss,超时项滞留队列
@@ -211,8 +229,8 @@ const LONGTAIL_DEGRADED: DiscoverRow[] = []
 // 过载观测(评审四轮:降级要有明确状态与可观测计数,不伪装成正常查询)
 const _overloadStats = { queueFullRejects: 0, budgetTimeouts: 0 }
 
-async function acquireLongtailSlot(): Promise<'acquired' | 'budget-exceeded' | 'queue-full'> {
-  if (_running < MAX_LONGTAIL_CONCURRENT) {
+async function acquireDiscoverSlot(): Promise<'acquired' | 'budget-exceeded' | 'queue-full'> {
+  if (_running < MAX_DISCOVER_DB_CONCURRENT) {
     _running++
     return 'acquired'
   }
@@ -247,7 +265,7 @@ async function acquireLongtailSlot(): Promise<'acquired' | 'budget-exceeded' | '
   })
 }
 
-function releaseLongtailSlot(): void {
+function releaseDiscoverSlot(): void {
   _running--
   // 转交给队首【未完成】的等待者;waiter.wake 内部置 done,不会二次消费
   const next = _waitQueue.find(w => !w.done)
@@ -263,7 +281,7 @@ function releaseLongtailSlot(): void {
  *  _overloadStats 是服务进程内存状态,跨进程读只会读到零,已弃用)。
  *  实际链路:过载事件发生时【本进程】console.error 结构化日志(ghb-overload)
  *  → docker json log → HK observe/sample.sh v4 每 10 分钟直读 json log 文件过滤 10 分钟窗口,
- *  分列为 qf10m(queue-full)/bt10m(budget-timeout)两列。
+ *  分列为 qf10m(queue-full)/bt10m(budget-timeout)两列。(v4 脚本全文见 docs/review 入库文档)
  *  告警阈值(候选,待基线校准):连续 3 窗口 budgetTimeouts 增量>100;queueFullRejects 独立规则待补。
  *  链路验证:queue-full 已隔离实测入日志(running=2/queued=50);budget-timeout 真实进程触发
  *  待部署后由 bt10m 观察(路径已由行为测试 Ⅳb 封死)。 */
@@ -282,12 +300,12 @@ async function discoverQueryEphemeral(f: DiscoverFilters): Promise<DiscoverQuery
   // exec 返回 [rows, degraded]:降级与结果分离(评审四轮 P1-2 修正——
   // 原实现降级空数组也被无条件写进 _ephemeral,30s 内同键命中空结果不再真查)
   const exec = (async (): Promise<DiscoverQueryResult> => {
-    const slot = await acquireLongtailSlot()
+    const slot = await acquireDiscoverSlot()
     if (slot !== 'acquired') return { rows: LONGTAIL_DEGRADED, status: 'overloaded' } // 降级(预算超时或队列满)
     try {
       return { rows: await discoverFilteredUncached(f), status: 'ok' }
     } finally {
-      releaseLongtailSlot()
+      releaseDiscoverSlot()
     }
   })()
   _inflight.set(key, exec)

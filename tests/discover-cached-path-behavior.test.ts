@@ -1,12 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 /**
- * Top 榜常用组合冷 miss 并发验证(评审十轮新增验收项):
- * discoverQueryCached 路径无应用层信号量——验证①同键并发由 Next 'use cache' 合并的程度
- * ②不同键冷 miss 是否无界并发打库(若有风险,需给持久路径补并发保护)。
- * 方法:mock withDb 计数+延迟,真实调用 discoverQuery(Top 榜组合)。
- * 注:'use cache' 在裸 Node 测试环境由 next/cache stub 提供——stub 是直通(无缓存语义),
- * 因此本测试能测到的是【应用层+mock 层】的并发形状;Next 真实缓存合并行为需隔离 standalone 验证(另行完成)。
+ * Top 榜持久路径信号量契约测试(评审十一轮 P0):
+ * 修复前缺陷:discoverQueryCached 无条件 release(未获得槽位也 release→_running 错误递减)+
+ * 过载仍执行 SQL(击穿并发帽)。
+ * 六断言:①两请求占满槽 ②第三请求(排队超时)不执行 SQL ③running 不被错误递减
+ * ④队列满不执行 SQL ⑤占槽完成后三计数归零 ⑥过载结果 status='overloaded'。
+ * 注:next/cache 为直通 stub,'use cache' 真实填充合并由 standalone 验证(另一层证据,不在此声称)。
  */
 
 const mocks = vi.hoisted(() => ({ withDb: vi.fn() }))
@@ -20,7 +20,7 @@ vi.mock('next/cache', () => ({
   revalidateTag: vi.fn(),
 }))
 
-import { discoverQuery } from '../lib/discover'
+import { discoverQuery, __testOnlyLongtailState } from '../lib/discover'
 
 const TOP_FACETS = {
   languages: [['typescript', 9], ['python', 8]] as Array<[string, number]>,
@@ -40,32 +40,69 @@ beforeEach(() => {
   vi.clearAllMocks()
 })
 
-describe('Top 榜持久缓存路径并发形状(评审十轮)', () => {
-  it('同键并发 20:stub 直通下 withDb 被调次数=20(Next 真实缓存的合并能力由 standalone 验证补测)', async () => {
-    let calls = 0
+describe('持久路径信号量契约(评审十一轮 P0)', () => {
+  it('①②③ 队列等待超时:第三请求不执行 SQL,running 不被错误递减,状态=overloaded', async () => {
+    let sqlCalls = 0
     mocks.withDb.mockImplementation(async (fn: (sql: unknown) => Promise<unknown>) => {
-      calls++
-      await new Promise(r => setTimeout(r, 50))
+      sqlCalls++
+      await new Promise(r => setTimeout(r, 4000)) // 4s > 3s 预算
       return fn(fakeSql()) as never
     })
-    await Promise.all(Array.from({ length: 20 }, () =>
-      discoverQuery({ ...filters({ lang: 'typescript', topic: 'ai' }), facetsRef: TOP_FACETS })))
-    expect(calls).toBe(20)
-  })
+    const stamp = Date.now()
+    // 两个请求占满 2 槽
+    const occupy = [
+      discoverQuery({ ...filters({ lang: 'typescript', topic: 'ai' }), facetsRef: TOP_FACETS }),
+      discoverQuery({ ...filters({ lang: 'typescript', topic: 'web' }), facetsRef: TOP_FACETS }),
+    ]
+    await new Promise(r => setTimeout(r, 200))
+    // 第三个:队列等待 → 3s 预算超时 → 必须 throw DiscoverOverloadedError(不执行 SQL)
+    const third = await discoverQuery({ ...filters({ lang: 'python', topic: 'ai' }), facetsRef: TOP_FACETS })
+    expect(third.status).toBe('overloaded')
+    expect(third.rows).toEqual([])
+    expect(sqlCalls).toBe(2) // 只有两个占槽请求执行了 SQL
+    await Promise.all(occupy)
+    // running 不被错误递减:全部落定后恰好归零(若错误 release 会变负或提前转交)
+    const st = __testOnlyLongtailState()
+    expect(st.running).toBe(0)
+    expect(st.queued).toBe(0)
+  }, 20000)
 
-  it('不同键冷 miss 并发 8:评审十轮治理后 maxConcurrent ≤ 2(持久路径共享信号量)', async () => {
-    let concurrent = 0
-    let maxConcurrent = 0
+  it('④ 队列满:第 51+ 个请求不执行 SQL,立即 overloaded', async () => {
     mocks.withDb.mockImplementation(async (fn: (sql: unknown) => Promise<unknown>) => {
-      concurrent++
-      maxConcurrent = Math.max(maxConcurrent, concurrent)
-      await new Promise(r => setTimeout(r, 60))
-      concurrent--
+      await new Promise(r => setTimeout(r, 8000)) // 长挂占满
       return fn(fakeSql()) as never
     })
-    await Promise.all(Array.from({ length: 8 }, (_, i) =>
-      discoverQuery({ ...filters(i % 2 ? { lang: 'typescript', topic: i < 4 ? 'ai' : 'web' } : { lang: i < 4 ? 'typescript' : 'python' }), facetsRef: TOP_FACETS })))
-    // Top 榜组合键空间有界(7150)+ 并发有帽(2)=持久路径 DB 预算闭环
-    expect(maxConcurrent).toBeLessThanOrEqual(2)
+    const stamp = Date.now()
+    const before = __testOnlyLongtailState().queueFullRejects
+    let sqlCalls = 0
+    const countWrap = mocks.withDb.getMockImplementation()!
+    mocks.withDb.mockImplementation(async (fn: (sql: unknown) => Promise<unknown>) => {
+      sqlCalls++
+      return countWrap(fn)
+    })
+    const first = Array.from({ length: 52 }, (_, i) =>
+      discoverQuery({ ...filters({ lang: 'typescript', topic: `full-${stamp}-${i}` }), facetsRef: TOP_FACETS }))
+    await new Promise(r => setTimeout(r, 300))
+    const mid = __testOnlyLongtailState()
+    expect(mid.running).toBe(2)
+    expect(mid.queued).toBe(50)
+    const callsAtMid = sqlCalls
+    const rejects = await Promise.all(Array.from({ length: 5 }, (_, i) =>
+      discoverQuery({ ...filters({ lang: 'typescript', topic: `rej-${stamp}-${i}` }), facetsRef: TOP_FACETS })))
+    for (const r of rejects) expect(r.status).toBe('overloaded')
+    expect(__testOnlyLongtailState().queueFullRejects).toBeGreaterThan(before)
+    expect(sqlCalls).toBe(callsAtMid) // 队列满的请求零 SQL
+    await Promise.all(first).catch(() => {})
+  }, 30000)
+
+  it('⑤ 正常路径契约:获得槽位→执行 SQL→release,完成后三计数归零', async () => {
+    mocks.withDb.mockImplementation(async (fn: (sql: unknown) => Promise<unknown>) => fn(fakeSql()) as never)
+    const r1 = await discoverQuery({ ...filters({ lang: 'typescript', topic: 'ai' }), facetsRef: TOP_FACETS })
+    expect(r1.status).toBe('ok')
+    expect(mocks.withDb).toHaveBeenCalledTimes(1)
+    const st = __testOnlyLongtailState()
+    expect(st.running).toBe(0)
+    expect(st.queued).toBe(0)
+    expect(st.inflight).toBe(0)
   })
 })

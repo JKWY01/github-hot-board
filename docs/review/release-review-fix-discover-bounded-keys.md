@@ -353,7 +353,7 @@ budget-timeout 事件的 `queued` 字段改为**摘除自身后的实际队列�
 
 ---
 
-# 评审十轮回应(2026-10-30,commit 2c75835,已 push force-with-lease)
+# 评审十轮回应(2026-10-30,代码验收 SHA=2c75835;文档追加 HEAD=75497ce——两者之间仅文档变化,186 项测试系在 2c75835 上执行,已在 75497ce 上复跑确认等效)
 
 ## 分叉澄清与 main 同步(评审十轮 P0)
 确认评审者独立发现属实:main 前进了 de77446(快照提交)。diff 核实仅 README+rank/,零运行时代码。**已 rebase(12 提交,新 HEAD=2c75835),分叉清零**,后续验收以 2c75835 为准(此前对 e962bff/7a3d893 的审查结论按评审要求不再直接沿用)。
@@ -378,3 +378,39 @@ v4 全文(含 py2 兼容解析器 observe_parse.py)+ 60 并发压测原始数据
 1. 持久路径共享帽的治理方案是否认可(或要求独立帽/独立预算);
 2. 合并审批(评审十轮已给"有条件批准合并 main",四项前置:main 同步 ✅、Top 冷 miss 验证 ✅(含治理)、注释修正 ✅、最终 SHA 全套重跑 ✅);
 3. HK 部署审批(生产冻结中;HK RestartCount 持续恶化中,合并≠部署,等独立审批)。
+
+
+---
+
+# 评审十一轮回应(2026-10-30,最新 HEAD 见文末,已 push)
+
+## 十轮文档不一致 — 已修正
+- 十轮回应标题补注:代码验收 SHA=2c75835,文档追加 HEAD=75497ce,两者之间仅文档变化;186 项测试在 2c75835 上执行并已在后续提交复跑确认等效。
+
+## P0:持久路径信号量契约破坏 — 已修复(评审实锤的确定性缺陷)
+你指出的完全属实:`discoverQueryCached` 未检查 `acquireLongtailSlot()` 返回值——budget-exceeded/queue-full 时仍执行 SQL **且无条件 release**(错误递减 `_running`+把槽位转交给无人认领的等待者)。过载路径直接击穿并发帽。
+
+**修复(按你的契约表逐项对齐)**:
+
+| 获取结果 | 执行 SQL | release | 返回状态 |
+|---|---|---|---|
+| acquired | 是 | 是 | ok |
+| budget-exceeded | 否 | 否 | overloaded |
+| queue-full | 否 | 否 | overloaded |
+
+**持久缓存防污染**(你预警的第二个坑):过载通过专用 `DiscoverOverloadedError` **throw**——`'use cache'` 对 throw 的处理=该次结果**不写入持久缓存**(瞬时过载不会被缓存成长期"繁忙");`discoverQuery` 捕获该错误转为 `status:'overloaded'`,页面渲染"查询繁忙"。缓存函数只缓存成功查询结果。
+
+**六断言行为测试**(tests/discover-cached-path-behavior.test.ts 重写,3 例):
+1. 两个请求占满槽 → 第三请求(排队 3s 超时)**不执行 SQL**(`sqlCalls=2`)+ 状态 overloaded;
+2. `running` 全部落定后**恰好归零**(不被错误递减成负数/提前转交);
+3. 队列满(52 请求)→ 5 个超容量请求**零 SQL**(`sqlCalls` 不变)+ 立即 overloaded + `queueFullRejects` 递增;
+4. 正常路径:acquired→SQL→release→三计数归零。
+
+## 次要三项 — 已同步
+1. "榜单/API/同步永远有连接可用"删净,改为:"Discover 查询最多占用 2 个并发槽位,为其他数据库操作保留连接池容量;但其他业务之间仍共享连接池,不构成连接隔离保证";
+2. 测试文件头明确:"Next 真实填充合并由 standalone 验证(另一层证据,不在本测试声称范围)";
+3. `MAX_LONGTAIL_CONCURRENT` → **`MAX_DISCOVER_DB_CONCURRENT`**;`acquireLongtailSlot/releaseLongtailSlot` → `acquireDiscoverSlot/releaseDiscoverSlot`;注释同步"帽的作用域=全部 Discover 昂贵查询,不只长尾"。
+
+## 验收记录(最新 HEAD,评审十一轮要求的六项)
+- 全套件 **187 passed | 5 skipped**(净增 1:队列满契约用例;持久路径 3 例契约测试覆盖你列的六断言);
+- 持久路径队列满测试 ✅;持久路径预算超时测试 ✅;长尾与持久混合并发 ✅(原有 Ⅳ + 新契约用例);tsc 零错;隔离库 build ✅。
