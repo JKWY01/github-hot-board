@@ -1,6 +1,10 @@
-# HK 自托管部署线(2026-10-25,Vercel 分流方案):打 v* 标签(或手动 dispatch)→ 构建 standalone
+# HK 自托管部署线(2026-10-25,Vercel 分流方案):打 v* 标签 → 构建 standalone
 # → 传 HK → 切软链 → 重启 ghb-web 容器 → 健康检查。
 # 2026-10-27 改节奏:push main 只攒代码,不再自动部署 —— 发版=打标签(两线同步,详见 vercel-deploy 工作流)。
+# 2026-10-31 收紧发布入口(指令03):移除 workflow_dispatch 手动触发 —— HK 生产部署
+# 唯一入口=推送 v* tag(需单独审批);此前 10-27 假0事故曾用 dispatch 应急部署,
+# 该应急通道与"部署必须单独审批"的治理纪律冲突,正式移除。应急回滚走服务器本地
+# ln -sfn 切 releases(不经工作流,见 runbook)。
 # 与 Vercel 双线并存:两边读同一个库;反代决定谁接客(nginx: 爬虫→HK,真人→Vercel)。
 # 回滚 = 服务器上 ln -sfn 指回上一个 releases/<sha> 再 docker restart。
 name: deploy-hk
@@ -8,7 +12,6 @@ name: deploy-hk
 on:
   push:
     tags: ['v*']
-  workflow_dispatch: {}
 
 concurrency:
   group: deploy-hk
