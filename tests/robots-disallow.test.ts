@@ -2,9 +2,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 /**
  * robots.txt 禁入规则契约(2026-10-31 HK OOM 取证报告 §二:
- * Disallow 是【路径前缀匹配】——`/discover` 只罩裸路径,不匹配 /{lang}/discover。
- * 16 语前缀路径占 discover 流量 99%+,PerplexityBot/ClaudeBot 钻此洞。
- * 本测试锁:①裸路径禁 ②16 语前缀禁 ③不误伤其它页面 ④/api/ 口子保持。
+ * Disallow 是【路径前缀匹配】——`/discover` 只罩裸路径,不匹配带语言前缀的 discover 路径。
+ * 语言前缀路径此前未被该规则覆盖,与 PerplexityBot/ClaudeBot 等爬虫持续访问
+ * 这些路径的现象一致(因果未证实,robots 修复≠OOM 治理替代品)。
+ * 本测试锁:①裸路径禁 ②全部 16 语前缀禁(逐一枚举)③大小写敏感匹配 ④不误伤其它页面 ⑤/api/ 口子保持。
  */
 
 // mock specifier 必须匹配被测模块的解析路径:app/robots.ts import 的是 '@/lib/snapshot'
@@ -20,9 +21,10 @@ function pickDefault(mod: unknown): () => Promise<RobotsOut> {
 }
 
 function robotMatchesRule(path: string, rule: string): boolean {
-  // RFC 9309 前缀匹配 + * 通配符(爬虫通用语义:* = 任意字符序列)
+  // RFC 9309 前缀匹配 + * 通配符(爬虫通用语义:* = 任意字符序列)。
+  // 大小写敏感:robots 路径匹配按规范区分大小写,不用 'i' 标志(避免测试比真实规则宽松)。
   const pattern = rule.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\\\*/g, '.*')
-  return new RegExp('^' + pattern, 'i').test(path)
+  return new RegExp('^' + pattern).test(path)
 }
 
 import * as robotsModule from '../app/robots'
@@ -46,11 +48,24 @@ describe('robots.txt 禁入契约(前缀洞修补)', () => {
     expect(disallow.some((r) => robotMatchesRule('/discover?lang=x', r))).toBe(true)
   })
 
-  it('② 16 语前缀 /{lang}/discover 全部被禁(修补目标)', () => {
-    for (const p of ['/de/discover', '/zh/discover', '/zh-TW/discover', '/uk/discover?lang=TypeScript&band=s2', '/en/discover']) {
-      const hit = [...disallow, ...aiDisallow].some((r) => robotMatchesRule(p, r))
-      expect(hit, `${p} 应被禁`).toBe(true)
+  it('② 全部 16 语前缀 /{lang}/discover 逐一被禁(修补目标,与生产 LOCALES 一致)', () => {
+    // 清单来自 lib/locales.ts 的 LOCALES(生产实际支持的全部 16 个 locale),逐一枚举不抽样
+    const locales = ['en', 'zh', 'zh-TW', 'ja', 'ko', 'de', 'fr', 'es', 'pt', 'it', 'ru', 'uk', 'pl', 'tr', 'vi', 'id']
+    expect(locales).toHaveLength(16)
+    for (const lang of locales) {
+      for (const p of [`/${lang}/discover`, `/${lang}/discover?lang=TypeScript&topic=web&band=s2&age=7`]) {
+        const hit = [...disallow, ...aiDisallow].some((r) => robotMatchesRule(p, r))
+        expect(hit, `${p} 应被禁`).toBe(true)
+      }
     }
+  })
+
+  it('②b 大小写敏感:匹配器不比真实爬虫规则宽松', () => {
+    // robots 路径匹配按 RFC 9309 大小写敏感:字面前缀不同即不匹配。
+    // 通配段(*)按语义匹配任意字符序列(含大写),不在此断言范围。
+    expect(robotMatchesRule('/DISCOVER', '/discover')).toBe(false)
+    expect(robotMatchesRule('/de/Discover', '/*/discover')).toBe(false)
+    expect(robotMatchesRule('/de/discover', '/*/discover')).toBe(true)
   })
 
   it('③ 不误伤正常页面(榜单/档案/历史/首页全放行)', () => {

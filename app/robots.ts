@@ -38,9 +38,11 @@ const AI_AGENTS = [
  * 白烧抓取预算 —— robots 明示禁入,预算让给榜单/档案页。真人访问不受影响。
  * 2026-10-31 前缀洞修补(HK OOM 取证报告 §二):robots 的 Disallow 是路径前缀匹配,
  * `/discover` 只罩裸路径,不匹配带语言前缀的 discover 路径(de/uk/en/… 共 16 语,
- * 占 discover 流量 99%+,PerplexityBot/ClaudeBot 正是钻这个洞)。
+ * 占 discover 流量 99%+)——语言前缀路径此前未被本规则覆盖,与 PerplexityBot/
+ * ClaudeBot 等爬虫持续访问这些路径的现象一致。
  * 补「单层通配段 + /discover」规则(RFC 9309 通配符语义);
- * `/api/` 无语言前缀(路由表核实),保持原样。 */
+ * `/api/` 无语言前缀(路由表核实),保持原样。robots 是爬虫行为约束,
+ * 不替代 nginx 限流与服务端资源保护。 */
 const BOT_DISALLOW = ['/api/', '/discover', '/*/discover']
 
 export default async function robots(): Promise<MetadataRoute.Robots> {
