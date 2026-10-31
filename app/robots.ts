@@ -35,8 +35,13 @@ const AI_AGENTS = [
  * 仓库再多也不会出现指向不存在分片的死链。 */
 /** 爬虫禁入的工具页:发现页 noindex 且不进 sitemap(工具语义,不参与排名),
  * 但实测 Googlebot/ClaudeBot 对 16 语 discover 反复深抓(6 天 5 万+ 次),
- * 白烧抓取预算 —— robots 明示禁入,预算让给榜单/档案页。真人访问不受影响。 */
-const BOT_DISALLOW = ['/api/', '/discover']
+ * 白烧抓取预算 —— robots 明示禁入,预算让给榜单/档案页。真人访问不受影响。
+ * 2026-10-31 前缀洞修补(HK OOM 取证报告 §二):robots 的 Disallow 是路径前缀匹配,
+ * `/discover` 只罩裸路径,不匹配带语言前缀的 discover 路径(de/uk/en/… 共 16 语,
+ * 占 discover 流量 99%+,PerplexityBot/ClaudeBot 正是钻这个洞)。
+ * 补「单层通配段 + /discover」规则(RFC 9309 通配符语义);
+ * `/api/` 无语言前缀(路由表核实),保持原样。 */
+const BOT_DISALLOW = ['/api/', '/discover', '/*/discover']
 
 export default async function robots(): Promise<MetadataRoute.Robots> {
   let fragmentCount = 0
