@@ -11,6 +11,7 @@ export default defineConfig({
   resolve: {
     alias: {
       'next/cache': resolve(__dirname, 'tests/stubs/next-cache.ts'),
+      '@/lib/discover': resolve(__dirname, 'lib/discover.ts'),
     },
   },
 })
